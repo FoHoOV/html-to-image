@@ -26,7 +26,7 @@ async function embedFonts(data: Metadata, options: Options): Promise<string> {
       url = new URL(url, data.url).href
     }
 
-    const dataUrl = await fontToDataUrl(url, undefined, options)
+    const { dataUrl } = await fontToDataUrl(url, undefined, options)
     cssText = cssText.replace(loc, dataUrl)
     return [loc, dataUrl]
   })
@@ -173,9 +173,8 @@ function getWebFontRules(cssRules: CSSStyleRule[]): CSSStyleRule[] {
     .filter(
       (rule) =>
         rule.type === CSSRule.FONT_FACE_RULE ||
-        (typeof CSSFontFaceRule !== 'undefined' &&
-          (rule.constructor.name === CSSFontFaceRule.name ||
-            rule instanceof CSSFontFaceRule)),
+        rule.constructor.name === CSSFontFaceRule.name ||
+        rule instanceof CSSFontFaceRule,
     )
     .filter((rule) => shouldEmbed(rule.style.getPropertyValue('src')))
 }

@@ -1,12 +1,13 @@
-export interface CacheValue {
+type Value = {
   contentType: string
-  response: ArrayBuffer
+  asString: () => string
+  asDataUrl: () => string
 }
 
 export class Cache {
-  private values = new Map<string, CacheValue>()
+  private values = new Map<string, Value>()
 
-  add(key: string, value: CacheValue) {
+  add(key: string, value: Value) {
     this.values.set(key, value)
   }
 

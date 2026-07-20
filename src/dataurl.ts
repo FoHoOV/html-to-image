@@ -20,9 +20,12 @@ export async function imageToDataUrl(
       forcedContentType,
       options,
     )
-    return response.asDataUrl()
+    return makeDataUrl(
+      getContentFromDataUrl(await response.asDataUrl()),
+      response.contentType,
+    )
   } catch (error) {
-    console.warn('Failed to convert image to a data URL', error)
+    console.warn('cannot convert image to dataurl', error)
     return options.imagePlaceholder || ''
   }
 }
@@ -33,5 +36,16 @@ export async function fontToDataUrl(
   options: Options,
 ) {
   const response = await fetchResource(resourceUrl, forcedContentType, options)
-  return `url(${await response.asDataUrl()})`
+  const dataUrl = makeDataUrl(
+    getContentFromDataUrl(await response.asDataUrl()),
+    response.contentType,
+  )
+  return {
+    resourceUrl,
+    dataUrl: `url(${dataUrl})`,
+  }
+}
+
+function getContentFromDataUrl(dataURL: string) {
+  return dataURL.split(/,/)[1]
 }

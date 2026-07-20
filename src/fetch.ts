@@ -1,57 +1,20 @@
-import type { CacheValue } from './cache'
 import type { Options } from './types'
-
-function getCacheKey(
-  url: string,
-  contentType: string | undefined,
-  includeQueryParams: boolean | undefined,
-) {
-  const key = includeQueryParams ? url : url.replace(/\?.*/, '')
-  return contentType ? `[${contentType}]${key}` : key
-}
-
-function asDataUrl({ response, contentType }: CacheValue) {
-  const blob = new Blob([response], { type: contentType })
-
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-
-    reader.onerror = () => reject(reader.error)
-    reader.onloadend = () => resolve(reader.result as string)
-    reader.readAsDataURL(blob)
-  })
-}
-
-function createResource(value: CacheValue) {
-  return {
-    contentType: value.contentType,
-    asString: (encoding = 'utf-8') =>
-      new TextDecoder(encoding).decode(value.response),
-    asDataUrl: () => asDataUrl(value),
-  }
-}
 
 export async function fetchResource(
   url: string,
   forcedContentType: string | undefined,
   options: Options,
 ) {
-  const cacheKey = getCacheKey(
-    url,
-    forcedContentType,
-    options.includeQueryParams,
-  )
+  let requestUrl = url
+  if (options.cacheBust) {
+    requestUrl += `${/\?/.test(requestUrl) ? '&' : '?'}${Date.now()}`
+  }
+  const cacheKey = requestUrl + forcedContentType
 
-  if (!options.cacheBust) {
-    const cached = options.cache?.get(cacheKey)
-    if (cached) {
-      return createResource(cached)
-    }
+  if (options.cache?.has(cacheKey)) {
+    return options.cache.get(cacheKey)!
   }
 
-  const requestUrl = options.cacheBust
-    ? `${url}${/\?/.test(url) ? '&' : '?'}${Date.now()}`
-    : url
   const res = await fetch(requestUrl, options.fetchRequestInit)
 
   if (!res.ok) {
@@ -60,14 +23,54 @@ export async function fetchResource(
     )
   }
 
-  const value: CacheValue = {
-    response: await res.arrayBuffer(),
-    contentType: forcedContentType || res.headers.get('Content-Type') || '',
-  }
+  const response = await res.arrayBuffer()
+  const contentType = forcedContentType || res.headers.get('Content-Type') || ''
 
-  if (!options.cacheBust) {
-    options.cache?.add(cacheKey, value)
-  }
+  return {
+    contentType,
+    asString: (encoding = 'utf-8') => {
+      const result = new TextDecoder(encoding).decode(response)
+      if (!options.cacheBust) {
+        options.cache?.add(cacheKey, {
+          asDataUrl() {
+            throw new Error(
+              'first hit read as string, cannot read as dataUrl now',
+            )
+          },
+          asString() {
+            return result
+          },
+          contentType,
+        })
+      }
+      return result
+    },
+    asDataUrl: () => {
+      const blob = new Blob([response], { type: contentType })
 
-  return createResource(value)
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+
+        reader.onerror = () => reject(reader.error)
+        reader.onloadend = () => {
+          if (!options.cacheBust) {
+            options.cache?.add(cacheKey, {
+              asDataUrl() {
+                return reader.result as string
+              },
+              asString() {
+                throw new Error(
+                  'first hit read as dataurl, cannot read as string now',
+                )
+              },
+              contentType,
+            })
+          }
+          resolve(reader.result as string)
+        }
+
+        reader.readAsDataURL(blob)
+      })
+    },
+  }
 }
