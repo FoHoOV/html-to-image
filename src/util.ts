@@ -243,9 +243,13 @@ export async function nodeToDataURL(
 }
 
 export const isInstanceOfElement = <
-  T extends typeof Element | typeof HTMLElement | typeof SVGImageElement,
+  T extends
+    | typeof Element
+    | typeof HTMLElement
+    | typeof SVGImageElement
+    | typeof Node,
 >(
-  node: Element | HTMLElement | SVGImageElement,
+  node: Element | HTMLElement | SVGImageElement | Node,
   instance: T,
 ): node is T['prototype'] => {
   if (node instanceof instance) return true
@@ -258,4 +262,41 @@ export const isInstanceOfElement = <
     nodePrototype.constructor.name === instance.name ||
     isInstanceOfElement(nodePrototype, instance)
   )
+}
+
+export async function waitForNextFrame() {
+  await new Promise((resolve) => {
+    requestAnimationFrame(resolve)
+  })
+  // Some WebKit versions run the first callback before style and paint work.
+  await new Promise((resolve) => {
+    requestAnimationFrame(resolve)
+  })
+}
+
+export function addHiddenDomElement(node: HTMLElement) {
+  const hiddenNode = document.createElement('div')
+  hiddenNode.style.position = 'fixed'
+  hiddenNode.style.zIndex = '-100000'
+  hiddenNode.style.opacity = '0'
+  hiddenNode.style.top = '0'
+  hiddenNode.style.left = '-200%'
+
+  hiddenNode.appendChild(node)
+  document.body.appendChild(hiddenNode)
+
+  return () => {
+    hiddenNode.remove()
+  }
+}
+
+export function traverse<T extends Element>(
+  node: T,
+  callback: (node: T | HTMLElement) => void,
+) {
+  callback(node)
+  const children = node.querySelectorAll<HTMLElement>('*')
+  for (let i = 0; i < children.length; i++) {
+    callback(children[i])
+  }
 }

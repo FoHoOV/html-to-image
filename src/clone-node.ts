@@ -1,11 +1,6 @@
 import type { Options } from './types'
 import { clonePseudoElements } from './clone-pseudos'
-import {
-  createImage,
-  toArray,
-  isInstanceOfElement,
-  getStyleProperties,
-} from './util'
+import { createImage, toArray, isInstanceOfElement } from './util'
 import { getMimeType } from './mimes'
 import { resourceToDataURL } from './dataurl'
 
@@ -119,11 +114,7 @@ async function cloneChildren<T extends HTMLElement>(
   return clonedNode
 }
 
-function cloneCSSStyle<T extends HTMLElement>(
-  nativeNode: T,
-  clonedNode: T,
-  options: Options,
-) {
+function cloneCSSText<T extends HTMLElement>(nativeNode: T, clonedNode: T) {
   const targetStyle = clonedNode.style
   if (!targetStyle) {
     return
@@ -133,33 +124,6 @@ function cloneCSSStyle<T extends HTMLElement>(
   if (sourceStyle.cssText) {
     targetStyle.cssText = sourceStyle.cssText
     targetStyle.transformOrigin = sourceStyle.transformOrigin
-  } else {
-    getStyleProperties(options).forEach((name) => {
-      let value = sourceStyle.getPropertyValue(name)
-      if (name === 'font-size' && value.endsWith('px')) {
-        const reducedFont =
-          Math.floor(parseFloat(value.substring(0, value.length - 2))) - 0.1
-        value = `${reducedFont}px`
-      }
-
-      if (
-        isInstanceOfElement(nativeNode, HTMLIFrameElement) &&
-        name === 'display' &&
-        value === 'inline'
-      ) {
-        value = 'block'
-      }
-
-      if (name === 'd' && clonedNode.getAttribute('d')) {
-        value = `path(${clonedNode.getAttribute('d')})`
-      }
-
-      targetStyle.setProperty(
-        name,
-        value,
-        sourceStyle.getPropertyPriority(name),
-      )
-    })
   }
 }
 
@@ -192,7 +156,7 @@ function decorate<T extends HTMLElement>(
   options: Options,
 ): T {
   if (isInstanceOfElement(clonedNode, Element)) {
-    cloneCSSStyle(nativeNode, clonedNode, options)
+    cloneCSSText(nativeNode, clonedNode)
     clonePseudoElements(nativeNode, clonedNode, options)
     cloneInputValue(nativeNode, clonedNode)
     cloneSelectValue(nativeNode, clonedNode)

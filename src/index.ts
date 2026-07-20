@@ -1,7 +1,7 @@
 import { Options } from './types'
 import { cloneNode } from './clone-node'
 import { embedImages } from './embed-images'
-import { applyStyle } from './apply-style'
+import { applyStyle, inlineCSSStyle } from './style'
 import { embedWebFonts, getWebFontCSS } from './embed-webfonts'
 import {
   getImageSize,
@@ -10,27 +10,54 @@ import {
   canvasToBlob,
   nodeToDataURL,
   checkCanvasDimensions,
+  waitForNextFrame,
+  addHiddenDomElement,
 } from './util'
+
+interface SvgResult {
+  svg: string
+  width: number
+  height: number
+}
+
+async function renderSvg<T extends HTMLElement>(
+  node: T,
+  options: Options,
+): Promise<SvgResult> {
+  const clonedNode = (await cloneNode(node, options, true)) as HTMLElement
+  applyStyle(clonedNode, options)
+
+  const removeElement = addHiddenDomElement(clonedNode)
+  try {
+    await waitForNextFrame()
+    inlineCSSStyle(clonedNode, options)
+    const { width, height } = getImageSize(clonedNode, options)
+
+    removeElement()
+    await embedImages(clonedNode, options)
+    await embedWebFonts(clonedNode, options)
+
+    const svg = await nodeToDataURL(clonedNode, width, height)
+    return { svg, width, height }
+  } catch (error) {
+    removeElement()
+    throw error
+  }
+}
 
 export async function toSvg<T extends HTMLElement>(
   node: T,
   options: Options = {},
 ): Promise<string> {
-  const { width, height } = getImageSize(node, options)
-  const clonedNode = (await cloneNode(node, options, true)) as HTMLElement
-  await embedWebFonts(clonedNode, options)
-  await embedImages(clonedNode, options)
-  applyStyle(clonedNode, options)
-  const datauri = await nodeToDataURL(clonedNode, width, height)
-  return datauri
+  const { svg } = await renderSvg(node, options)
+  return svg
 }
 
 export async function toCanvas<T extends HTMLElement>(
   node: T,
   options: Options = {},
 ): Promise<HTMLCanvasElement> {
-  const { width, height } = getImageSize(node, options)
-  const svg = await toSvg(node, options)
+  const { svg, width, height } = await renderSvg(node, options)
   const img = await createImage(svg)
 
   const canvas = document.createElement('canvas')
