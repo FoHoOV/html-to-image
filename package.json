@@ -34,6 +34,10 @@
     "build:types": "tsc --emitDeclarationOnly --outDir ./dist/types",
     "build": "run-s build:types build:code",
     "prebuild": "run-s lint clean",
+    "changeset": "changeset",
+    "changeset:status": "changeset status",
+    "version-packages": "changeset version",
+    "release": "pnpm build && changeset publish",
     "test": "karma start",
     "test:watch": "karma start --single-run=false --auto-watch",
     "test:debug": "karma start --browsers=Chrome --single-run=false --auto-watch --debug",
@@ -64,6 +68,7 @@
   },
   "homepage": "https://github.com/bubkoo/html-to-image#readme",
   "devDependencies": {
+    "@changesets/cli": "^2.31.1",
     "@commitlint/cli": "^17.4.4",
     "@commitlint/config-conventional": "^17.4.4",
     "@fortawesome/fontawesome-free": "^6.1.2",
