@@ -9,6 +9,8 @@ interface Metadata {
   cssText: string
 }
 
+const PROPERTY_FONT_FAMILY = 'font-family'
+
 async function fetchCSS(url: string, options: Options) {
   const response = await fetchResource(url, undefined, options)
   return { url, cssText: response.asString() }
@@ -168,7 +170,13 @@ async function getCSSRules(
 
 function getWebFontRules(cssRules: CSSStyleRule[]): CSSStyleRule[] {
   return cssRules
-    .filter((rule) => rule.type === CSSRule.FONT_FACE_RULE)
+    .filter(
+      (rule) =>
+        rule.type === CSSRule.FONT_FACE_RULE ||
+        (typeof CSSFontFaceRule !== 'undefined' &&
+          (rule.constructor.name === CSSFontFaceRule.name ||
+            rule instanceof CSSFontFaceRule)),
+    )
     .filter((rule) => shouldEmbed(rule.style.getPropertyValue('src')))
 }
 
@@ -194,7 +202,9 @@ function getUsedFonts(node: HTMLElement) {
   const fonts = new Set<string>()
   function traverse(node: HTMLElement) {
     const fontFamily =
-      node.style.fontFamily || getComputedStyle(node).fontFamily
+      node.style.getPropertyValue(PROPERTY_FONT_FAMILY) ||
+      window.getComputedStyle(node).getPropertyValue(PROPERTY_FONT_FAMILY) ||
+      node.style.fontFamily
     fontFamily.split(',').forEach((font) => {
       fonts.add(normalizeFontFamily(font))
     })
@@ -218,7 +228,11 @@ export async function getWebFontCSS<T extends HTMLElement>(
   const cssTexts = await Promise.all(
     rules
       .filter((rule) =>
-        usedFonts.has(normalizeFontFamily(rule.style.fontFamily)),
+        usedFonts.has(
+          normalizeFontFamily(
+            rule.style.getPropertyValue(PROPERTY_FONT_FAMILY),
+          ),
+        ),
       )
       .map((rule) => {
         const baseUrl = rule.parentStyleSheet
