@@ -15,16 +15,14 @@ import {
   isIOS,
 } from './util'
 
-interface SvgResult {
-  svg: string
-  width: number
-  height: number
-}
-
 async function renderSvg<T extends HTMLElement>(
   node: T,
   options: Options,
-): Promise<SvgResult> {
+): Promise<{
+  svg: string
+  width: number
+  height: number
+}> {
   const clonedNode = (await cloneNode(node, options)) as HTMLElement
   applyStyle(clonedNode, options)
 
