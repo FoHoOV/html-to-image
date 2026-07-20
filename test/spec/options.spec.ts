@@ -102,15 +102,45 @@ describe('work with options', () => {
       .catch(done)
   })
 
-  it('should preserve logical canvas dimensions at high pixel ratios', async () => {
-    const node = await bootstrap('dimensions/node.html', 'dimensions/style.css')
-    const canvas = await toCanvas(node, {
-      pixelRatio: 2,
-      skipFonts: true,
-    })
+  it('should preserve logical size and full content at high pixel ratios', async () => {
+    const node = document.createElement('div')
+    node.style.cssText = 'position: relative; width: 100px; height: 100px;'
 
-    expect(canvas.width).toBe(parseFloat(canvas.style.width) * 2)
-    expect(canvas.height).toBe(parseFloat(canvas.style.height) * 2)
+    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00']
+    colors.forEach((color, index) => {
+      const child = document.createElement('div')
+      child.style.cssText = `
+        position: absolute;
+        left: ${(index % 2) * 50}px;
+        top: ${Math.floor(index / 2) * 50}px;
+        width: 50px;
+        height: 50px;
+        background: ${color};
+      `
+      node.appendChild(child)
+    })
+    document.body.appendChild(node)
+
+    try {
+      const canvas = await toCanvas(node, {
+        pixelRatio: 2,
+        skipFonts: true,
+      })
+      const context = canvas.getContext('2d')!
+      const pixelAt = (x: number, y: number) =>
+        Array.from(context.getImageData(x, y, 1, 1).data)
+
+      expect(canvas.width).toBe(200)
+      expect(canvas.height).toBe(200)
+      expect(canvas.style.width).toBe('100px')
+      expect(canvas.style.height).toBe('100px')
+      expect(pixelAt(50, 50)).toEqual([255, 0, 0, 255])
+      expect(pixelAt(150, 50)).toEqual([0, 255, 0, 255])
+      expect(pixelAt(50, 150)).toEqual([0, 0, 255, 255])
+      expect(pixelAt(150, 150)).toEqual([255, 255, 0, 255])
+    } finally {
+      node.remove()
+    }
   })
 
   it('should use node filter', (done) => {

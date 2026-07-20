@@ -69,28 +69,30 @@ export async function toCanvas<T extends HTMLElement>(
   canvas.width = canvasWidth * ratio
   canvas.height = canvasHeight * ratio
 
-  context.setTransform(ratio, 0, 0, ratio, 0, 0)
-
   if (!options.skipAutoScale) {
     checkCanvasDimensions(canvas)
   }
 
-  canvas.style.width = `${canvas.width}px`
-  canvas.style.height = `${canvas.height}px`
-  canvas.style.minWidth = `${canvas.width}px`
-  canvas.style.maxWidth = `${canvas.width}px`
+  const scaleX = canvasWidth ? canvas.width / canvasWidth : 1
+  const scaleY = canvasHeight ? canvas.height / canvasHeight : 1
+  context.setTransform(scaleX, 0, 0, scaleY, 0, 0)
+
+  canvas.style.width = `${canvasWidth}px`
+  canvas.style.height = `${canvasHeight}px`
+  canvas.style.minWidth = `${canvasWidth}px`
+  canvas.style.maxWidth = `${canvasWidth}px`
 
   if (options.style?.backgroundColor) {
     context.fillStyle = options.style.backgroundColor
-    context.fillRect(0, 0, canvas.width, canvas.height)
+    context.fillRect(0, 0, canvasWidth, canvasHeight)
   }
 
-  context.drawImage(img, 0, 0, canvas.width, canvas.height)
+  context.drawImage(img, 0, 0, canvasWidth, canvasHeight)
 
   if (isIOS()) {
     await waitForNextFrame()
-    context.clearRect(0, 0, canvas.width, canvas.height)
-    context.drawImage(img, 0, 0, canvas.width, canvas.height)
+    context.clearRect(0, 0, canvasWidth, canvasHeight)
+    context.drawImage(img, 0, 0, canvasWidth, canvasHeight)
   }
 
   return canvas
