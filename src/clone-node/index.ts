@@ -15,12 +15,12 @@ export async function cloneNode<T extends ClonableElement>(
   options: Options,
 ): Promise<T | null> {
   const filter = getFilterResult(node, options)
-  if (filter === 'all') {
+  if (filter === 'remove') {
     return null
   }
 
   let clonedNode: ClonableElement
-  if (filter === 'self') {
+  if (filter === 'unwrap') {
     clonedNode = document.createElement('div')
   } else {
     clonedNode = await cloneSingleNode(node, options)
@@ -129,5 +129,5 @@ function isSvgElement(node: Node): node is SVGElement {
 }
 
 function getFilterResult(node: ClonableElement, options: Options) {
-  return options.filter?.(node as HTMLElement) ?? 'include'
+  return options.filter?.(node as HTMLElement) ?? 'keep'
 }

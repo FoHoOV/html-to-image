@@ -28,11 +28,11 @@ export interface Options {
    */
   includeStyleProperties?: string[]
   /**
-   * A function taking a DOM node as its argument. Return `include` to include
-   * the node, `self` to exclude only the node while preserving its children,
-   * or `all` to exclude the node and all of its children.
+   * A function taking a DOM node as its argument. Return `keep` to preserve
+   * the node, `unwrap` to remove only the node while preserving its children,
+   * or `remove` to remove the node and all of its children.
    */
-  filter?: (domNode: HTMLElement) => 'include' | 'self' | 'all'
+  filter?: (domNode: HTMLElement) => 'keep' | 'unwrap' | 'remove'
   /**
    * A number between `0` and `1` indicating image quality (e.g. 0.92 => 92%)
    * of the JPEG image.

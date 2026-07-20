@@ -229,9 +229,9 @@ describe('work with options', () => {
         toPng(node, {
           filter(node) {
             if (node.classList) {
-              return node.classList.contains('omit') ? 'all' : 'include'
+              return node.classList.contains('omit') ? 'remove' : 'keep'
             }
-            return 'include'
+            return 'keep'
           },
         }),
       )
@@ -244,27 +244,27 @@ describe('work with options', () => {
     const root = document.createElement('div')
 
     const clone = await cloneNode(root, {
-      filter: (node) => (node === root ? 'all' : 'include'),
+      filter: (node) => (node === root ? 'remove' : 'keep'),
     })
 
     expect(clone).toBeNull()
   })
 
-  it('should preserve children when a string filter excludes only the root', async () => {
+  it('should preserve children when the filter unwraps the root', async () => {
     const root = document.createElement('section')
     const child = document.createElement('span')
     child.textContent = 'preserved'
     root.appendChild(child)
 
     const clone = await cloneNode(root, {
-      filter: (node) => (node === root ? 'self' : 'include'),
+      filter: (node) => (node === root ? 'unwrap' : 'keep'),
     })
 
     expect(clone?.tagName).toBe('DIV')
     expect(clone?.textContent).toBe('preserved')
   })
 
-  it('should exclude descendants when a string filter returns all', async () => {
+  it('should exclude descendants when the filter removes their parent', async () => {
     const root = document.createElement('div')
     const excluded = document.createElement('section')
     excluded.className = 'excluded'
@@ -273,14 +273,14 @@ describe('work with options', () => {
 
     const clone = await cloneNode(root, {
       filter: (node) =>
-        node.classList.contains('excluded') ? 'all' : 'include',
+        node.classList.contains('excluded') ? 'remove' : 'keep',
     })
 
     expect(clone?.querySelector('.excluded')).toBeNull()
     expect(clone?.children).toHaveSize(0)
   })
 
-  it('should preserve descendants when a string filter excludes only their parent', async () => {
+  it('should preserve descendants when the filter unwraps their parent', async () => {
     const root = document.createElement('div')
     const excluded = document.createElement('section')
     const preserved = document.createElement('span')
@@ -289,7 +289,7 @@ describe('work with options', () => {
     root.appendChild(excluded)
 
     const clone = await cloneNode(root, {
-      filter: (node) => (node === excluded ? 'self' : 'include'),
+      filter: (node) => (node === excluded ? 'unwrap' : 'keep'),
     })
 
     expect(clone?.querySelector('section')).toBeNull()
