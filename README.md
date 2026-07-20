@@ -241,10 +241,10 @@ Defaults to `false`
 
 ### includeQueryParams
 
-Set false to use all URL as cache key.
-If the value has falsy value, it will exclude query params from the provided URL.
+Whether query parameters are included in resource cache keys. Set to `false` to
+strip query parameters from cache keys. This does not change the requested URL.
 
-Defaults to `false`
+Defaults to `true`
 
 ### imagePlaceholder
 

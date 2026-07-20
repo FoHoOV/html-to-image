@@ -44,8 +44,8 @@ export interface Options {
    */
   cacheBust?: boolean
   /**
-   * Set false to use all URL as cache key.
-   * Default: false | undefined - which strips away the query parameters
+   * Whether query parameters are included in resource cache keys. Set to
+   * `false` to strip them from cache keys. Defaults to `true`.
    */
   includeQueryParams?: boolean
   /**

@@ -9,9 +9,13 @@ export async function fetchResource(
   if (options.cacheBust) {
     requestUrl += `${/\?/.test(requestUrl) ? '&' : '?'}${Date.now()}`
   }
-  const cacheKey = requestUrl + forcedContentType
+  const cacheUrl =
+    options.includeQueryParams === false
+      ? requestUrl.replace(/\?.*/, '')
+      : requestUrl
+  const cacheKey = cacheUrl + forcedContentType
 
-  if (options.cache?.has(cacheKey)) {
+  if (!options.cacheBust && options.cache?.has(cacheKey)) {
     return options.cache.get(cacheKey)!
   }
 
