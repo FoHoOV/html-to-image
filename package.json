@@ -69,6 +69,7 @@
     "@bubkoo/tsconfig": "^1.0.0",
     "@fortawesome/fontawesome-free": "^6.1.2",
     "@types/jasmine": "^4.3.1",
+    "@types/node": "18.11.18",
     "@types/pixelmatch": "^5.2.4",
     "coveralls": "^3.1.1",
     "eslint": "^8.22.0",
