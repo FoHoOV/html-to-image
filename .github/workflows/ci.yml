@@ -1,69 +1,74 @@
-name: 👷　CI
+name: CI
+
 on:
-  pull_request: 
-  pull_request_target:
+  pull_request:
   push:
-    branches:
-      - master
-      - next
-      - next-major
-      - alpha
-      - beta
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  ci:
+  verify:
+    name: Build and test
     runs-on: ubuntu-latest
     steps:
-      - name: ⤵️　Checkout
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v6
 
-      - name: 🎉　Setup nodejs
-        uses: actions/setup-node@v3
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
         with:
-          node-version: 16.x
+          node-version: 24
+          cache: pnpm
 
-      - name: 🎉　Setup pnpm
-        uses: pnpm/action-setup@v2
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
+
+  release:
+    name: Release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
         with:
-          version: 7
-          run_install: false
+          fetch-depth: 0
 
-      - name: 🌱　Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
 
-      - name: 🚸　Setup pnpm cache
-        uses: actions/cache@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
         with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version: 24
+          cache: pnpm
 
-      - name: 🚧　Install dependencies
-        run: pnpm install --no-frozen-lockfile --ignore-scripts
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: 📦　Build
-        run: pnpm run build
-
-      - name: ✅　Test
-        run: pnpm run test
-
-      - name: 🔑　Generate Token
-        uses: wow-actions/use-app-token@v2
+      - name: Create release pull request or publish
+        uses: changesets/action@v1
         with:
-          app_id: ${{ secrets.APP_ID }}
-          private_key: ${{ secrets.PRIVATE_KEY }}
-
-      - name: 💡　Coveralls
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ env.BOT_TOKEN }}
-          path-to-lcov: ./test/coverage/lcov.info
-
-      - name: 💡　Codecov
-        uses: codecov/codecov-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./test/coverage/lcov.info
+          publish: pnpm release
+          version: pnpm version-packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
