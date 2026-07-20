@@ -170,12 +170,7 @@ export function canvasToBlob(
 
   return new Promise((resolve) => {
     const binaryString = window.atob(
-      canvas
-        .toDataURL(
-          options.type ? options.type : undefined,
-          options.quality ? options.quality : undefined,
-        )
-        .split(',')[1],
+      canvas.toDataURL(options.type, options.quality).split(',')[1],
     )
     const len = binaryString.length
     const binaryArray = new Uint8Array(len)
@@ -196,10 +191,9 @@ export function createImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => {
-      const decode = img.decode ? img.decode() : Promise.resolve()
-      decode
-        .catch(() => undefined)
-        .then(() => requestAnimationFrame(() => resolve(img)))
+      img.decode().finally(() => {
+        requestAnimationFrame(() => resolve(img))
+      })
     }
     img.onerror = reject
     if (!url.startsWith('data:') && !url.startsWith('blob:')) {

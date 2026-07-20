@@ -4,32 +4,28 @@ type WindowWithSaveFilePicker = Window & {
   showSaveFilePicker?: unknown
 }
 
-function canShareImage() {
-  if (
-    typeof navigator.share !== 'function' ||
-    typeof navigator.canShare !== 'function' ||
-    typeof File !== 'function'
-  ) {
+function isShareSupported() {
+  return typeof navigator.share === 'function'
+}
+
+function canShare(data: ShareData) {
+  if (!isShareSupported()) {
     return false
   }
 
-  try {
-    return navigator.canShare({
-      title: isIOS() ? undefined : '-',
-      files: [
-        new File([new Blob([], { type: 'image/png' })], '-', {
-          type: 'image/png',
-        }),
-      ],
-    })
-  } catch {
-    return false
-  }
+  return navigator.canShare(data)
 }
 
 export function getApiAvailability() {
-  const canShareText = typeof navigator.share === 'function'
-  const canShareFile = canShareImage()
+  const canShareText = isShareSupported()
+  const canShareFile = canShare({
+    title: isIOS() ? undefined : '-',
+    files: [
+      new File([new Blob(undefined, { type: 'image/png' })], '-', {
+        type: 'image/png',
+      }),
+    ],
+  })
   const canSaveFile =
     typeof (window as WindowWithSaveFilePicker).showSaveFilePicker ===
     'function'
