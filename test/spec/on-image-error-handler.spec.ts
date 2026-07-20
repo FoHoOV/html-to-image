@@ -17,14 +17,17 @@ describe('Error Handling in resourceToDataURL', () => {
   })
 
   it('should reject with an error if no onImageErrorHandler is provided', async () => {
-    const options = {}
     const node = document.createElement('img')
     node.src = 'invalid_url'
-    await embedImages(node, options).catch((error) => {
-      expect(() => {
-        throw error
-      }).toThrow()
-    })
+    let rejection: unknown
+
+    try {
+      await embedImages(node, {})
+    } catch (error) {
+      rejection = error
+    }
+
+    expect(rejection).toEqual(jasmine.any(Error))
   })
 
   it('should propagate errors from onImageErrorHandler', async () => {

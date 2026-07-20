@@ -102,6 +102,53 @@ describe('work with options', () => {
       .catch(done)
   })
 
+  it('should measure dimensions supplied through style on the cloned node', async () => {
+    const node = document.createElement('div')
+    node.style.cssText = 'width: 40px; height: 30px; background: red;'
+    document.body.appendChild(node)
+
+    try {
+      const canvas = await toCanvas(node, {
+        pixelRatio: 1,
+        skipFonts: true,
+        style: {
+          width: '160px',
+          height: '90px',
+        },
+      })
+
+      expect(canvas.width).toBe(160)
+      expect(canvas.height).toBe(90)
+      expect(canvas.style.width).toBe('160px')
+      expect(canvas.style.height).toBe('90px')
+      expect(node.style.width).toBe('40px')
+      expect(node.style.height).toBe('30px')
+    } finally {
+      node.remove()
+    }
+  })
+
+  it('should measure reflow after applying a consumer-provided width', async () => {
+    const node = document.createElement('div')
+    node.style.cssText = 'width: 40px; aspect-ratio: 2 / 1; background: red;'
+    document.body.appendChild(node)
+
+    try {
+      const canvas = await toCanvas(node, {
+        width: 160,
+        pixelRatio: 1,
+        skipFonts: true,
+      })
+
+      expect(canvas.width).toBe(160)
+      expect(canvas.height).toBe(80)
+      expect(node.getBoundingClientRect().width).toBe(40)
+      expect(node.getBoundingClientRect().height).toBe(20)
+    } finally {
+      node.remove()
+    }
+  })
+
   it('should preserve logical size and full content at high pixel ratios', async () => {
     const node = document.createElement('div')
     node.style.cssText = 'position: relative; width: 100px; height: 100px;'
@@ -140,6 +187,39 @@ describe('work with options', () => {
       expect(pixelAt(150, 150)).toEqual([255, 255, 0, 255])
     } finally {
       node.remove()
+    }
+  })
+
+  it('should redraw canvas output on iOS', async () => {
+    const platformDescriptor = Object.getOwnPropertyDescriptor(
+      navigator,
+      'platform',
+    )
+    Object.defineProperty(navigator, 'platform', {
+      configurable: true,
+      value: 'iPhone',
+    })
+
+    const drawImage = spyOn(
+      CanvasRenderingContext2D.prototype,
+      'drawImage',
+    ).and.callThrough()
+    const clearRect = spyOn(
+      CanvasRenderingContext2D.prototype,
+      'clearRect',
+    ).and.callThrough()
+    const node = document.createElement('div')
+    node.style.cssText = 'width: 20px; height: 20px; background: red;'
+    document.body.appendChild(node)
+
+    try {
+      await toCanvas(node, { pixelRatio: 1, skipFonts: true })
+
+      expect(drawImage).toHaveBeenCalledTimes(2)
+      expect(clearRect).toHaveBeenCalledTimes(1)
+    } finally {
+      node.remove()
+      restoreProperty(navigator, 'platform', platformDescriptor)
     }
   })
 
@@ -200,6 +280,22 @@ describe('work with options', () => {
     expect(clone?.children).toHaveSize(0)
   })
 
+  it('should preserve descendants when a string filter excludes only their parent', async () => {
+    const root = document.createElement('div')
+    const excluded = document.createElement('section')
+    const preserved = document.createElement('span')
+    preserved.className = 'preserved'
+    excluded.appendChild(preserved)
+    root.appendChild(excluded)
+
+    const clone = await cloneNode(root, {
+      filter: (node) => (node === excluded ? 'self' : 'include'),
+    })
+
+    expect(clone?.querySelector('section')).toBeNull()
+    expect(clone?.querySelector('.preserved')).not.toBeNull()
+  })
+
   it('should only use fontEmbedCss if it is supplied', (done) => {
     const testCss = `
         @font-face {
@@ -255,3 +351,15 @@ describe('work with options', () => {
       .catch(done)
   })
 })
+
+function restoreProperty(
+  target: object,
+  property: PropertyKey,
+  descriptor: PropertyDescriptor | undefined,
+) {
+  if (descriptor) {
+    Object.defineProperty(target, property, descriptor)
+  } else {
+    delete (target as Record<PropertyKey, unknown>)[property]
+  }
+}
