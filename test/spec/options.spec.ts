@@ -36,7 +36,9 @@ describe('work with options', () => {
     bootstrap('bgcolor/node.html', 'bgcolor/style.css', 'bgcolor/image')
       .then((node) => {
         return toPng(node, {
-          backgroundColor: '#ff0000',
+          style: {
+            backgroundColor: '#ff0000',
+          },
         })
       })
       .then(check)
@@ -48,7 +50,9 @@ describe('work with options', () => {
     bootstrap('bgcolor/node.html', 'bgcolor/style.css', 'bgcolor/image')
       .then((node) => {
         return toSvg(node, {
-          backgroundColor: '#ff0000',
+          style: {
+            backgroundColor: '#ff0000',
+          },
         })
       })
       .then(check)
@@ -60,7 +64,7 @@ describe('work with options', () => {
     bootstrap('style/node.html', 'style/style.css', 'style/image')
       .then((node) => {
         return toPng(node, {
-          style: { backgroundColor: 'red', transform: 'scale(0.5)' },
+          style: { background: 'red', transform: 'scale(0.5)' },
         })
       })
       .then(check)
