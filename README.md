@@ -32,7 +32,6 @@ npm install --save html-to-image
 import * as htmlToImage from 'html-to-image';
 import {
   Cache,
-  getApiAvailability,
   getFontEmbedCSS,
   toBlob,
   toCanvas,
@@ -156,21 +155,6 @@ htmlToImage
     }
   });
 ```
-
-#### getApiAvailability
-
-Check whether the current browser supports image sharing, text sharing, or saving files with the native file picker:
-
-```js
-const {
-  canShareImage,
-  canShareText,
-  canSaveFile,
-  canShare,
-} = htmlToImage.getApiAvailability();
-```
-
-`canShare` is `true` when any of the other capabilities is available.
 
 #### React
 ```tsx

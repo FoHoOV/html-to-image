@@ -1,4 +1,4 @@
-## Unreleased
+# 2.0.0
 
 ### BREAKING CHANGES
 
@@ -12,7 +12,6 @@
 * **cache:** export a reusable, caller-owned `Cache` for images, fonts, stylesheets, and external SVG resources without retaining fetched resource data globally for the application lifecycle.
 * **filter:** add tri-state filtering, including `self` for removing an element while preserving its children.
 * **svg:** inline external SVG `use` definitions and their referenced dependencies.
-* **browser:** expose `getApiAvailability()` for image sharing, text sharing, and file-saving capability checks.
 * **rendering:** capture browser-computed styles from a live off-screen clone before serialization.
 
 ### Bug Fixes
