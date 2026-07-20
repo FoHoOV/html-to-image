@@ -10,7 +10,7 @@ import {
   compareToRefImage,
   assertTextRendered,
 } from './helper'
-import { toPng, toSvg } from '../../src'
+import { toCanvas, toPng, toSvg } from '../../src'
 import { cloneNode } from '../../src/clone-node'
 
 describe('work with options', () => {
@@ -96,6 +96,17 @@ describe('work with options', () => {
       .then(compareToRefImage)
       .then(done)
       .catch(done)
+  })
+
+  it('should preserve logical canvas dimensions at high pixel ratios', async () => {
+    const node = await bootstrap('dimensions/node.html', 'dimensions/style.css')
+    const canvas = await toCanvas(node, {
+      pixelRatio: 2,
+      skipFonts: true,
+    })
+
+    expect(canvas.width).toBe(parseFloat(canvas.style.width) * 2)
+    expect(canvas.height).toBe(parseFloat(canvas.style.height) * 2)
   })
 
   it('should use node filter', (done) => {

@@ -164,11 +164,7 @@ export function canvasToBlob(
 ): Promise<Blob | null> {
   if (canvas.toBlob) {
     return new Promise((resolve) => {
-      canvas.toBlob(
-        resolve,
-        options.type ? options.type : 'image/png',
-        options.quality ? options.quality : 1,
-      )
+      canvas.toBlob(resolve, options.type ?? 'image/png', options.quality ?? 1)
     })
   }
 
@@ -303,4 +299,18 @@ export function traverse<T extends Element>(
   for (let i = 0; i < children.length; i++) {
     callback(children[i])
   }
+}
+
+export function isIOS() {
+  return (
+    [
+      'iPad Simulator',
+      'iPhone Simulator',
+      'iPod Simulator',
+      'iPad',
+      'iPhone',
+      'iPod',
+    ].includes(navigator.platform) ||
+    (navigator.userAgent.includes('Mac') && 'ontouchend' in document)
+  )
 }

@@ -12,6 +12,7 @@ import {
   checkCanvasDimensions,
   waitForNextFrame,
   addHiddenDomElement,
+  isIOS,
 } from './util'
 
 interface SvgResult {
@@ -59,6 +60,7 @@ export async function toCanvas<T extends HTMLElement>(
 ): Promise<HTMLCanvasElement> {
   const { svg, width, height } = await renderSvg(node, options)
   const img = await createImage(svg)
+  await waitForNextFrame()
 
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')!
@@ -72,15 +74,30 @@ export async function toCanvas<T extends HTMLElement>(
   if (!options.skipAutoScale) {
     checkCanvasDimensions(canvas)
   }
-  canvas.style.width = `${canvasWidth}`
-  canvas.style.height = `${canvasHeight}`
 
-  if (options.backgroundColor) {
-    context.fillStyle = options.backgroundColor
-    context.fillRect(0, 0, canvas.width, canvas.height)
+  const scaleX = canvasWidth ? canvas.width / canvasWidth : 1
+  const scaleY = canvasHeight ? canvas.height / canvasHeight : 1
+  context.setTransform(scaleX, 0, 0, scaleY, 0, 0)
+
+  canvas.style.width = `${canvasWidth}px`
+  canvas.style.height = `${canvasHeight}px`
+  canvas.style.minWidth = `${canvasWidth}px`
+  canvas.style.maxWidth = `${canvasWidth}px`
+
+  const backgroundColor =
+    options.style?.backgroundColor ?? options.backgroundColor
+  if (backgroundColor) {
+    context.fillStyle = backgroundColor
+    context.fillRect(0, 0, canvasWidth, canvasHeight)
   }
 
-  context.drawImage(img, 0, 0, canvas.width, canvas.height)
+  context.drawImage(img, 0, 0, canvasWidth, canvasHeight)
+
+  if (isIOS()) {
+    await waitForNextFrame()
+    context.clearRect(0, 0, canvasWidth, canvasHeight)
+    context.drawImage(img, 0, 0, canvasWidth, canvasHeight)
+  }
 
   return canvas
 }
@@ -108,7 +125,7 @@ export async function toJpeg<T extends HTMLElement>(
   options: Options = {},
 ): Promise<string> {
   const canvas = await toCanvas(node, options)
-  return canvas.toDataURL('image/jpeg', options.quality || 1)
+  return canvas.toDataURL('image/jpeg', options.quality ?? 1)
 }
 
 export async function toBlob<T extends HTMLElement>(
@@ -116,7 +133,7 @@ export async function toBlob<T extends HTMLElement>(
   options: Options = {},
 ): Promise<Blob | null> {
   const canvas = await toCanvas(node, options)
-  const blob = await canvasToBlob(canvas)
+  const blob = await canvasToBlob(canvas, options)
   return blob
 }
 
