@@ -246,10 +246,11 @@ export const isInstanceOfElement = <
   T extends
     | typeof Element
     | typeof HTMLElement
+    | typeof SVGElement
     | typeof SVGImageElement
     | typeof Node,
 >(
-  node: Element | HTMLElement | SVGImageElement | Node,
+  node: Element | HTMLElement | SVGElement | SVGImageElement | Node,
   instance: T,
 ): node is T['prototype'] => {
   if (node instanceof instance) return true
