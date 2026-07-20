@@ -28,7 +28,7 @@ export async function cloneNode<T extends ClonableElement>(
   }
 
   clonedNode = await cloneChildren(node, clonedNode, options)
-  return decorate(node, clonedNode, options) as T
+  return decorate(node, clonedNode, options, filter !== 'self') as T
 }
 
 async function cloneSingleNode<T extends ClonableElement>(
@@ -100,8 +100,9 @@ function decorate(
   nativeNode: ClonableElement,
   clonedNode: ClonableElement,
   options: Options,
+  preserveReplacementStyle: boolean,
 ) {
-  cloneCSSText(nativeNode, clonedNode)
+  cloneCSSText(nativeNode, clonedNode, options, preserveReplacementStyle)
   clonePseudoElements(nativeNode, clonedNode, options)
 
   if (
