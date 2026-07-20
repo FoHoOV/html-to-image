@@ -145,3 +145,4 @@ export async function getFontEmbedCSS<T extends HTMLElement>(
 }
 
 export { Cache } from './cache'
+export { getApiAvailability } from './browser'
