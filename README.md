@@ -87,7 +87,7 @@ Get an SVG data URL, but filter out all the `<i>` elements:
 
 ```js
 function filter(node) {
-  return node.tagName === 'I' ? 'all' : 'include';
+  return node.tagName === 'I' ? 'remove' : 'keep';
 }
 
 htmlToImage
@@ -194,7 +194,7 @@ const App: React.FC = () => {
 
 ## Migration notes
 
-- `filter` now runs for the root and every descendant element and must return `include`, `self`, or `all`. Boolean callbacks no longer exclude nodes.
+- `filter` now runs for the root and every descendant element and must return `keep`, `unwrap`, or `remove`. Boolean callbacks no longer exclude nodes.
 - The standalone `backgroundColor` option has been removed. Use `style: { backgroundColor: '...' }`.
 - Output bounds are measured from the styled and filtered clone. Consumer-provided dimensions and layout-changing styles can therefore change the output size, and filtering can reduce it.
 - Resource caching is now opt-in and caller-owned. The library no longer retains fetched resources in a module-global cache for the application lifecycle, and `includeQueryParams` now defaults to `true`.
@@ -204,10 +204,10 @@ const App: React.FC = () => {
 ### filter
 
 ```ts
-(domNode: HTMLElement) => 'include' | 'self' | 'all'
+(domNode: HTMLElement) => 'keep' | 'unwrap' | 'remove'
 ```
 
-A function invoked for the root node and every descendant element. Return `include` to keep the node, `self` to omit only that node while preserving its children, or `all` to omit the node and its entire subtree.
+A function invoked for the root node and every descendant element. Return `keep` to preserve the node and process its descendants, `unwrap` to omit only the node while preserving its descendants, or `remove` to omit the node and its entire subtree.
 
 You can add a filter to every image function. For example:
 
@@ -215,8 +215,8 @@ You can add a filter to every image function. For example:
 const filter = (node: HTMLElement) => {
   const exclusionClasses = ['remove-me', 'secret-div'];
   return exclusionClasses.some((classname) => node.classList?.contains(classname))
-    ? 'all'
-    : 'include';
+    ? 'remove'
+    : 'keep';
 }
 
 htmlToImage.toJpeg(node, { quality: 0.95, filter });

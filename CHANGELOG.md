@@ -2,7 +2,7 @@
 
 ### BREAKING CHANGES
 
-* **filter:** `filter` now runs for the root and every descendant element and must return `include`, `self`, or `all`; boolean callbacks no longer exclude nodes.
+* **filter:** `filter` now runs for the root and every descendant element and must return `keep`, `unwrap`, or `remove`; boolean callbacks no longer exclude nodes.
 * **background:** remove the standalone `backgroundColor` option; use `style.backgroundColor` instead.
 * **rendering:** measure output dimensions from the styled and filtered clone. Consumer-provided `width`, `height`, and layout-changing `style` values now affect layout before capture, and filtering can change the resulting bounds.
 * **cache:** remove the module-global resource and stylesheet caches. Cross-render reuse is now opt-in through a caller-owned `Cache`, and `includeQueryParams` now defaults to `true`.
@@ -10,7 +10,7 @@
 ### Features
 
 * **cache:** export a reusable, caller-owned `Cache` for images, fonts, stylesheets, and external SVG resources without retaining fetched resource data globally for the application lifecycle.
-* **filter:** add tri-state filtering, including `self` for removing an element while preserving its children.
+* **filter:** add tri-state filtering, including `unwrap` for removing an element while preserving its children.
 * **svg:** inline external SVG `use` definitions and their referenced dependencies.
 * **rendering:** capture browser-computed styles from a live off-screen clone before serialization.
 
