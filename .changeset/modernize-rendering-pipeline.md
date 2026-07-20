@@ -42,3 +42,4 @@ Rework cloning, rendering, resource caching, and package distribution for the 2.
 - Support pnpm 11.11 with a compatible lockfile and pinned Node.js type definitions.
 - Replace maintainer-specific toolchain packages with public dependencies and local configuration.
 - Publish native-safe `.mjs` and `.cjs` bundles, a minified browser bundle, portable source maps, and one declaration tree under `dist`.
+- Adopt Changesets with verified, `master`-only release automation.

@@ -59,14 +59,21 @@
     "name": "bubkooo",
     "email": "bubkoo.wy@gmail.com"
   },
+  "contributors": [
+    {
+      "name": "FoHoOV",
+      "email": "53280503+FoHoOV@users.noreply.github.com",
+      "url": "https://github.com/FoHoOV"
+    }
+  ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bubkoo/html-to-image.git"
+    "url": "git+https://github.com/FoHoOV/html-to-image.git"
   },
   "bugs": {
-    "url": "https://github.com/bubkoo/html-to-image/issues"
+    "url": "https://github.com/FoHoOV/html-to-image/issues"
   },
-  "homepage": "https://github.com/bubkoo/html-to-image#readme",
+  "homepage": "https://github.com/FoHoOV/html-to-image#readme",
   "devDependencies": {
     "@changesets/cli": "^2.31.1",
     "@commitlint/cli": "^17.4.4",
