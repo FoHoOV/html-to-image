@@ -25,6 +25,7 @@ async function renderSvg<T extends HTMLElement>(
   node: T,
   options: Options,
 ): Promise<SvgResult> {
+  const { width, height } = getImageSize(node, options)
   const clonedNode = (await cloneNode(node, options, true)) as HTMLElement
   applyStyle(clonedNode, options)
 
@@ -32,7 +33,6 @@ async function renderSvg<T extends HTMLElement>(
   try {
     await waitForNextFrame()
     inlineCSSStyle(clonedNode, options)
-    const { width, height } = getImageSize(clonedNode, options)
 
     removeElement()
     await embedImages(clonedNode, options)
@@ -84,8 +84,7 @@ export async function toCanvas<T extends HTMLElement>(
   canvas.style.minWidth = `${canvasWidth}px`
   canvas.style.maxWidth = `${canvasWidth}px`
 
-  const backgroundColor =
-    options.style?.backgroundColor ?? options.backgroundColor
+  const backgroundColor = options.backgroundColor
   if (backgroundColor) {
     context.fillStyle = backgroundColor
     context.fillRect(0, 0, canvasWidth, canvasHeight)
