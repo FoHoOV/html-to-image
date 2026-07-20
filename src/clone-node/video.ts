@@ -1,8 +1,7 @@
 import type { Options } from '../types'
 import { imageToDataUrl } from '../dataurl'
 import { getMimeType } from '../mimes'
-import { setStyleSource } from '../style'
-import { createImage } from '../util'
+import { createImage, toArray } from '../util'
 
 export async function cloneVideoElement(
   video: HTMLVideoElement,
@@ -25,7 +24,19 @@ export async function cloneVideoElement(
 }
 
 async function createVideoImage(video: HTMLVideoElement, dataURL: string) {
+  const style = window.getComputedStyle(video)
+  const cssText =
+    style.cssText ||
+    toArray<string>(style)
+      .map((name) => {
+        const priority = style.getPropertyPriority(name)
+        return `${name}: ${style.getPropertyValue(name)}${
+          priority ? ` !${priority}` : ''
+        };`
+      })
+      .join(' ')
   const image = await createImage(dataURL)
-  setStyleSource(image, video)
+
+  image.style.cssText = cssText
   return image
 }

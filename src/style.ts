@@ -7,11 +7,6 @@ const SKIPPED_STYLE_PROPS = new Set([
   '-webkit-text-stroke-color',
   '-webkit-text-stroke-width',
 ])
-const styleSources = new WeakMap<Element, Element>()
-
-export function setStyleSource(clonedNode: Element, sourceNode: Element) {
-  styleSources.set(clonedNode, sourceNode)
-}
 
 export function applyStyle<T extends HTMLElement>(
   node: T,
@@ -46,9 +41,7 @@ export function inlineCSSStyle<T extends HTMLElement>(
       return
     }
 
-    const computedStyles = window.getComputedStyle(
-      styleSources.get(node) ?? node,
-    )
+    const computedStyles = window.getComputedStyle(node)
     const isParentGridOrFlex =
       node.parentElement &&
       isFlexOrGridDisplay(window.getComputedStyle(node.parentElement).display)
