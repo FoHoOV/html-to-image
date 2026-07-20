@@ -26,4 +26,21 @@ describe('Error Handling in resourceToDataURL', () => {
       }).toThrow()
     })
   })
+
+  it('should propagate errors from onImageErrorHandler', async () => {
+    const handlerError = new Error('image error handler failed')
+    const node = document.createElement('img')
+    node.src = 'invalid_url'
+    let rejection: unknown
+
+    try {
+      await embedImages(node, {
+        onImageErrorHandler: () => Promise.reject(handlerError),
+      })
+    } catch (error) {
+      rejection = error
+    }
+
+    expect(rejection).toBe(handlerError)
+  })
 })
