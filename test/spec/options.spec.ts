@@ -119,9 +119,9 @@ describe('work with options', () => {
         toPng(node, {
           filter(node) {
             if (node.classList) {
-              return !node.classList.contains('omit')
+              return node.classList.contains('omit') ? 'all' : 'include'
             }
-            return true
+            return 'include'
           },
         }),
       )
@@ -130,21 +130,14 @@ describe('work with options', () => {
       .catch(done)
   })
 
-  it('should not apply node filter to root node', (done) => {
-    bootstrap('filter/node.html', 'filter/style.css', 'filter/image')
-      .then((node) =>
-        toPng(node, {
-          filter(node) {
-            if (node.classList) {
-              return node.classList.contains('include')
-            }
-            return false
-          },
-        }),
-      )
-      .then(check)
-      .then(done)
-      .catch(done)
+  it('should apply node filter to root node', async () => {
+    const root = document.createElement('div')
+
+    const clone = await cloneNode(root, {
+      filter: (node) => (node === root ? 'all' : 'include'),
+    })
+
+    expect(clone).toBeNull()
   })
 
   it('should preserve children when a string filter excludes only the root', async () => {
@@ -153,11 +146,9 @@ describe('work with options', () => {
     child.textContent = 'preserved'
     root.appendChild(child)
 
-    const clone = await cloneNode(
-      root,
-      { filter: (node) => (node === root ? 'self' : 'include') },
-      true,
-    )
+    const clone = await cloneNode(root, {
+      filter: (node) => (node === root ? 'self' : 'include'),
+    })
 
     expect(clone?.tagName).toBe('DIV')
     expect(clone?.textContent).toBe('preserved')
@@ -170,14 +161,10 @@ describe('work with options', () => {
     excluded.appendChild(document.createElement('span'))
     root.appendChild(excluded)
 
-    const clone = await cloneNode(
-      root,
-      {
-        filter: (node) =>
-          node.classList.contains('excluded') ? 'all' : 'include',
-      },
-      true,
-    )
+    const clone = await cloneNode(root, {
+      filter: (node) =>
+        node.classList.contains('excluded') ? 'all' : 'include',
+    })
 
     expect(clone?.querySelector('.excluded')).toBeNull()
     expect(clone?.children).toHaveSize(0)
