@@ -2,16 +2,20 @@
   "name": "html-to-image",
   "version": "1.11.13",
   "description": "Generates an image from a DOM node using HTML5 canvas and SVG.",
-  "main": "lib/index.js",
-  "module": "es/index.js",
-  "unpkg": "dist/html-to-image.js",
-  "types": "lib/index.d.ts",
-  "files": [
-    "dist",
-    "es",
-    "lib",
-    "src"
-  ],
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.mjs",
+  "unpkg": "./dist/browser/html-to-image.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.mjs",
+      "require": "./dist/cjs/index.cjs",
+      "default": "./dist/esm/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist"],
   "keywords": [
     "screenshot",
     "capture",
@@ -26,10 +30,9 @@
     "lint": "eslint 'src/**/*.{js,ts}?(x)'",
     "lint:fix": "pnpm lint --fix",
     "clean": "rimraf dist es lib",
-    "build:esm": "tsc --module esnext --target es2017 --outDir ./es",
-    "build:cjs": "tsc --module commonjs --target es5 --outDir ./lib",
-    "build:umd": "rollup -c --bundleConfigAsCjs",
-    "build": "run-s build:esm build:cjs build:umd",
+    "build:code": "rollup -c --bundleConfigAsCjs",
+    "build:types": "tsc --emitDeclarationOnly --outDir ./dist/types",
+    "build": "run-s build:types build:code",
     "prebuild": "run-s lint clean",
     "test": "karma start",
     "test:watch": "karma start --single-run=false --auto-watch",
