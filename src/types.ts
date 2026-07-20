@@ -1,3 +1,5 @@
+import type { Cache } from './cache'
+
 export interface Options {
   /**
    * Width in pixels to be applied to node before rendering.
@@ -103,4 +105,9 @@ export interface Options {
    * An event handler for the error event when any image in html has problem with loading.
    */
   onImageErrorHandler?: OnErrorEventHandler
+  /**
+   * A caller-owned cache for resources fetched while rendering. Reusing a
+   * cache across calls avoids downloading the same resources more than once.
+   */
+  cache?: Cache
 }

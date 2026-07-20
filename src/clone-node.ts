@@ -2,7 +2,7 @@ import type { Options } from './types'
 import { clonePseudoElements } from './clone-pseudos'
 import { createImage, toArray, isInstanceOfElement } from './util'
 import { getMimeType } from './mimes'
-import { resourceToDataURL } from './dataurl'
+import { imageToDataUrl } from './dataurl'
 
 async function cloneCanvasElement(canvas: HTMLCanvasElement) {
   const dataURL = canvas.toDataURL()
@@ -25,7 +25,7 @@ async function cloneVideoElement(video: HTMLVideoElement, options: Options) {
 
   const poster = video.poster
   const contentType = getMimeType(poster)
-  const dataURL = await resourceToDataURL(poster, contentType, options)
+  const dataURL = await imageToDataUrl(poster, contentType, options)
   return createImage(dataURL)
 }
 

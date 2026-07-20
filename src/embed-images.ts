@@ -1,7 +1,7 @@
 import { Options } from './types'
 import { embedResources } from './embed-resources'
 import { toArray, isInstanceOfElement } from './util'
-import { isDataUrl, resourceToDataURL } from './dataurl'
+import { isDataUrl, imageToDataUrl } from './dataurl'
 import { getMimeType } from './mimes'
 
 async function embedProp(
@@ -52,7 +52,7 @@ async function embedImageNode<T extends HTMLElement | SVGImageElement>(
 
   const url = isImageElement ? clonedNode.src : clonedNode.href.baseVal
 
-  const dataURL = await resourceToDataURL(url, getMimeType(url), options)
+  const dataURL = await imageToDataUrl(url, getMimeType(url), options)
   await new Promise((resolve, reject) => {
     clonedNode.onload = resolve
     clonedNode.onerror = options.onImageErrorHandler
