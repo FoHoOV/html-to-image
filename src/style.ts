@@ -41,6 +41,10 @@ export function inlineCSSStyle<T extends HTMLElement>(
   const styleProps = getStyleProperties(options)
 
   traverse(clonedNode, (node) => {
+    if (isChildOfSvg(node)) {
+      return
+    }
+
     const computedStyles = window.getComputedStyle(node)
     const isParentGridOrFlex =
       node.parentElement &&
@@ -80,6 +84,12 @@ export function inlineCSSStyle<T extends HTMLElement>(
       node.style.setProperty(key, value, priority)
     })
   })
+}
+
+function isChildOfSvg(node: Element) {
+  const closestSvg = node.closest('svg')
+
+  return closestSvg != null && closestSvg !== node
 }
 
 function isFlexOrGridDisplay(display: string) {
