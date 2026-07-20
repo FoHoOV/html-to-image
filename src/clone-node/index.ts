@@ -13,9 +13,8 @@ import { cloneVideoElement } from './video'
 export async function cloneNode<T extends ClonableElement>(
   node: T,
   options: Options,
-  isRoot?: boolean,
 ): Promise<T | null> {
-  const filter = getFilterResult(node, options, isRoot)
+  const filter = getFilterResult(node, options)
   if (filter === 'all') {
     return null
   }
@@ -28,7 +27,7 @@ export async function cloneNode<T extends ClonableElement>(
   }
 
   clonedNode = await cloneChildren(node, clonedNode, options)
-  return decorate(node, clonedNode, options, filter !== 'self') as T
+  return decorate(node, clonedNode, options) as T
 }
 
 async function cloneSingleNode<T extends ClonableElement>(
@@ -56,7 +55,7 @@ async function cloneChildren(
   clonedNode: ClonableElement,
   options: Options,
 ) {
-  if (isSvgElement(nativeNode) && isSvgElement(clonedNode)) {
+  if (isSvgElement(nativeNode)) {
     return clonedNode
   }
   if (isInstanceOfElement(nativeNode, HTMLVideoElement)) {
@@ -77,21 +76,23 @@ async function cloneChildren(
     )
   }
 
-  await children.reduce<Promise<void>>(
-    (deferred, child) =>
-      deferred.then(async () => {
-        if (!isClonableElement(child)) {
-          clonedNode.appendChild(child.cloneNode(true))
-          return
-        }
+  if (children.length === 0) {
+    return clonedNode
+  }
 
-        const clonedChild = await cloneNode(child, options)
-        if (clonedChild) {
-          clonedNode.appendChild(clonedChild)
-        }
-      }),
-    Promise.resolve(),
-  )
+  // eslint-disable-next-line no-restricted-syntax
+  for (const child of children) {
+    if (!isClonableElement(child)) {
+      clonedNode.appendChild(child.cloneNode(true))
+      continue
+    }
+
+    // eslint-disable-next-line no-await-in-loop
+    const clonedChild = await cloneNode(child, options)
+    if (clonedChild) {
+      clonedNode.appendChild(clonedChild)
+    }
+  }
 
   return clonedNode
 }
@@ -100,9 +101,8 @@ function decorate(
   nativeNode: ClonableElement,
   clonedNode: ClonableElement,
   options: Options,
-  preserveReplacementStyle: boolean,
 ) {
-  cloneCSSText(nativeNode, clonedNode, options, preserveReplacementStyle)
+  cloneCSSText(nativeNode, clonedNode)
   clonePseudoElements(nativeNode, clonedNode, options)
 
   if (
@@ -128,15 +128,6 @@ function isSvgElement(node: Node): node is SVGElement {
   return isInstanceOfElement(node, SVGElement)
 }
 
-function getFilterResult(
-  node: ClonableElement,
-  options: Options,
-  isRoot?: boolean,
-) {
-  const result = options.filter?.(node as HTMLElement)
-  if (typeof result === 'boolean') {
-    return isRoot || result ? 'include' : 'all'
-  }
-
-  return result ?? 'include'
+function getFilterResult(node: ClonableElement, options: Options) {
+  return options.filter?.(node as HTMLElement) ?? 'include'
 }

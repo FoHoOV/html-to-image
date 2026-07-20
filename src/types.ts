@@ -10,10 +10,6 @@ export interface Options {
    */
   height?: number
   /**
-   * A string value for the background color, any valid CSS color value.
-   */
-  backgroundColor?: string
-  /**
    * Width in pixels to be applied to canvas on export.
    */
   canvasWidth?: number
@@ -32,13 +28,11 @@ export interface Options {
    */
   includeStyleProperties?: string[]
   /**
-   * A function taking a DOM node as its argument. Return `true` or `include`
-   * to include the node, `false` or `all` to exclude the node and its
-   * children, or `self` to exclude only the node while preserving its
-   * children. Boolean filters retain the legacy behavior of always including
-   * the root node.
+   * A function taking a DOM node as its argument. Return `include` to include
+   * the node, `self` to exclude only the node while preserving its children,
+   * or `all` to exclude the node and all of its children.
    */
-  filter?: (domNode: HTMLElement) => boolean | 'include' | 'self' | 'all'
+  filter?: (domNode: HTMLElement) => 'include' | 'self' | 'all'
   /**
    * A number between `0` and `1` indicating image quality (e.g. 0.92 => 92%)
    * of the JPEG image.
