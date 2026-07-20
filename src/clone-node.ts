@@ -217,13 +217,39 @@ export async function cloneNode<T extends HTMLElement>(
   options: Options,
   isRoot?: boolean,
 ): Promise<T | null> {
-  if (!isRoot && options.filter && !options.filter(node)) {
+  const filter = getFilterResult(node, options, isRoot)
+
+  if (filter === 'all') {
     return null
   }
 
-  return Promise.resolve(node)
-    .then((clonedNode) => cloneSingleNode(clonedNode, options) as Promise<T>)
-    .then((clonedNode) => cloneChildren(node, clonedNode, options))
-    .then((clonedNode) => decorate(node, clonedNode, options))
-    .then((clonedNode) => ensureSVGSymbols(clonedNode, options))
+  let clonedNode: T
+  if (filter === 'self') {
+    clonedNode = document.createElement('div') as unknown as T
+  } else {
+    clonedNode = (await cloneSingleNode(node, options)) as T
+  }
+
+  clonedNode = await cloneChildren(node, clonedNode, options)
+  clonedNode = decorate(node, clonedNode, options)
+  clonedNode = await ensureSVGSymbols(clonedNode, options)
+
+  return clonedNode
+}
+
+function getFilterResult(
+  node: HTMLElement,
+  options: Options,
+  isRoot?: boolean,
+) {
+  const result = options.filter?.(node)
+
+  if (typeof result === 'boolean') {
+    if (isRoot) {
+      return 'include'
+    }
+    return result ? 'include' : 'all'
+  }
+
+  return result ?? 'include'
 }

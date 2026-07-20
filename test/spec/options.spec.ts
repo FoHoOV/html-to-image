@@ -11,6 +11,7 @@ import {
   assertTextRendered,
 } from './helper'
 import { toPng, toSvg } from '../../src'
+import { cloneNode } from '../../src/clone-node'
 
 describe('work with options', () => {
   it('should apply width and height options to node copy being rendered', (done) => {
@@ -129,6 +130,42 @@ describe('work with options', () => {
       .then(check)
       .then(done)
       .catch(done)
+  })
+
+  it('should preserve children when a string filter excludes only the root', async () => {
+    const root = document.createElement('section')
+    const child = document.createElement('span')
+    child.textContent = 'preserved'
+    root.appendChild(child)
+
+    const clone = await cloneNode(
+      root,
+      { filter: (node) => (node === root ? 'self' : 'include') },
+      true,
+    )
+
+    expect(clone?.tagName).toBe('DIV')
+    expect(clone?.textContent).toBe('preserved')
+  })
+
+  it('should exclude descendants when a string filter returns all', async () => {
+    const root = document.createElement('div')
+    const excluded = document.createElement('section')
+    excluded.className = 'excluded'
+    excluded.appendChild(document.createElement('span'))
+    root.appendChild(excluded)
+
+    const clone = await cloneNode(
+      root,
+      {
+        filter: (node) =>
+          node.classList.contains('excluded') ? 'all' : 'include',
+      },
+      true,
+    )
+
+    expect(clone?.querySelector('.excluded')).toBeNull()
+    expect(clone?.children).toHaveSize(0)
   })
 
   it('should only use fontEmbedCss if it is supplied', (done) => {

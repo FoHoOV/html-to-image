@@ -30,11 +30,13 @@ export interface Options {
    */
   includeStyleProperties?: string[]
   /**
-   * A function taking DOM node as argument. Should return `true` if passed
-   * node should be included in the output. Excluding node means excluding
-   * it's children as well.
+   * A function taking a DOM node as its argument. Return `true` or `include`
+   * to include the node, `false` or `all` to exclude the node and its
+   * children, or `self` to exclude only the node while preserving its
+   * children. Boolean filters retain the legacy behavior of always including
+   * the root node.
    */
-  filter?: (domNode: HTMLElement) => boolean
+  filter?: (domNode: HTMLElement) => boolean | 'include' | 'self' | 'all'
   /**
    * A number between `0` and `1` indicating image quality (e.g. 0.92 => 92%)
    * of the JPEG image.
