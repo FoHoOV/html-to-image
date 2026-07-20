@@ -12,10 +12,6 @@ export function applyStyle<T extends HTMLElement>(
   node: T,
   options: Options,
 ): T {
-  if (options.backgroundColor) {
-    node.style.backgroundColor = options.backgroundColor
-  }
-
   if (options.width) {
     node.style.width = `${options.width}px`
   }

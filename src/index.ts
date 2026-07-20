@@ -25,14 +25,14 @@ async function renderSvg<T extends HTMLElement>(
   node: T,
   options: Options,
 ): Promise<SvgResult> {
-  const { width, height } = getImageSize(node, options)
-  const clonedNode = (await cloneNode(node, options, true)) as HTMLElement
+  const clonedNode = (await cloneNode(node, options)) as HTMLElement
   applyStyle(clonedNode, options)
 
   const removeElement = addHiddenDomElement(clonedNode)
   try {
     await waitForNextFrame()
     inlineCSSStyle(clonedNode, options)
+    const { width, height } = getImageSize(clonedNode, options)
 
     removeElement()
     await embedImages(clonedNode, options)
@@ -71,31 +71,28 @@ export async function toCanvas<T extends HTMLElement>(
   canvas.width = canvasWidth * ratio
   canvas.height = canvasHeight * ratio
 
+  context.setTransform(ratio, 0, 0, ratio, 0, 0)
+
   if (!options.skipAutoScale) {
     checkCanvasDimensions(canvas)
   }
 
-  const scaleX = canvasWidth ? canvas.width / canvasWidth : 1
-  const scaleY = canvasHeight ? canvas.height / canvasHeight : 1
-  context.setTransform(scaleX, 0, 0, scaleY, 0, 0)
+  canvas.style.width = `${canvas.width}px`
+  canvas.style.height = `${canvas.height}px`
+  canvas.style.minWidth = `${canvas.width}px`
+  canvas.style.maxWidth = `${canvas.width}px`
 
-  canvas.style.width = `${canvasWidth}px`
-  canvas.style.height = `${canvasHeight}px`
-  canvas.style.minWidth = `${canvasWidth}px`
-  canvas.style.maxWidth = `${canvasWidth}px`
-
-  const backgroundColor = options.backgroundColor
-  if (backgroundColor) {
-    context.fillStyle = backgroundColor
-    context.fillRect(0, 0, canvasWidth, canvasHeight)
+  if (options.style?.backgroundColor) {
+    context.fillStyle = options.style.backgroundColor
+    context.fillRect(0, 0, canvas.width, canvas.height)
   }
 
-  context.drawImage(img, 0, 0, canvasWidth, canvasHeight)
+  context.drawImage(img, 0, 0, canvas.width, canvas.height)
 
   if (isIOS()) {
     await waitForNextFrame()
-    context.clearRect(0, 0, canvasWidth, canvasHeight)
-    context.drawImage(img, 0, 0, canvasWidth, canvasHeight)
+    context.clearRect(0, 0, canvas.width, canvas.height)
+    context.drawImage(img, 0, 0, canvas.width, canvas.height)
   }
 
   return canvas
@@ -124,7 +121,7 @@ export async function toJpeg<T extends HTMLElement>(
   options: Options = {},
 ): Promise<string> {
   const canvas = await toCanvas(node, options)
-  return canvas.toDataURL('image/jpeg', options.quality ?? 1)
+  return canvas.toDataURL('image/jpeg', options.quality || 1)
 }
 
 export async function toBlob<T extends HTMLElement>(
@@ -132,7 +129,7 @@ export async function toBlob<T extends HTMLElement>(
   options: Options = {},
 ): Promise<Blob | null> {
   const canvas = await toCanvas(node, options)
-  const blob = await canvasToBlob(canvas, options)
+  const blob = await canvasToBlob(canvas)
   return blob
 }
 
