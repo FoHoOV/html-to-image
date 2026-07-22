@@ -10,7 +10,6 @@ Rework cloning, rendering, resource caching, and package distribution for the 2.
 - Remove the standalone `backgroundColor` option; use `style.backgroundColor` instead.
 - Measure output dimensions from the styled and filtered clone. Consumer-provided `width`, `height`, and layout-changing `style` values now affect layout before capture, and filtering can change the resulting bounds.
 - Remove the module-global resource and stylesheet caches. Cross-render reuse is now opt-in through a caller-owned `Cache`, and `includeQueryParams` now defaults to `true`.
-- Remove `getApiAvailability` and the browser share/save capability checks from the public API.
 - Restrict package exports to the documented root entry point. Generated ESM, CommonJS, browser, and declaration artifacts now live under `dist`; legacy deep imports from `es`, `lib`, or `src` are no longer published.
 
 **Features:**
