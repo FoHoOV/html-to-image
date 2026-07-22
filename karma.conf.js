@@ -1,9 +1,8 @@
-/* eslint-disable */
+import { cpus } from 'os'
 
-const cpuCount = require('os').cpus().length
 const reportsDir = 'test/coverage'
 
-module.exports = function (config) {
+export default function (config) {
   const hasFlag = (flag) => process.argv.some((arg) => arg === flag)
   const isDebug = hasFlag('--debug')
   const isWatch = hasFlag('--auto-watch')
@@ -107,6 +106,6 @@ module.exports = function (config) {
 
     // Concurrency level
     // how many browser should be started simultaneous
-    concurrency: cpuCount || Infinity,
+    concurrency: cpus().length || Infinity,
   })
 }

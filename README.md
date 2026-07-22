@@ -2,12 +2,12 @@
 
 <p align="center"><strong>✂️ Generates an image from a DOM node using HTML5 canvas and SVG.</strong></p>
 
-<p align="center">Fork from <a href="https://github.com/tsayen/dom-to-image" rel="nofollow">dom-to-image</a> with more maintainable code and some new features.</p>
+<p align="center">Originally created by <a href="https://github.com/bubkoo" rel="nofollow">bubkoo</a> from <a href="https://github.com/tsayen/dom-to-image" rel="nofollow">dom-to-image</a>. This maintained fork continues development at <a href="https://github.com/FoHoOV/html-to-image">FoHoOV/html-to-image</a>.</p>
 
 <p align="center">
 <a href="https://github.com/FoHoOV/html-to-image/actions/workflows/ci.yml"><img alt="build" src="https://img.shields.io/github/actions/workflow/status/FoHoOV/html-to-image/ci.yml?branch=master&logo=github&style=for-the-badge"></a>
-<a href="https://www.npmjs.com/package/html-to-image" rel="nofollow"><img alt="NPM Package" src="https://img.shields.io/npm/v/html-to-image.svg?logo=npm&style=for-the-badge" /></a>
-<a href="https://www.npmjs.com/package/html-to-image" rel="nofollow"><img alt="NPM Downloads" src="http://img.shields.io/npm/dm/html-to-image.svg?logo=npm&style=for-the-badge" /></a>
+<a href="https://www.npmjs.com/package/@fohoov/html-to-image" rel="nofollow"><img alt="NPM Package" src="https://img.shields.io/npm/v/@fohoov/html-to-image.svg?logo=npm&style=for-the-badge" /></a>
+<a href="https://www.npmjs.com/package/@fohoov/html-to-image" rel="nofollow"><img alt="NPM Downloads" src="https://img.shields.io/npm/dm/@fohoov/html-to-image.svg?logo=npm&style=for-the-badge" /></a>
 
 
 </p>
@@ -21,14 +21,14 @@
 ## Install
 
 ```shell
-npm install --save html-to-image
+npm install --save @fohoov/html-to-image
 ```
 
 ## Usage
 
 ```js
 /* ES6 */
-import * as htmlToImage from 'html-to-image';
+import * as htmlToImage from '@fohoov/html-to-image';
 import {
   Cache,
   getFontEmbedCSS,
@@ -38,10 +38,10 @@ import {
   toPixelData,
   toPng,
   toSvg,
-} from 'html-to-image';
+} from '@fohoov/html-to-image';
 
 /* ES5 */
-var htmlToImage = require('html-to-image');
+var htmlToImage = require('@fohoov/html-to-image');
 ```
 
 The rendering functions below accept a DOM node and rendering options, and return a promise with the corresponding output:
@@ -158,7 +158,7 @@ htmlToImage
 #### React
 ```tsx
 import React, { useCallback, useRef } from 'react';
-import { toPng } from 'html-to-image';
+import { toPng } from '@fohoov/html-to-image';
 
 const App: React.FC = () => {
   const ref = useRef<HTMLDivElement>(null)
@@ -191,7 +191,7 @@ const App: React.FC = () => {
 }
 ```
 
-## Migration notes
+## Migration notes from upstream
 
 - `filter` now runs for the root and every descendant element and must return `keep`, `unwrap`, or `remove`. Boolean callbacks no longer exclude nodes.
 - The standalone `backgroundColor` option has been removed. Use `style: { backgroundColor: '...' }`.
@@ -260,7 +260,7 @@ Defaults to `false`
 A caller-owned resource cache. Resource caching is opt-in: when `cache` is omitted, fetched images, fonts, stylesheets, and external SVG definitions are not retained between render calls. The library does not create a module-global resource cache that remains alive for the application lifecycle.
 
 ```js
-import { Cache, toPng } from 'html-to-image';
+import { Cache, toPng } from '@fohoov/html-to-image';
 
 const cache = new Cache();
 await toPng(firstNode, { cache });
@@ -388,6 +388,8 @@ This library uses a feature of SVG that allows having arbitrary HTML content ins
 Please let us know how we can help. Check the [issues](https://github.com/FoHoOV/html-to-image/issues) for existing bug reports or suggestions first.
 
 To become a contributor, please follow our [contributing guide](/CONTRIBUTING.md).
+
+This fork preserves the work of bubkoo and all contributors to the original project. The contributor gallery below records that history; new activity is tracked in this repository.
 
 <a href="https://github.com/FoHoOV/html-to-image/graphs/contributors">
   <img src="/CONTRIBUTORS.svg" alt="Contributors" width="740" />

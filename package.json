@@ -1,6 +1,7 @@
 {
-  "name": "html-to-image",
+  "name": "@fohoov/html-to-image",
   "version": "1.11.13",
+  "type": "module",
   "description": "Generates an image from a DOM node using HTML5 canvas and SVG.",
   "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.mjs",
@@ -62,7 +63,7 @@
   "contributors": [
     {
       "name": "FoHoOV",
-      "email": "53280503+FoHoOV@users.noreply.github.com",
+      "email": "fohoov@gmail.com",
       "url": "https://github.com/FoHoOV"
     }
   ],

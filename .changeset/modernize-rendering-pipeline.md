@@ -1,5 +1,5 @@
 ---
-"html-to-image": major
+"@fohoov/html-to-image": major
 ---
 
 Rework cloning, rendering, resource caching, and package distribution for the 2.0 release.
