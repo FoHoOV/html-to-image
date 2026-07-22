@@ -53,6 +53,6 @@ assignees: ''
 <!--- Include as many relevant details about the -->
 <!--- environment you experienced the bug in. -->
 
-- html-to-image: [e.g. 0.1.0]
+- @fohoov/html-to-image: [e.g. 0.1.0]
 - OS: [e.g. macOS Sierra 10.12.3]
 - Browser: [e.g. chrome 78.0.3904.108]
