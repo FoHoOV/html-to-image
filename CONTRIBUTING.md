@@ -1,123 +1,99 @@
-# Contribution Guide
+# Contributing to html-to-image
 
-If you have any comment or advice, please report your [issue](https://github.com/bubkoo/html-to-image/issues),
-or make any change as you wish and submit a [PR](https://github.com/bubkoo/html-to-image/pulls).
+Thanks for helping improve html-to-image. Before opening an issue, search the [existing issues](https://github.com/FoHoOV/html-to-image/issues). Bug reports should include a minimal reproduction, browser and operating-system versions, the html-to-image version, and the expected and actual behavior.
 
-## Reporting New Issues
+## Development setup
 
-- Please specify what kind of issue it is.
-- Before you report an issue, please search for related issues. Make sure you are not going to open a duplicate issue.
-- Explain your purpose clearly in labels, title, or content.
+CI uses Node.js 24 and the pnpm version pinned in `package.json`. Corepack can install that exact pnpm version:
 
-We will confirm the purpose of the issue, replace more accurate labels for it, identify related milestone, and assign developers working on it.
-
-## Submitting Code
-
-### Pull Request Guide
-
-1. [Fork][fork] and clone the repository
-2. Configure and install the dependencies `pnpm`
-3. Make sure the tests pass on your machine `pnpm test`, note: these tests also run the TypeScript compiler (`tsc`) to check for type errors, so there's no need to run these commands separately.
-4. Create a new branch `git checkout -b my-branch-name` for development. The name of branch should be semantic, avoiding words like 'update' or 'tmp'. We suggest to use `'feature/xxx'`, if the modification is about to implement a new feature.
-5. Run the test `pnpm test` after you finish your modification. Add new test cases or change old ones if you feel necessary.
-6. Push to your fork and [submit a pull request][pr]
-7. Pat your self on the back and wait for your pull request to be reviewed and merged.
-
-No one can guarantee how much will be remembered about certain PR after some time. To make sure we can easily recap what happened previously, please provide the following information in your PR.
-
-1. Need: What function you want to achieve (Generally, please point out which issue is related).
-2. Updating Reason: Different with issue. Briefly describe your reason and logic about why you need to make such modification.
-3. Related Testing: Briefly describe what part of testing is relevant to your modification.
-4. User Tips: Notice for html-to-image users. You can skip this part, if the PR is not about update in API or potential compatibility problem.
-
-### Style Guide
-
-tslint can help to identify styling issues that may exist in your code. Your code is required to pass the test from tslint. Run the test locally by `$ pnpm lint`.
-
-### Commit Message Format
-
-You are encouraged to use [angular commit-message-format](https://github.com/angular/angular.js/blob/master/CONTRIBUTING.md#commit-message-format) to write commit message. In this way, we could have a more trackable history and an automatically generated changelog.
-
-```xml
-<type>(<scope>): <subject>
-<BLANK LINE>
-<body>
-<BLANK LINE>
-<footer>
+```shell
+corepack enable
+pnpm install
 ```
 
-（1）type
+Create a focused branch from `master`, make the change, and add or update tests for behavior changes. Before opening a pull request, run:
 
-Must be one of the following:
-
-- feat: A new feature
-- fix: A bug fix
-- docs: Documentation-only changes
-- style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
-- refactor: A code change that neither fixes a bug nor adds a feature
-- perf: A code change that improves performance
-- test: Adding missing tests
-- chore: Changes to the build process or auxiliary tools and libraries such as documentation generation
-- deps: Updates about dependencies
-
-（2）scope
-
-The scope could be anything specifying place of the commit change.
-
-（3）subject
-
-Use succinct words to describe what did you do in the commit change.
-
-（4）body
-
-Feel free to add more content in the body, if you think subject is not self-explanatory enough, such as what it is the purpose or reasons of you commit.
-
-（5）footer
-
-- **If the commit is a Breaking Change, please note it clearly in this part.**
-- related issues, like `Closes #1, Closes #2, #3`
-
-e.g.
-
-```
-fix($compile): [BREAKING_CHANGE] couple of unit tests for IE9
-
-Older IEs serialize html uppercased, but IE9 does not...
-Would be better to expect case insensitive, unfortunately jasmine does
-not allow to user regexps for throw expectations.
-
-Document change on bubkoo/html-to-image#123
-
-Closes #392
-
-BREAKING CHANGE:
-
-  Breaks foo.bar api, foo.baz should be used instead
+```shell
+pnpm lint
+pnpm build
+pnpm test
 ```
 
-Look at [these files](https://docs.google.com/document/d/1QrDFcIiPjSLDn3EL15IJygNPiHORgU1_OOAqWjiDU5Y/edit) for more details.
+The build creates all publishable output under `dist/`:
 
-## Release
+- `dist/esm` contains the ESM bundle.
+- `dist/cjs` contains the CommonJS bundle.
+- `dist/browser` contains the minified UMD bundle.
+- `dist/types` contains TypeScript declarations.
 
-We use semantic versioning in release process based on [semver](https://semver.org/).
+## Add a Changeset
 
-### Branch Strategy
+Changesets records the release impact and consumer-facing release notes alongside a change. Add one for a bug fix, feature, breaking change, or any other change that should appear in a release:
 
-`master` branch is the latest stable version.
+```shell
+pnpm changeset
+```
 
-- Just checkout develop branch from `master`
-- All new features will be added into `master` or `next` branch as well as all bug-fix except security issues. In such way, we can motivate developers to update to the latest stable version.
+Select `html-to-image`, choose the appropriate semantic-version bump, and write a concise summary from the consumer's point of view:
 
-### Release Strategy
+- `patch` fixes behavior without changing the public API.
+- `minor` adds backward-compatible functionality.
+- `major` makes a breaking API or behavior change.
 
-In the release of every stable version, there will be a PM who has the following responsibilities in different stages of the release.
+Commit the generated `.changeset/*.md` file with the implementation. Do not edit `package.json`'s version or add the future release to `CHANGELOG.md` manually; the release workflow does that in the Version Packages pull request.
 
-#### Preparation
+Documentation-only, test-only, and internal maintenance changes that do not affect the published package can omit a Changeset. Explain that choice in the pull request. Changesets deliberately is not a blocking CI check because not every repository change requires a release.
 
-- Set up milestone. Confirm that request is related to milestone.
+You can inspect the pending release plan at any time:
 
-#### Before Release
+```shell
+pnpm changeset:status
+```
 
-- Confirm that performance test is passed and all issues in current Milestone are either closed or can be delayed to later versions.
-- Open a new [Release Proposal MR](https://github.com/nodejs/node/pull/4181), and write `History` as [node CHANGELOG](https://github.com/nodejs/node/blob/master/CHANGELOG.md). Don't forget to correct content in documentation which is related to the releasing version.
-- Nominate PM for next stable version.
+## Pull requests
+
+A pull request should explain:
+
+1. What problem it solves and any related issue.
+2. Why the chosen behavior is correct, including compatibility tradeoffs.
+3. Which tests cover the change and which commands were run.
+4. What consumers need to know about API or behavior changes.
+5. Whether it includes a Changeset, or why one is unnecessary.
+
+Keep pull requests focused. CI installs with the frozen lockfile, builds every package format, and runs the browser test suite. A pull request must pass those checks before merge.
+
+## Commit messages
+
+Husky and commitlint enforce [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). Use a short imperative subject such as:
+
+```text
+fix: preserve dimensions after filtering
+feat: add caller-owned resource cache
+docs: explain changeset workflow
+```
+
+Use `!` or a `BREAKING CHANGE:` footer when a commit itself introduces a breaking change. The Changeset remains the source of truth for the release version and changelog entry.
+
+## Release process
+
+`master` is the stable release branch. Every pull request and every push to `master` must pass the build and test job. After a change containing a Changeset reaches `master`, the Changesets action creates or updates a Version Packages pull request. That pull request consumes pending Changesets, updates the package version, and writes `CHANGELOG.md`.
+
+After the Version Packages pull request is reviewed and merged, the next verified `master` run executes:
+
+```shell
+pnpm release
+```
+
+That command rebuilds `dist/`, publishes the new version to npm, creates the git tag, and allows the Changesets action to create the corresponding GitHub release. Maintainers can apply and review the versioning changes locally with `pnpm version-packages`, but should normally let the action own that mutating step; use `pnpm changeset:status` for a read-only preview.
+
+### Repository release setup
+
+The release workflow requires the following repository configuration:
+
+- An `NPM_TOKEN` Actions secret containing a granular npm access token that can publish the unscoped `html-to-image` package and has bypass-2FA enabled for automated publishing.
+- GitHub Actions permission to write repository contents and pull requests, as declared by the release job.
+- The repository setting that allows GitHub Actions to create pull requests.
+
+Changing the GitHub repository URL does not grant npm publishing rights. The token owner must already be an npm maintainer for `html-to-image`; otherwise, choose a package name the owner is authorized to publish.
+
+Pull requests created with the built-in `GITHUB_TOKEN` may not trigger another workflow automatically. If branch protection requires CI on the Version Packages pull request, configure the Changesets action with a fine-grained personal access token or GitHub App token that is scoped to this repository.

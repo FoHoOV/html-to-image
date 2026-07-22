@@ -1,17 +1,22 @@
 {
-  "name": "html-to-image",
+  "name": "@fohoov/html-to-image",
   "version": "1.11.13",
+  "type": "module",
   "description": "Generates an image from a DOM node using HTML5 canvas and SVG.",
-  "main": "lib/index.js",
-  "module": "es/index.js",
-  "unpkg": "dist/html-to-image.js",
-  "types": "lib/index.d.ts",
-  "files": [
-    "dist",
-    "es",
-    "lib",
-    "src"
-  ],
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.mjs",
+  "unpkg": "./dist/browser/html-to-image.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.mjs",
+      "require": "./dist/cjs/index.cjs",
+      "default": "./dist/esm/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist"],
   "keywords": [
     "screenshot",
     "capture",
@@ -23,13 +28,17 @@
     "svg"
   ],
   "scripts": {
-    "lint": "eslint 'src/**/*.{js,ts}?(x)' --fix",
+    "lint": "eslint 'src/**/*.{js,ts}?(x)'",
+    "lint:fix": "pnpm lint --fix",
     "clean": "rimraf dist es lib",
-    "build:esm": "tsc --module esnext --target es2017 --outDir ./es",
-    "build:cjs": "tsc --module commonjs --target es5 --outDir ./lib",
-    "build:umd": "rollup -c --bundleConfigAsCjs",
-    "build": "run-s build:esm build:cjs build:umd",
+    "build:code": "rollup -c --bundleConfigAsCjs",
+    "build:types": "tsc --emitDeclarationOnly --outDir ./dist/types",
+    "build": "run-s build:types build:code",
     "prebuild": "run-s lint clean",
+    "changeset": "changeset",
+    "changeset:status": "changeset status",
+    "version-packages": "changeset version",
+    "release": "pnpm build && changeset publish",
     "test": "karma start",
     "test:watch": "karma start --single-run=false --auto-watch",
     "test:debug": "karma start --browsers=Chrome --single-run=false --auto-watch --debug",
@@ -38,41 +47,52 @@
     "prepare": "is-ci || husky install .husky"
   },
   "lint-staged": {
-    "**/*.{js,jsx,tsx,ts,less,md,json}": [
-      "pretty-quick —-staged"
-    ],
-    "*.ts": [
+    "**/*.{ts,tsx}": [
+      "prettier --write",
       "eslint --fix"
+    ],
+    "**/*.{js,jsx,less,md,json}": [
+      "prettier --write"
     ]
-  },
-  "release": {
-    "extends": "@bubkoo/semantic-release-config"
   },
   "license": "MIT",
   "author": {
     "name": "bubkooo",
     "email": "bubkoo.wy@gmail.com"
   },
+  "contributors": [
+    {
+      "name": "FoHoOV",
+      "email": "fohoov@gmail.com",
+      "url": "https://github.com/FoHoOV"
+    }
+  ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bubkoo/html-to-image.git"
+    "url": "git+https://github.com/FoHoOV/html-to-image.git"
   },
   "bugs": {
-    "url": "https://github.com/bubkoo/html-to-image/issues"
+    "url": "https://github.com/FoHoOV/html-to-image/issues"
   },
-  "homepage": "https://github.com/bubkoo/html-to-image#readme",
+  "homepage": "https://github.com/FoHoOV/html-to-image#readme",
   "devDependencies": {
-    "@bubkoo/commitlint-config": "^1.0.2",
-    "@bubkoo/eslint-config": "^1.3.1",
-    "@bubkoo/rollup-config": "^1.2.1",
-    "@bubkoo/semantic-release-config": "^1.6.1",
-    "@bubkoo/tsconfig": "^1.0.0",
+    "@changesets/cli": "^2.31.1",
+    "@commitlint/cli": "^17.4.4",
+    "@commitlint/config-conventional": "^17.4.4",
     "@fortawesome/fontawesome-free": "^6.1.2",
+    "@rollup/plugin-commonjs": "^24.1.0",
+    "@rollup/plugin-node-resolve": "^15.3.1",
+    "@rollup/plugin-replace": "^5.0.7",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^11.1.6",
     "@types/jasmine": "^4.3.1",
     "@types/node": "18.11.18",
     "@types/pixelmatch": "^5.2.4",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
     "coveralls": "^3.1.1",
     "eslint": "^8.22.0",
+    "eslint-config-prettier": "^8.10.2",
     "husky": "^8.0.1",
     "is-ci": "^3.0.1",
     "jasmine-core": "^4.3.0",
@@ -82,12 +102,13 @@
     "karma-jasmine": "^5.1.0",
     "karma-spec-reporter": "^0.0.36",
     "karma-typescript": "^5.5.3",
+    "lint-staged": "^15.2.10",
     "npm-run-all": "^4.1.5",
     "pixelmatch": "^5.3.0",
     "prettier": "^2.8.1",
-    "pretty-quick": "^3.1.3",
     "rimraf": "^4.1.2",
     "rollup": "^3.7.4",
+    "rollup-plugin-filesize": "^10.0.0",
     "tslib": "^2.4.0",
     "typescript": "^4.9.5"
   },
