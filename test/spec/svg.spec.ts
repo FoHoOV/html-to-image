@@ -71,6 +71,33 @@ describe('work with svg element', () => {
     expect(sourceUse?.getAttribute('href')).toBe(sourceHref)
   })
 
+  it('should render multiple parts from an external SVG sprite', async () => {
+    const node = await bootstrap(
+      'svg-use-external-parts/node.html',
+      undefined,
+      'svg-use-external-parts/image',
+    )
+    node.style.cssText = 'width: 40px; height: 20px; overflow: hidden;'
+
+    const dataUrl = await toSvg(node, { skipFonts: true })
+    const document = await getSvgDocument(dataUrl)
+    const uses = Array.from(document.querySelectorAll('use'))
+    const targetIds = uses.map(
+      (use) => use.getAttribute('href')?.match(/^#(.+)$/)?.[1],
+    )
+
+    expect(uses.length).toBe(2)
+    expect(new Set(targetIds).size).toBe(2)
+    expect(
+      document.querySelector('[data-sprite-part="part1"]')?.getAttribute('id'),
+    ).toBe(targetIds[0])
+    expect(
+      document.querySelector('[data-sprite-part="part2"]')?.getAttribute('id'),
+    ).toBe(targetIds[1])
+
+    await renderAndCheck(node, { skipFonts: true })
+  })
+
   it('should render SVG with clip-path', function (done) {
     bootstrap('svg-same-doc-ref/node.html', undefined, 'svg-same-doc-ref/image')
       .then(renderAndCheck)

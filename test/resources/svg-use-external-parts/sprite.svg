@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <symbol id="part1" data-sprite-part="part1" viewBox="0 0 20 20">
+    <rect width="20" height="20" fill="rgb(211, 47, 47)" />
+  </symbol>
+  <symbol id="part2" data-sprite-part="part2" viewBox="0 0 20 20">
+    <rect width="20" height="20" fill="rgb(25, 118, 210)" />
+  </symbol>
+</svg>
