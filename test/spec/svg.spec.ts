@@ -1,5 +1,3 @@
-/* eslint-disable promise/no-callback-in-promise */
-
 import '../spec/setup'
 import { toSvg } from '../../src'
 import { bootstrap, renderAndCheck, getSvgDocument } from '../spec/helper'
@@ -71,5 +69,12 @@ describe('work with svg element', () => {
     expect(document.querySelector('defs #icon')).not.toBeNull()
     expect(document.querySelector('defs #paint')).not.toBeNull()
     expect(sourceUse?.getAttribute('href')).toBe(sourceHref)
+  })
+
+  it('should render SVG with clip-path', function (done) {
+    bootstrap('svg-same-doc-ref/node.html', undefined, 'svg-same-doc-ref/image')
+      .then(renderAndCheck)
+      .then(done)
+      .catch(done)
   })
 })
