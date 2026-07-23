@@ -5,7 +5,7 @@ export function cloneInputValue(
   clonedNode: HTMLElement,
 ) {
   if (isInstanceOfElement(nativeNode, HTMLTextAreaElement)) {
-    clonedNode.innerHTML = nativeNode.value
+    clonedNode.textContent = nativeNode.value
   }
 
   if (isInstanceOfElement(nativeNode, HTMLInputElement)) {
