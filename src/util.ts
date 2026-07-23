@@ -191,9 +191,12 @@ export function createImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.onload = () => {
-      img.decode().finally(() => {
-        requestAnimationFrame(() => resolve(img))
-      })
+      img
+        .decode()
+        .then(() => {
+          requestAnimationFrame(() => resolve(img))
+        })
+        .catch(reject)
     }
     img.onerror = reject
     if (!url.startsWith('data:') && !url.startsWith('blob:')) {
@@ -258,7 +261,7 @@ export const isInstanceOfElement = <
   )
 }
 
-export async function waitForNextFrame() {
+export async function nextFrame() {
   await new Promise((resolve) => {
     requestAnimationFrame(resolve)
   })
