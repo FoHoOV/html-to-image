@@ -1,5 +1,13 @@
 # html-to-image
 
+## 2.0.1
+
+### Patch Changes
+
+- dba83e7: fix: normalize clip-path for same document references
+- 6af99fd: fix: throw decoding error when creating img with no fallback fails
+- c672e9b: fix: dont add input.value as unsanitized innerHtml
+
 ## 2.0.0
 
 ### Major Changes
