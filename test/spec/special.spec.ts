@@ -1,5 +1,3 @@
-/* eslint-disable promise/no-callback-in-promise */
-
 import '../spec/setup'
 import { toPng } from '../../src'
 import { delay } from '../../src/util'
@@ -36,7 +34,6 @@ describe('special cases', () => {
     document.head.append(script, link)
 
     Promise.all(tasks).then(() =>
-      // eslint-disable-next-line promise/no-nesting
       bootstrap(
         'custom-element/node.html',
         'custom-element/style.css',

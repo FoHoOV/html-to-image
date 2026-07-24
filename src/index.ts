@@ -10,7 +10,7 @@ import {
   canvasToBlob,
   nodeToDataURL,
   checkCanvasDimensions,
-  waitForNextFrame,
+  nextFrame,
   addHiddenDomElement,
   isIOS,
 } from './util'
@@ -28,7 +28,7 @@ async function renderSvg<T extends HTMLElement>(
 
   const removeElement = addHiddenDomElement(clonedNode)
   try {
-    await waitForNextFrame()
+    await nextFrame()
     inlineCSSStyle(clonedNode, options)
     const { width, height } = getImageSize(clonedNode, options)
 
@@ -58,7 +58,7 @@ export async function toCanvas<T extends HTMLElement>(
 ): Promise<HTMLCanvasElement> {
   const { svg, width, height } = await renderSvg(node, options)
   const img = await createImage(svg)
-  await waitForNextFrame()
+  await nextFrame()
 
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')!
@@ -90,7 +90,7 @@ export async function toCanvas<T extends HTMLElement>(
   context.drawImage(img, 0, 0, canvasWidth, canvasHeight)
 
   if (isIOS()) {
-    await waitForNextFrame()
+    await nextFrame()
     context.clearRect(0, 0, canvasWidth, canvasHeight)
     context.drawImage(img, 0, 0, canvasWidth, canvasHeight)
   }

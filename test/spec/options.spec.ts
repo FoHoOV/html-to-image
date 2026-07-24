@@ -1,5 +1,3 @@
-/* eslint-disable promise/no-callback-in-promise */
-
 import './setup'
 import {
   bootstrap,

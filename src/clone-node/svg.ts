@@ -50,17 +50,53 @@ async function fetchExternalSvgDocument(url: string, options: Options) {
   }
 }
 
+function isInsideSrcdocIframe(element: Element) {
+  return /^about:srcdoc(?:#.*)?$/.test(element.ownerDocument.URL)
+}
+
+function normalizeClipPath(element: Element | HTMLElement) {
+  const clipPath =
+    element.getAttribute('clip-path') ||
+    ('style' in element && element.style.getPropertyValue('clip-path'))
+
+  if (!clipPath || !clipPath.startsWith('url')) {
+    return
+  }
+
+  if ('style' in element) {
+    element.style.removeProperty('clip-path')
+  }
+
+  const clipPathUrl = clipPath.substring("url('".length, clipPath.length - 2)
+
+  if (isInsideSrcdocIframe(element)) {
+    const url = new URL(clipPathUrl, 'http://localhost')
+    element.setAttribute('clip-path', `url('${url.hash}')`)
+    return
+  }
+
+  const url = new URL(clipPathUrl, location.origin)
+  if (url.pathname === location.pathname) {
+    element.setAttribute('clip-path', `url('${url.hash}')`)
+  }
+}
+
+function normalizeHref(element: Element) {
+  const href =
+    element.getAttribute('href') ??
+    element.getAttribute('xlink:href') ??
+    element.getAttributeNS(XLINK_NS, 'href')
+
+  if (href) {
+    element.setAttribute('href', href)
+    element.setAttributeNS(XLINK_NS, 'xlink:href', href)
+  }
+}
+
 function normalizeSvgReferences(element: Element) {
   traverse(element, (child) => {
-    const href =
-      child.getAttribute('href') ??
-      child.getAttribute('xlink:href') ??
-      child.getAttributeNS(XLINK_NS, 'href')
-
-    if (href) {
-      child.setAttribute('href', href)
-      child.setAttributeNS(XLINK_NS, 'xlink:href', href)
-    }
+    normalizeHref(child)
+    normalizeClipPath(child)
   })
 }
 
@@ -156,11 +192,10 @@ function ensureSvgDefs(svg: SVGElement) {
   return defs
 }
 
-export async function cloneSvgElement<T extends SVGElement>(
-  node: T,
+async function inlineExternalReferences<T extends SVGElement>(
+  clone: T,
   options: Options,
-): Promise<T> {
-  const clone = node.cloneNode(true) as T
+) {
   const uses = Array.from(clone.querySelectorAll<SVGUseElement>('use'))
   if (uses.length === 0) {
     return clone
@@ -205,7 +240,14 @@ export async function cloneSvgElement<T extends SVGElement>(
     const defs = ensureSvgDefs(clone)
     definitions.forEach((definition) => defs.appendChild(definition))
   }
+}
 
+export async function cloneSvgElement<T extends SVGElement>(
+  node: T,
+  options: Options,
+): Promise<T> {
+  const clone = node.cloneNode(true) as T
+  await inlineExternalReferences(clone, options)
   normalizeSvgReferences(clone)
   return clone
 }
