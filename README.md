@@ -206,7 +206,7 @@ const App: React.FC = () => {
 (domNode: HTMLElement) => 'keep' | 'unwrap' | 'remove'
 ```
 
-A function invoked for the root node and every descendant element. Return `keep` to preserve the node and process its descendants, `unwrap` to omit only the node while preserving its descendants, node with unwrap is replaced with a newly created div, or `remove` to omit the node and its entire subtree.
+A function invoked for the root node and every descendant element. Return `keep` to preserve the node and process its descendants, `unwrap` to omit only the node while preserving its descendants, node with unwrap is replaced with a document fragment, or `remove` to omit the node and its entire subtree.
 
 You can add a filter to every image function. For example:
 

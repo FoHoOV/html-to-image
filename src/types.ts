@@ -32,7 +32,7 @@ export interface Options {
    * the node, `unwrap` to remove only the node while preserving its children,
    * or `remove` to remove the node and all of its children.
    */
-  filter?: (domNode: HTMLElement) => 'keep' | 'unwrap' | 'remove'
+  filter?: (node: Node) => 'keep' | 'unwrap' | 'remove'
   /**
    * A number between `0` and `1` indicating image quality (e.g. 0.92 => 92%)
    * of the JPEG image.

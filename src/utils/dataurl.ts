@@ -1,5 +1,5 @@
 import { fetchResource } from './fetch'
-import { Options } from './types'
+import { Options } from '@/types'
 
 export function isDataUrl(url: string) {
   return url.search(/^(data:)/) !== -1

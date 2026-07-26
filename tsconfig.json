@@ -14,7 +14,13 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "strictNullChecks": true,
-    "target": "es5"
+    "verbatimModuleSyntax": true,
+    "downlevelIteration": true,
+    "target": "es5",
+    "strict": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "exclude": ["node_modules", "dist"],
   "include": ["src/**/*.ts"]

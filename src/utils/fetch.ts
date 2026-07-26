@@ -1,4 +1,4 @@
-import type { Options } from './types'
+import type { Options } from '@/types'
 
 export async function fetchResource(
   url: string,
@@ -30,26 +30,27 @@ export async function fetchResource(
   const response = await res.arrayBuffer()
   const contentType = forcedContentType || res.headers.get('Content-Type') || ''
 
-  return {
-    contentType,
-    asString: (encoding = 'utf-8') => {
-      const result = new TextDecoder(encoding).decode(response)
-      if (!options.cacheBust) {
-        options.cache?.add(cacheKey, {
-          asDataUrl() {
-            throw new Error(
-              'first hit read as string, cannot read as dataUrl now',
-            )
-          },
-          asString() {
-            return result
-          },
-          contentType,
-        })
+  function createAsString() {
+    let cachedEncoding: string | undefined = undefined
+    let cachedResult: string | undefined = undefined
+
+    return (encoding = 'utf-8') => {
+      if (cachedEncoding === encoding && cachedResult) {
+        return cachedResult
       }
+      const result = new TextDecoder(encoding).decode(response)
+      cachedEncoding = encoding
+      cachedResult = result
       return result
-    },
-    asDataUrl: () => {
+    }
+  }
+
+  function createAsDataUrl() {
+    let cachedResult: string | undefined = undefined
+    return () => {
+      if (cachedResult) {
+        return cachedResult
+      }
       const blob = new Blob([response], { type: contentType })
 
       return new Promise<string>((resolve, reject) => {
@@ -57,24 +58,24 @@ export async function fetchResource(
 
         reader.onerror = () => reject(reader.error)
         reader.onloadend = () => {
-          if (!options.cacheBust) {
-            options.cache?.add(cacheKey, {
-              asDataUrl() {
-                return reader.result as string
-              },
-              asString() {
-                throw new Error(
-                  'first hit read as dataurl, cannot read as string now',
-                )
-              },
-              contentType,
-            })
-          }
+          cachedResult = reader.result as string
           resolve(reader.result as string)
         }
 
         reader.readAsDataURL(blob)
       })
-    },
+    }
   }
+
+  const result = {
+    asDataUrl: createAsDataUrl(),
+    asString: createAsString(),
+    contentType,
+  }
+
+  if (!options.cacheBust) {
+    options.cache?.add(cacheKey, result)
+  }
+
+  return result
 }

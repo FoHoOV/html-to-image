@@ -5,6 +5,9 @@ import typescript from '@rollup/plugin-typescript'
 import terser from '@rollup/plugin-terser'
 import filesize from 'rollup-plugin-filesize'
 
+/**
+ * @type {import("rollup").RollupOptions}
+ */
 export default {
   input: './src/index.ts',
   output: [
