@@ -7,6 +7,8 @@ import {
   cloneSvgElement,
   cloneTextAreaElement,
   cloneVideoElement,
+  embedCssText,
+  embedPseudoElements,
 } from './html'
 import { isInstanceOfElement, traverseChildren } from './traverse'
 
@@ -21,6 +23,7 @@ export async function cloneNodeTree(startingNode: Node, options: Options) {
       filter === 'unwrap'
         ? document.createDocumentFragment()
         : await cloneSingleNode(node, clonedParentNode, options)
+    decorate(node, clonedCurrentNode, clonedParentNode, options)
 
     for (const element of traverseChildren(node)) {
       const clonedChild = await cloneSubtree(element, clonedCurrentNode)
@@ -34,32 +37,48 @@ export async function cloneNodeTree(startingNode: Node, options: Options) {
   return await cloneSubtree(startingNode, null)
 }
 
-export async function cloneSingleNode(
-  node: Node,
+async function cloneSingleNode(
+  originalNode: Node,
   clonedParentNode: Node | null,
   options: Options,
 ): Promise<Node> {
-  if (isInstanceOfElement(node, HTMLCanvasElement)) {
-    return cloneCanvasElement({ node, options, clonedParentNode })
+  if (isInstanceOfElement(originalNode, HTMLCanvasElement)) {
+    return cloneCanvasElement({ originalNode, options, clonedParentNode })
   }
-  if (isInstanceOfElement(node, HTMLVideoElement)) {
-    return cloneVideoElement({ node, options, clonedParentNode })
+  if (isInstanceOfElement(originalNode, HTMLVideoElement)) {
+    return cloneVideoElement({ originalNode, options, clonedParentNode })
   }
-  if (isInstanceOfElement(node, HTMLIFrameElement)) {
-    return cloneIFrameElement({ node, options, clonedParentNode })
+  if (isInstanceOfElement(originalNode, HTMLIFrameElement)) {
+    return cloneIFrameElement({ originalNode, options, clonedParentNode })
   }
-  if (isInstanceOfElement(node, SVGElement)) {
-    return cloneSvgElement({ node, options, clonedParentNode })
+  if (isInstanceOfElement(originalNode, SVGElement)) {
+    return cloneSvgElement({ originalNode, options, clonedParentNode })
   }
-  if (isInstanceOfElement(node, HTMLTextAreaElement)) {
-    return cloneTextAreaElement({ node, options, clonedParentNode })
+  if (isInstanceOfElement(originalNode, HTMLTextAreaElement)) {
+    return cloneTextAreaElement({ originalNode, options, clonedParentNode })
   }
-  if (isInstanceOfElement(node, HTMLInputElement)) {
-    return cloneInputElement({ node, options, clonedParentNode })
+  if (isInstanceOfElement(originalNode, HTMLInputElement)) {
+    return cloneInputElement({ originalNode, options, clonedParentNode })
   }
-  if (isInstanceOfElement(node, HTMLSelectElement)) {
-    return cloneSelectElement({ node, options, clonedParentNode })
+  if (isInstanceOfElement(originalNode, HTMLSelectElement)) {
+    return cloneSelectElement({ originalNode, options, clonedParentNode })
   }
 
-  return node.cloneNode(false)
+  return originalNode.cloneNode(false)
+}
+
+async function decorate(
+  originalNode: Node,
+  clonedNode: Node,
+  clonedParentNode: Node | null,
+  options: Options,
+) {
+  if (
+    isInstanceOfElement(originalNode, HTMLElement) &&
+    isInstanceOfElement(clonedNode, HTMLElement)
+  ) {
+    const context = { originalNode, clonedNode, clonedParentNode, options }
+    embedCssText(context)
+    embedPseudoElements(context)
+  }
 }

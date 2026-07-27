@@ -5,7 +5,6 @@
   "description": "Generates an image from a DOM node using HTML5 canvas and SVG.",
   "main": "./dist/cjs/index.cjs",
   "module": "./dist/esm/index.mjs",
-  "unpkg": "./dist/browser/html-to-image.js",
   "types": "./dist/types/index.d.ts",
   "exports": {
     ".": {

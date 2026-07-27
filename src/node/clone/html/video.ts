@@ -3,21 +3,21 @@ import { getMimeType, imageToDataUrl } from '@/utils'
 import { Cloner } from './types'
 
 export const cloneVideoElement: Cloner<HTMLVideoElement> = async ({
-  node,
+  originalNode,
   options,
 }) => {
-  if (node.currentSrc) {
+  if (originalNode.currentSrc) {
     const canvas = document.createElement('canvas')
     const context = canvas.getContext('2d')
 
-    canvas.width = node.clientWidth
-    canvas.height = node.clientHeight
-    context?.drawImage(node, 0, 0, canvas.width, canvas.height)
+    canvas.width = originalNode.clientWidth
+    canvas.height = originalNode.clientHeight
+    context?.drawImage(originalNode, 0, 0, canvas.width, canvas.height)
 
     return createVideoImage(canvas.toDataURL())
   }
 
-  const poster = node.poster
+  const poster = originalNode.poster
   const dataURL = await imageToDataUrl(poster, getMimeType(poster), options)
   return createVideoImage(dataURL)
 }

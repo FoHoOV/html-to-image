@@ -1,7 +1,7 @@
 type Value = {
   contentType: string
   asString: () => string
-  asDataUrl: () => string
+  asDataUrl: () => string | Promise<string>
 }
 
 export class Cache {

@@ -1,8 +1,10 @@
 import { Cloner } from './types'
 
-export const cloneSelectElement: Cloner<HTMLSelectElement> = ({ node }) => {
-  const cloned = node.cloneNode(false) as HTMLSelectElement
-  const selectedOption = getActiveSelectOption(node)
+export const cloneSelectElement: Cloner<HTMLSelectElement> = ({
+  originalNode,
+}) => {
+  const cloned = originalNode.cloneNode(false) as HTMLSelectElement
+  const selectedOption = getActiveSelectOption(originalNode)
 
   if (selectedOption) {
     selectedOption.setAttribute('selected', '')
