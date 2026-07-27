@@ -19,4 +19,4 @@ type EmbedContext<TNode extends Node> = Readonly<{
 
 export type Embedder<TNode extends Node> = (
   context: EmbedContext<TNode>,
-) => void
+) => void | Promise<void>

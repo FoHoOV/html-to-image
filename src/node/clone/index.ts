@@ -11,6 +11,7 @@ import {
   embedCssText,
   embedPseudoElements,
   embedStyles,
+  embedImages,
 } from './html'
 import { isInstanceOfElement, traverseChildren } from './traverse'
 
@@ -25,7 +26,8 @@ export async function cloneNodeTree(startingNode: Node, options: Options) {
       filter === 'unwrap'
         ? document.createDocumentFragment()
         : await cloneSingleNode(node, clonedParentNode, options)
-    decorate(node, clonedCurrentNode, clonedParentNode, options)
+    // TODO: all decorate calls can fired, but awaited at the end, that will be much faster
+    await decorate(node, clonedCurrentNode, clonedParentNode, options)
 
     for (const element of traverseChildren(node)) {
       const clonedChild = await cloneSubtree(element, clonedCurrentNode)
@@ -39,11 +41,11 @@ export async function cloneNodeTree(startingNode: Node, options: Options) {
   return await cloneSubtree(startingNode, null)
 }
 
-async function cloneSingleNode(
+function cloneSingleNode(
   originalNode: Node,
   clonedParentNode: Node | null,
   options: Options,
-): Promise<Node> {
+) {
   if (isInstanceOfElement(originalNode, HTMLCanvasElement)) {
     return cloneCanvasElement({ originalNode, options, clonedParentNode })
   }
@@ -86,5 +88,6 @@ async function decorate(
     embedCssText(context)
     embedPseudoElements(context)
     embedStyles(context)
+    await embedImages(context)
   }
 }
