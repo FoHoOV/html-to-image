@@ -6,7 +6,7 @@ export function* traverseChildren(node: Node) {
     isInstanceOfElement(node, HTMLIFrameElement) &&
     node.contentDocument?.body
   ) {
-    children = node.contentDocument.body.childNodes
+    children = [node.contentDocument.body]
   } else {
     children = ((node as HTMLElement).shadowRoot ?? node).childNodes
   }
