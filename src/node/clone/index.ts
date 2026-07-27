@@ -10,6 +10,7 @@ import {
   cloneVideoElement,
   embedCssText,
   embedPseudoElements,
+  embedStyles,
 } from './html'
 import { isInstanceOfElement, traverseChildren } from './traverse'
 
@@ -84,5 +85,6 @@ async function decorate(
     const context = { originalNode, clonedNode, clonedParentNode, options }
     embedCssText(context)
     embedPseudoElements(context)
+    embedStyles(context)
   }
 }
