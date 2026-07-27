@@ -5,6 +5,9 @@ export async function fetchResource(
   forcedContentType: string | undefined,
   options: Options,
 ) {
+  // TODO: add a lock for each url, requests to same url should await the previously fired request!
+  // the request should be able to be retried based on Options.fetchRetryCount or something
+
   let requestUrl = url
   if (options.cacheBust) {
     requestUrl += `${/\?/.test(requestUrl) ? '&' : '?'}${Date.now()}`
