@@ -2,7 +2,10 @@ import type { Options } from '@/types'
 import {
   cloneCanvasElement,
   cloneIFrameElement,
+  cloneInputElement,
+  cloneSelectElement,
   cloneSvgElement,
+  cloneTextAreaElement,
   cloneVideoElement,
 } from './html'
 import { isInstanceOfElement, traverseChildren } from './traverse'
@@ -48,6 +51,15 @@ export async function cloneSingleNode(
   if (isInstanceOfElement(node, SVGElement)) {
     return cloneSvgElement({ node, options, clonedParentNode })
   }
+  if (isInstanceOfElement(node, HTMLTextAreaElement)) {
+    return cloneTextAreaElement({ node, options, clonedParentNode })
+  }
+  if (isInstanceOfElement(node, HTMLInputElement)) {
+    return cloneInputElement({ node, options, clonedParentNode })
+  }
+  if (isInstanceOfElement(node, HTMLSelectElement)) {
+    return cloneSelectElement({ node, options, clonedParentNode })
+  }
 
-  return node.cloneNode()
+  return node.cloneNode(false)
 }
