@@ -1,10 +1,11 @@
 import type { Options } from '@/types'
 import {
-  cloneCanvasElement,
+  cloneSvgElement,
+  cloneUseElement,
   cloneIFrameElement,
   cloneInputElement,
   cloneSelectElement,
-  cloneSvgElement,
+  cloneCanvasElement,
   cloneTextAreaElement,
   cloneVideoElement,
   embedCssText,
@@ -51,9 +52,6 @@ async function cloneSingleNode(
   if (isInstanceOfElement(originalNode, HTMLIFrameElement)) {
     return cloneIFrameElement({ originalNode, options, clonedParentNode })
   }
-  if (isInstanceOfElement(originalNode, SVGElement)) {
-    return cloneSvgElement({ originalNode, options, clonedParentNode })
-  }
   if (isInstanceOfElement(originalNode, HTMLTextAreaElement)) {
     return cloneTextAreaElement({ originalNode, options, clonedParentNode })
   }
@@ -62,6 +60,12 @@ async function cloneSingleNode(
   }
   if (isInstanceOfElement(originalNode, HTMLSelectElement)) {
     return cloneSelectElement({ originalNode, options, clonedParentNode })
+  }
+  if (isInstanceOfElement(originalNode, SVGElement)) {
+    return cloneSvgElement({ originalNode, options, clonedParentNode })
+  }
+  if (isInstanceOfElement(originalNode, SVGUseElement)) {
+    return cloneUseElement({ originalNode, options, clonedParentNode })
   }
 
   return originalNode.cloneNode(false)
