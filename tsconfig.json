@@ -14,7 +14,6 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "strictNullChecks": true,
-    "verbatimModuleSyntax": true,
     "downlevelIteration": true,
     "target": "es5",
     "strict": true,
