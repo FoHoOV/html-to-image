@@ -50,7 +50,7 @@ export async function cloneNodeTree(startingNode: Node, options: Options) {
   async function cloneSubtree(node: Node, clonedParentNode: Node | null) {
     const filter = options.filter?.(node as Node) ?? 'keep'
     if (filter === 'remove') {
-      return clonedParentNode
+      return null
     }
 
     const clonedCurrentNode =
