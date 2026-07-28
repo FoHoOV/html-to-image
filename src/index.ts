@@ -73,7 +73,7 @@ export async function toPng<T extends HTMLElement>(
   options: Options = {},
 ): Promise<string> {
   const canvas = await toCanvas(node, options)
-  return canvas.toDataURL()
+  return canvas.toDataURL('image/png', options.quality ?? 1)
 }
 
 export async function toJpeg<T extends HTMLElement>(
@@ -81,7 +81,7 @@ export async function toJpeg<T extends HTMLElement>(
   options: Options = {},
 ): Promise<string> {
   const canvas = await toCanvas(node, options)
-  return canvas.toDataURL('image/jpeg', options.quality || 1)
+  return canvas.toDataURL('image/jpeg', options.quality ?? 1)
 }
 
 export async function toBlob<T extends HTMLElement>(

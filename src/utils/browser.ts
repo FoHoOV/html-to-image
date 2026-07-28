@@ -14,7 +14,7 @@ export function isIOS() {
   )
 }
 
-export function addHiddenDomElement(node: HTMLElement) {
+export function addHiddenDomElement(originalNode: Node, clonedNode: Node) {
   const hiddenNode = document.createElement('div')
   hiddenNode.style.position = 'fixed'
   hiddenNode.style.zIndex = '-100000'
@@ -22,8 +22,10 @@ export function addHiddenDomElement(node: HTMLElement) {
   hiddenNode.style.top = '0'
   hiddenNode.style.left = '-200%'
 
-  hiddenNode.appendChild(node)
-  document.body.appendChild(hiddenNode)
+  hiddenNode.appendChild(clonedNode)
+
+  const parent = originalNode.parentNode ?? document.body
+  parent.insertBefore(hiddenNode, parent.firstChild)
 
   return () => {
     hiddenNode.remove()

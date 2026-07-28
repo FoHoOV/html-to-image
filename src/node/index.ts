@@ -27,7 +27,7 @@ export async function cloneAsSvg(node: Node, options: Options) {
 
   applyStyle(clonedNode, options)
 
-  const removeElement = addHiddenDomElement(clonedNode)
+  const removeElement = addHiddenDomElement(node, clonedNode)
   try {
     await nextFrame()
     const { width, height } = getImageSize(clonedNode, options)
@@ -57,8 +57,6 @@ export async function cloneNodeTree(startingNode: Node, options: Options) {
       filter === 'unwrap'
         ? document.createDocumentFragment()
         : await cloneSingleNode(node, clonedParentNode, options)
-    // TODO: all embed calls can fired, but awaited at the end, that will be much faster
-    await embed(node, clonedCurrentNode, clonedParentNode, options)
 
     for (const element of traverseChildren(node)) {
       const clonedChild = await cloneSubtree(element, clonedCurrentNode)
@@ -66,7 +64,9 @@ export async function cloneNodeTree(startingNode: Node, options: Options) {
         clonedCurrentNode.appendChild(clonedChild)
       }
     }
-    return node
+    // TODO: all embed calls can fired, but awaited at the end, that will be much faster
+    await embed(node, clonedCurrentNode, clonedParentNode, options)
+    return clonedCurrentNode
   }
 
   return (await cloneSubtree(startingNode, null)) as HTMLElement
@@ -118,6 +118,10 @@ async function embed(
     const context = { originalNode, clonedNode, clonedParentNode, options }
     embedCssText(context)
     embedPseudoElements(context)
+    // TODO: think about this, i believe `embedStyles` should be done AFTER cloned dom tree is available
+    // why? because an empty div that doesnt have its children yet, cannot inline its props using getPropertyValue
+    // but, if that isnt the calculated browser value at that time, this could be ok and even a better approach,
+    // meaning the value is the final applied css prop who won.
     embedStyles(context)
     await embedImages(context)
   }
