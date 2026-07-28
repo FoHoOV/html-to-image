@@ -1,13 +1,18 @@
 import { getStyleProperties } from '@/node/utils'
 import { Embedder } from '../embed/types'
 
-export const embedStyles: Embedder<HTMLElement> = ({ clonedNode, options }) => {
+export const embedStyles: Embedder<HTMLElement> = ({
+  clonedNode,
+  originalNode,
+  options,
+}) => {
   const styleProps = getStyleProperties(options)
   if (isChildOfSvg(clonedNode)) {
     return
   }
 
-  const computedStyles = window.getComputedStyle(clonedNode)
+  // @ts-expect-error - TODO: bad min support
+  const computedStyles = originalNode.computedStyleMap(clonedNode)
   const isParentGridOrFlex =
     clonedNode.parentElement &&
     isFlexOrGridDisplay(
@@ -25,7 +30,7 @@ export const embedStyles: Embedder<HTMLElement> = ({ clonedNode, options }) => {
       return
     }
 
-    let value = computedStyles.getPropertyValue(name)
+    let value = computedStyles.get(name)
     if (name === 'font-kerning') {
       value = 'normal'
     }
@@ -36,7 +41,7 @@ export const embedStyles: Embedder<HTMLElement> = ({ clonedNode, options }) => {
 
     nodeStyles.set(name, {
       value,
-      priority: computedStyles.getPropertyPriority(name),
+      priority: '',
     })
   })
 
