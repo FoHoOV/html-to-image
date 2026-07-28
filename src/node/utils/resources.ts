@@ -14,7 +14,7 @@ function toRegex(url: string): RegExp {
   return new RegExp(`(url\\(['"]?)(${escaped})(['"]?\\))`, 'g')
 }
 
-function parseURLs(cssText: string): string[] {
+export function parseURLs(cssText: string): string[] {
   const urls: string[] = []
 
   cssText.replace(URL_REGEX, (raw, quotation, url) => {
@@ -57,7 +57,7 @@ function resolveUrl(url: string, baseUrl: string | null): string {
   return a.href
 }
 
-async function embed(
+export async function embed(
   cssText: string,
   resourceURL: string,
   baseURL: string | null,

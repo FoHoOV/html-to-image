@@ -1,5 +1,5 @@
 import { Cache } from '../../src'
-import { fetchResource } from '../../src/fetch'
+import { fetchResource } from '../../src/utils'
 
 describe('resource cache', () => {
   it('does not retain resources unless a cache is provided', async () => {

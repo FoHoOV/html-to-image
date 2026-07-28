@@ -8,8 +8,8 @@ import {
   compareToRefImage,
   assertTextRendered,
 } from './helper'
-import { toCanvas, toPng, toSvg } from '../../src'
 import { cloneNodeTree } from '../../src/node'
+import { toCanvas, toPng, toSvg } from '../../src'
 
 describe('work with options', () => {
   it('should apply width and height options to node copy being rendered', (done) => {
@@ -226,8 +226,10 @@ describe('work with options', () => {
       .then((node) =>
         toPng(node, {
           filter(node) {
-            if (node.classList) {
-              return node.classList.contains('omit') ? 'remove' : 'keep'
+            if ((node as HTMLElement).classList) {
+              return (node as HTMLElement).classList.contains('omit')
+                ? 'remove'
+                : 'keep'
             }
             return 'keep'
           },
@@ -271,7 +273,9 @@ describe('work with options', () => {
 
     const clone = await cloneNodeTree(root, {
       filter: (node) =>
-        node.classList.contains('excluded') ? 'remove' : 'keep',
+        (node as HTMLElement).classList.contains('excluded')
+          ? 'remove'
+          : 'keep',
     })
 
     expect(clone?.querySelector('.excluded')).toBeNull()
