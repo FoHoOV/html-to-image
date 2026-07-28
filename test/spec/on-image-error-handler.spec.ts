@@ -1,4 +1,4 @@
-import { embedImages } from '../../src/embed-images'
+import { embedImages } from '../../src/node/embed'
 
 describe('Error Handling in resourceToDataURL', () => {
   it('should call the onImageErrorHandler when an error occurs', async () => {
@@ -11,9 +11,13 @@ describe('Error Handling in resourceToDataURL', () => {
     node.src = 'invalid_url'
 
     // Assuming resourceToDataURL is the function being tested
-    await embedImages(node, options).then(() => {
-      expect(handlers.onError).toHaveBeenCalled()
+    await embedImages({
+      originalNode: node,
+      clonedNode: node.cloneNode() as HTMLImageElement,
+      clonedParentNode: null,
+      options,
     })
+    expect(handlers.onError).toHaveBeenCalled()
   })
 
   it('should reject with an error if no onImageErrorHandler is provided', async () => {
@@ -22,7 +26,12 @@ describe('Error Handling in resourceToDataURL', () => {
     let rejection: unknown
 
     try {
-      await embedImages(node, {})
+      await embedImages({
+        originalNode: node,
+        clonedNode: node.cloneNode() as HTMLImageElement,
+        clonedParentNode: null,
+        options: {},
+      })
     } catch (error) {
       rejection = error
     }
@@ -37,8 +46,11 @@ describe('Error Handling in resourceToDataURL', () => {
     let rejection: unknown
 
     try {
-      await embedImages(node, {
-        onImageErrorHandler: () => Promise.reject(handlerError),
+      await embedImages({
+        originalNode: node,
+        clonedNode: node.cloneNode() as HTMLImageElement,
+        clonedParentNode: null,
+        options: { onImageErrorHandler: () => Promise.reject(handlerError) },
       })
     } catch (error) {
       rejection = error

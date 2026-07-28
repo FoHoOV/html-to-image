@@ -1,7 +1,6 @@
 import pixelmatch from 'pixelmatch'
 import { toPng } from '../../src'
 import { Options } from '../../src/types'
-import { getPixelRatio } from '../../src/util'
 
 export function getCaptureNode() {
   return document.getElementById('dom-node') as HTMLDivElement
@@ -89,7 +88,7 @@ function makeCanvas(
 
   const width = (size && size.width) || img.width
   const height = (size && size.height) || img.height
-  const ratio = getPixelRatio()
+  const ratio = window.devicePixelRatio || 1
   canvas.width = width * ratio
   canvas.height = height * ratio
   canvas.style.width = `${width}`
@@ -214,5 +213,12 @@ async function recognize(dataUrl: string) {
     .catch(() => {
       // console.log(`text recognize error: ${err}`)
       return ''
+    })
+}
+
+export function delay<T>(ms: number) {
+  return (args: T) =>
+    new Promise<T>((resolve) => {
+      setTimeout(() => resolve(args), ms)
     })
 }

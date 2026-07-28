@@ -9,7 +9,13 @@ export function makeDataUrl(content: string, mimeType: string) {
   return `data:${mimeType};base64,${content}`
 }
 
-export async function imageToDataUrl(
+export function nodeToDataUrl(node: Node) {
+  const serialized = new XMLSerializer().serializeToString(node)
+  const encoded = encodeURIComponent(serialized)
+  return `data:image/svg+xml;charset=utf-8,${encoded}`
+}
+
+export async function resourceToDataUrl(
   resourceUrl: string,
   forcedContentType: string | undefined,
   options: Options,

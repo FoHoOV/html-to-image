@@ -1,6 +1,7 @@
 import { isInstanceOfElement } from '@/node/utils'
 import { Options } from '@/types'
-import { embedResources, getMimeType, imageToDataUrl, isDataUrl } from '@/utils'
+import { getMimeType, resourceToDataUrl, isDataUrl } from '@/utils'
+import { embedResources } from '../utils/resources'
 import { Embedder } from './types'
 
 export const embedImages: Embedder<HTMLElement> = async ({
@@ -61,7 +62,7 @@ async function embedImageNode<T extends HTMLElement | SVGImageElement>(
 
   const url = isImageElement ? clonedNode.src : clonedNode.href.baseVal
 
-  const dataURL = await imageToDataUrl(url, getMimeType(url), options)
+  const dataURL = await resourceToDataUrl(url, getMimeType(url), options)
   let imageErrorHandled = false
   await new Promise((resolve, reject) => {
     clonedNode.onload = resolve

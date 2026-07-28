@@ -1,3 +1,5 @@
+import { Options } from '@/types'
+
 export function isIOS() {
   return (
     [
@@ -10,4 +12,59 @@ export function isIOS() {
     ].includes(navigator.platform) ||
     (navigator.userAgent.includes('Mac') && 'ontouchend' in document)
   )
+}
+
+export function addHiddenDomElement(node: HTMLElement) {
+  const hiddenNode = document.createElement('div')
+  hiddenNode.style.position = 'fixed'
+  hiddenNode.style.zIndex = '-100000'
+  hiddenNode.style.opacity = '0'
+  hiddenNode.style.top = '0'
+  hiddenNode.style.left = '-200%'
+
+  hiddenNode.appendChild(node)
+  document.body.appendChild(hiddenNode)
+
+  return () => {
+    hiddenNode.remove()
+  }
+}
+
+export async function nextFrame() {
+  await new Promise((resolve) => {
+    requestAnimationFrame(resolve)
+  })
+  // Some WebKit versions run the first callback before style and paint work.
+  await new Promise((resolve) => {
+    requestAnimationFrame(resolve)
+  })
+}
+
+export function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  options: Options = {},
+): Promise<Blob | null> {
+  if (canvas.toBlob) {
+    return new Promise((resolve) => {
+      canvas.toBlob(resolve, options.type ?? 'image/png', options.quality ?? 1)
+    })
+  }
+
+  return new Promise((resolve) => {
+    const binaryString = window.atob(
+      canvas.toDataURL(options.type, options.quality).split(',')[1],
+    )
+    const len = binaryString.length
+    const binaryArray = new Uint8Array(len)
+
+    for (let i = 0; i < len; i += 1) {
+      binaryArray[i] = binaryString.charCodeAt(i)
+    }
+
+    resolve(
+      new Blob([binaryArray], {
+        type: options.type ? options.type : 'image/png',
+      }),
+    )
+  })
 }

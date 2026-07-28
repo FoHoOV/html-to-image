@@ -1,7 +1,11 @@
 import '../spec/setup'
 import { toPng } from '../../src'
-import { delay } from '../../src/util'
-import { assertTextRendered, bootstrap, renderAndCheck } from '../spec/helper'
+import {
+  assertTextRendered,
+  bootstrap,
+  renderAndCheck,
+  delay,
+} from '../spec/helper'
 
 describe('special cases', () => {
   xit('should not crash when loading external stylesheet causes error', (done) => {

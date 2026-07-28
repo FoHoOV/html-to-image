@@ -1,8 +1,8 @@
 // TODO: review
 
 import { Options } from '@/types'
-import { getMimeType } from './mimes'
-import { isDataUrl, makeDataUrl, imageToDataUrl } from './dataurl'
+import { getMimeType } from '../../utils/mimes'
+import { isDataUrl, makeDataUrl, resourceToDataUrl } from '../../utils/dataurl'
 
 const URL_REGEX = /url\((['"]?)([^'"]+?)\1\)/g
 const URL_WITH_FORMAT_REGEX = /url\([^)]+\)\s*format\((["']?)([^"']+)\1\)/g
@@ -14,7 +14,7 @@ function toRegex(url: string): RegExp {
   return new RegExp(`(url\\(['"]?)(${escaped})(['"]?\\))`, 'g')
 }
 
-export function parseURLs(cssText: string): string[] {
+function parseURLs(cssText: string): string[] {
   const urls: string[] = []
 
   cssText.replace(URL_REGEX, (raw, quotation, url) => {
@@ -25,7 +25,7 @@ export function parseURLs(cssText: string): string[] {
   return urls.filter((url) => !isDataUrl(url))
 }
 
-export function resolveUrl(url: string, baseUrl: string | null): string {
+function resolveUrl(url: string, baseUrl: string | null): string {
   // url is absolute already
   if (url.match(/^[a-z]+:\/\//i)) {
     return url
@@ -57,7 +57,7 @@ export function resolveUrl(url: string, baseUrl: string | null): string {
   return a.href
 }
 
-export async function embed(
+async function embed(
   cssText: string,
   resourceURL: string,
   baseURL: string | null,
@@ -72,7 +72,7 @@ export async function embed(
       const content = await getContentFromUrl(resolvedURL)
       dataURL = makeDataUrl(content, contentType)
     } else {
-      dataURL = await imageToDataUrl(resolvedURL, contentType, options)
+      dataURL = await resourceToDataUrl(resolvedURL, contentType, options)
     }
     return cssText.replace(toRegex(resourceURL), `$1${dataURL}$3`)
   } catch (error) {

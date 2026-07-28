@@ -1,21 +1,20 @@
 import * as htmlToImage from '../../src'
-import { delay } from '../../src/util'
 import {
   clean,
   bootstrap,
   check,
   renderAndCheck,
   assertTextRendered,
+  delay,
 } from './helper'
 import './setup'
 
 beforeAll(() => {
-  process.env.devicePixelRatio = '1'
+  window.devicePixelRatio = 1
   jasmine.DEFAULT_TIMEOUT_INTERVAL = 20000
 })
 
 afterAll(() => {
-  delete process.env.devicePixelRatio
   clean()
 })
 

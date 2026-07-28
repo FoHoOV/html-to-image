@@ -1,4 +1,5 @@
 import type { Options } from '@/types'
+import { addHiddenDomElement, nextFrame } from '@/utils'
 import {
   cloneSvgElement,
   cloneUseElement,
@@ -14,8 +15,36 @@ import {
   embedPseudoElements,
   embedStyles,
   embedImages,
+  embedWebFonts,
 } from './embed'
+import { applyStyle, getImageSize, wrapInSvg } from './utils'
 import { isInstanceOfElement, traverseChildren } from './utils/traverse'
+
+export async function cloneAsSvg(node: Node, options: Options) {
+  const clonedNode =
+    ((await cloneNodeTree(node, options)) as HTMLElement | null) ??
+    document.createElement('div')
+
+  applyStyle(clonedNode, options)
+
+  const removeElement = addHiddenDomElement(clonedNode)
+  try {
+    await nextFrame()
+    const { width, height } = getImageSize(clonedNode, options)
+    removeElement()
+    await embedWebFonts({
+      clonedNode,
+      clonedParentNode: null,
+      options,
+      originalNode: node as typeof clonedNode,
+    })
+    const svg = wrapInSvg(clonedNode, width, height)
+    return { svg, width, height }
+  } catch (error) {
+    removeElement()
+    throw error
+  }
+}
 
 export async function cloneNodeTree(startingNode: Node, options: Options) {
   async function cloneSubtree(node: Node, clonedParentNode: Node | null) {
@@ -40,7 +69,7 @@ export async function cloneNodeTree(startingNode: Node, options: Options) {
     return node
   }
 
-  return await cloneSubtree(startingNode, null)
+  return (await cloneSubtree(startingNode, null)) as HTMLElement
 }
 
 function cloneSingleNode(

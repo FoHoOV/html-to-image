@@ -1,3 +1,6 @@
+import { Options } from '@/types'
+import { getNodeHeight, getNodeWidth } from './size'
+
 export function createImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
@@ -16,4 +19,11 @@ export function createImage(url: string): Promise<HTMLImageElement> {
     img.decoding = 'sync'
     img.src = url
   })
+}
+
+export function getImageSize(targetNode: HTMLElement, options: Options = {}) {
+  const width = options.width || getNodeWidth(targetNode)
+  const height = options.height || getNodeHeight(targetNode)
+
+  return { width, height }
 }

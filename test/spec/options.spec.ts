@@ -9,7 +9,7 @@ import {
   assertTextRendered,
 } from './helper'
 import { toCanvas, toPng, toSvg } from '../../src'
-import { cloneNode } from '../../src/clone-node'
+import { cloneNodeTree } from '../../src/node'
 
 describe('work with options', () => {
   it('should apply width and height options to node copy being rendered', (done) => {
@@ -241,7 +241,7 @@ describe('work with options', () => {
   it('should apply node filter to root node', async () => {
     const root = document.createElement('div')
 
-    const clone = await cloneNode(root, {
+    const clone = await cloneNodeTree(root, {
       filter: (node) => (node === root ? 'remove' : 'keep'),
     })
 
@@ -254,7 +254,7 @@ describe('work with options', () => {
     child.textContent = 'preserved'
     root.appendChild(child)
 
-    const clone = await cloneNode(root, {
+    const clone = await cloneNodeTree(root, {
       filter: (node) => (node === root ? 'unwrap' : 'keep'),
     })
 
@@ -269,7 +269,7 @@ describe('work with options', () => {
     excluded.appendChild(document.createElement('span'))
     root.appendChild(excluded)
 
-    const clone = await cloneNode(root, {
+    const clone = await cloneNodeTree(root, {
       filter: (node) =>
         node.classList.contains('excluded') ? 'remove' : 'keep',
     })
@@ -286,7 +286,7 @@ describe('work with options', () => {
     excluded.appendChild(preserved)
     root.appendChild(excluded)
 
-    const clone = await cloneNode(root, {
+    const clone = await cloneNodeTree(root, {
       filter: (node) => (node === excluded ? 'unwrap' : 'keep'),
     })
 

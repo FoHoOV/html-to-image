@@ -1,5 +1,5 @@
 import { createImage } from '@/node/utils'
-import { getMimeType, imageToDataUrl } from '@/utils'
+import { getMimeType, resourceToDataUrl } from '@/utils'
 import { Cloner } from './types'
 
 export const cloneVideoElement: Cloner<HTMLVideoElement> = async ({
@@ -18,7 +18,7 @@ export const cloneVideoElement: Cloner<HTMLVideoElement> = async ({
   }
 
   const poster = originalNode.poster
-  const dataURL = await imageToDataUrl(poster, getMimeType(poster), options)
+  const dataURL = await resourceToDataUrl(poster, getMimeType(poster), options)
   return createVideoImage(dataURL)
 }
 

@@ -1,6 +1,6 @@
 import type { Cache } from './utils/cache'
 
-export interface Options {
+export type Options = {
   /**
    * Width in pixels to be applied to node before rendering.
    */
