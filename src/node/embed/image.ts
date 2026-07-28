@@ -4,7 +4,7 @@ import { getMimeType, resourceToDataUrl, isDataUrl } from '@/utils'
 import { embedResources } from '../utils/resources'
 import { Embedder } from './types'
 
-export const embedImages: Embedder<HTMLElement> = async ({
+export const embedImages: Embedder<HTMLElement | SVGElement> = async ({
   clonedNode,
   options,
 }) => {
@@ -16,7 +16,7 @@ export const embedImages: Embedder<HTMLElement> = async ({
 
 async function embedProp(
   propName: string,
-  node: HTMLElement,
+  node: HTMLElement | SVGElement,
   options: Options,
 ) {
   const propValue = node.style?.getPropertyValue(propName)
@@ -32,7 +32,7 @@ async function embedProp(
   return false
 }
 
-async function embedBackground<T extends HTMLElement>(
+async function embedBackground<T extends HTMLElement | SVGElement>(
   clonedNode: T,
   options: Options,
 ) {
@@ -44,7 +44,7 @@ async function embedBackground<T extends HTMLElement>(
     (await embedProp('-webkit-mask-image', clonedNode, options))
 }
 
-async function embedImageNode<T extends HTMLElement | SVGImageElement>(
+async function embedImageNode<T extends HTMLElement | SVGElement>(
   clonedNode: T,
   options: Options,
 ) {

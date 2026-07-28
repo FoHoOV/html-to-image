@@ -1,6 +1,6 @@
 import { Embedder } from '../embed/types'
 
-export const embedCssText: Embedder<HTMLElement> = ({
+export const embedCssText: Embedder<HTMLElement | SVGElement> = ({
   originalNode,
   clonedNode,
 }) => {

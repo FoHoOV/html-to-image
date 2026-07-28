@@ -112,8 +112,10 @@ async function embed(
   options: Options,
 ) {
   if (
-    isInstanceOfElement(originalNode, HTMLElement) &&
-    isInstanceOfElement(clonedNode, HTMLElement)
+    (isInstanceOfElement(originalNode, HTMLElement) ||
+      isInstanceOfElement(originalNode, SVGElement)) &&
+    (isInstanceOfElement(clonedNode, HTMLElement) ||
+      isInstanceOfElement(clonedNode, SVGElement))
   ) {
     const context = { originalNode, clonedNode, clonedParentNode, options }
     embedCssText(context)

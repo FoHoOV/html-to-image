@@ -10,7 +10,7 @@ describe('work with svg element', () => {
       .catch(done)
   })
 
-  it('should render svg `<rect>` with width and heigth', (done) => {
+  it('should render svg `<rect>` with width and height', (done) => {
     bootstrap('svg-rect/node.html', 'svg-rect/style.css', 'svg-rect/image')
       .then(renderAndCheck)
       .then(done)
