@@ -1,4 +1,4 @@
-import { isInstanceOfElement } from '@/node/clone/traverse'
+import { isInstanceOfElement } from '@/node/utils'
 import { Options } from '@/types'
 import { embedResources, getMimeType, imageToDataUrl, isDataUrl } from '@/utils'
 import { Embedder } from './types'

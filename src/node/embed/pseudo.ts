@@ -1,7 +1,7 @@
-import { getStyleProperties } from '@/node/style-props'
+import { getStyleProperties } from '@/node/utils'
 import { Options } from '@/types'
 import { uuid } from '@/utils'
-import { Embedder } from './types'
+import { Embedder } from '../embed/types'
 
 export const embedPseudoElements: Embedder<Element> = ({
   originalNode,

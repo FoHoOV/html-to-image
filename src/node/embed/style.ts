@@ -1,5 +1,5 @@
-import { getStyleProperties } from '@/node/style-props'
-import { Embedder } from './types'
+import { getStyleProperties } from '@/node/utils'
+import { Embedder } from '../embed/types'
 
 export const embedStyles: Embedder<HTMLElement> = ({ clonedNode, options }) => {
   const styleProps = getStyleProperties(options)

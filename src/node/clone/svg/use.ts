@@ -2,7 +2,7 @@ import { getHref, normalizeHref, setHref, createOrGetSvgDefs } from './utils'
 import { Cloner } from '../types'
 import { Options } from '@/types'
 import { fetchResource } from '@/utils'
-import { isInstanceOfElement } from '@/node/clone/traverse'
+import { isInstanceOfElement } from '@/node/utils'
 
 export const cloneUseElement: Cloner<SVGUseElement> = async ({
   originalNode,

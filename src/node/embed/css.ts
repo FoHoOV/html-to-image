@@ -1,4 +1,4 @@
-import { Embedder } from './types'
+import { Embedder } from '../embed/types'
 
 export const embedCssText: Embedder<HTMLElement> = ({
   originalNode,

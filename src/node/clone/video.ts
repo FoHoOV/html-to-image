@@ -1,4 +1,4 @@
-import { createImage } from '@/node/image'
+import { createImage } from '@/node/utils'
 import { getMimeType, imageToDataUrl } from '@/utils'
 import { Cloner } from './types'
 
