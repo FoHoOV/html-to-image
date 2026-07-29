@@ -27,8 +27,8 @@ export function applyStyle<TElement extends HTMLElement>(
 
   const manual = options.style
   if (manual != null) {
-    Object.keys(manual).forEach((key: any) => {
-      node.style[key] = `${manual[key]} !important` as string
+    Object.entries(manual).forEach(([key, value]) => {
+      node.style.setProperty(key, value?.toString() ?? null, 'important')
     })
   }
 }
