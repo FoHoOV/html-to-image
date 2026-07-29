@@ -24,15 +24,18 @@ describe('work with video element', () => {
     const video = root.querySelector('video')!
     video.style.objectFit = 'cover'
     video.style.objectPosition = '25% 75%'
-    const computedStyle = window.getComputedStyle(video)
+    const originalNodeStyles = window.getComputedStyle(video)
 
-    const clone = await cloneNodeTree(video, {})
-    const image = clone as unknown as HTMLImageElement
-
+    const image = await cloneNodeTree(video, {})
+    const clonedNodeStyles = window.getComputedStyle(image)
+    root.appendChild(image)
     expect(image).toEqual(jasmine.any(HTMLImageElement))
-    expect(image.style.width).toBe(computedStyle.width)
-    expect(image.style.height).toBe(computedStyle.height)
-    expect(image.style.objectFit).toBe(computedStyle.objectFit)
-    expect(image.style.objectPosition).toBe(computedStyle.objectPosition)
+    expect(clonedNodeStyles.width).toBe(originalNodeStyles.width)
+    expect(clonedNodeStyles.height).toBe(originalNodeStyles.height)
+    expect(clonedNodeStyles.objectFit).toBe(originalNodeStyles.objectFit)
+    expect(clonedNodeStyles.objectPosition).toBe(
+      originalNodeStyles.objectPosition,
+    )
+    image.remove()
   })
 })

@@ -13,7 +13,7 @@ export const embedStyles: Embedder<HTMLElement | SVGElement> = ({
   }
 
   // @ts-expect-error - TODO: bad min support
-  const computedStyles = originalNode.computedStyleMap(clonedNode)
+  const computedStyles = originalNode.computedStyleMap()
   const isParentGridOrFlex =
     clonedNode.parentElement &&
     isFlexOrGridDisplay(
