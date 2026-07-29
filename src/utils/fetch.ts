@@ -24,7 +24,7 @@ export async function fetchResource(
   const cacheKey = cacheUrl + forcedContentType
 
   if (options.cacheBust) {
-    return requestResource(requestUrl, forcedContentType, options)
+    return makeRequest(requestUrl, forcedContentType, options)
   }
 
   const cachedResource = options.cache?.get(cacheKey)
@@ -34,7 +34,7 @@ export async function fetchResource(
 
   let request = pendingRequests.get(cacheKey)
   if (!request) {
-    request = requestResource(requestUrl, forcedContentType, options)
+    request = makeRequest(requestUrl, forcedContentType, options)
     pendingRequests.set(cacheKey, request)
   }
 
@@ -49,7 +49,7 @@ export async function fetchResource(
   }
 }
 
-async function requestResource(
+async function makeRequest(
   requestUrl: string,
   forcedContentType: string | undefined,
   options: Options,
