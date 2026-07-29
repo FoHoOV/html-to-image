@@ -1,7 +1,12 @@
 import type { Options } from '@/types'
-import { Mutex } from './mutex'
 
-const lockedRequests = new Map<string, () => Promise<void>>()
+type Resource = {
+  contentType: string
+  asString: (encoding?: string) => string
+  asDataUrl: () => string | Promise<string>
+}
+
+const pendingRequests = new Map<string, Promise<Resource>>()
 
 export async function fetchResource(
   url: string,
@@ -18,43 +23,52 @@ export async function fetchResource(
       : requestUrl
   const cacheKey = cacheUrl + forcedContentType
 
-  if (!options.cacheBust) {
-    await lockedRequests.get(cacheKey)?.()
-    if (options.cache?.has(cacheKey)) {
-      return options.cache.get(cacheKey)!
-    }
+  if (options.cacheBust) {
+    return requestResource(requestUrl, forcedContentType, options)
   }
 
-  const lock = new Mutex()
-  lockedRequests.set(cacheKey, () => lock.wait())
-  const release = await lock.acquire()
+  const cachedResource = options.cache?.get(cacheKey)
+  if (cachedResource) {
+    return cachedResource
+  }
+
+  let request = pendingRequests.get(cacheKey)
+  if (!request) {
+    request = requestResource(requestUrl, forcedContentType, options)
+    pendingRequests.set(cacheKey, request)
+  }
+
   try {
-    const res = await fetch(requestUrl, options.fetchRequestInit)
-
-    if (!res.ok) {
-      throw new Error(
-        `cannot fetch(${res.status} ${res.statusText}): "${res.url}"`,
-      )
-    }
-
-    const response = await res.arrayBuffer()
-    const contentType =
-      forcedContentType || res.headers.get('Content-Type') || ''
-
-    const result = {
-      asDataUrl: createAsDataUrl(response, contentType),
-      asString: createAsString(response),
-      contentType,
-    }
-
-    if (!options.cacheBust) {
-      options.cache?.add(cacheKey, result)
-    }
-
-    return result
+    const resource = await request
+    options.cache?.add(cacheKey, resource)
+    return resource
   } finally {
-    lockedRequests.delete(cacheKey)
-    release()
+    if (pendingRequests.get(cacheKey) === request) {
+      pendingRequests.delete(cacheKey)
+    }
+  }
+}
+
+async function requestResource(
+  requestUrl: string,
+  forcedContentType: string | undefined,
+  options: Options,
+): Promise<Resource> {
+  const res = await fetch(requestUrl, options.fetchRequestInit)
+
+  if (!res.ok) {
+    throw new Error(
+      `cannot fetch(${res.status} ${res.statusText}): "${res.url}"`,
+    )
+  }
+
+  const response = await res.arrayBuffer()
+  const contentType = forcedContentType || res.headers.get('Content-Type') || ''
+
+  return {
+    asDataUrl: createAsDataUrl(response, contentType),
+    asString: createAsString(response),
+    contentType,
   }
 }
 
