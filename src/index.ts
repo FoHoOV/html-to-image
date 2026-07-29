@@ -109,3 +109,4 @@ export async function getFontEmbedCSS<T extends HTMLElement>(
 }
 
 export { Cache } from './utils/cache'
+export type { Options } from './types'
