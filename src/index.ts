@@ -2,11 +2,11 @@ import { cloneAsSvg } from './node'
 import { getWebFontCSS } from './node/embed'
 import { checkCanvasDimensions, createImage, getImageSize } from './node/utils'
 import { Options } from './types'
-import { canvasToBlob, isIOS, nextFrame, nodeToDataUrl } from './utils'
+import { Cache, canvasToBlob, isIOS, nextFrame, nodeToDataUrl } from './utils'
 
 export async function toSvg<T extends HTMLElement>(
   node: T,
-  options: Options = {},
+  options: Options = { cache: new Cache() },
 ): Promise<SVGSVGElement> {
   const { svg } = await cloneAsSvg(node, options)
   return svg
@@ -14,7 +14,7 @@ export async function toSvg<T extends HTMLElement>(
 
 export async function toDataUrl<T extends HTMLElement>(
   node: T,
-  options: Options = {},
+  options: Options = { cache: new Cache() },
 ): Promise<string> {
   const svg = await toSvg(node, options)
   return nodeToDataUrl(svg)
@@ -22,7 +22,7 @@ export async function toDataUrl<T extends HTMLElement>(
 
 export async function toCanvas<T extends HTMLElement>(
   node: T,
-  options: Options = {},
+  options: Options = { cache: new Cache() },
 ): Promise<HTMLCanvasElement> {
   const { svg, width, height } = await cloneAsSvg(node, options)
   const img = await createImage(nodeToDataUrl(svg))
@@ -68,7 +68,7 @@ export async function toCanvas<T extends HTMLElement>(
 
 export async function toPixelData<T extends HTMLElement>(
   node: T,
-  options: Options = {},
+  options: Options = { cache: new Cache() },
 ): Promise<Uint8ClampedArray> {
   const { width, height } = getImageSize(node, options)
   const canvas = await toCanvas(node, options)
@@ -78,7 +78,7 @@ export async function toPixelData<T extends HTMLElement>(
 
 export async function toPng<T extends HTMLElement>(
   node: T,
-  options: Options = {},
+  options: Options = { cache: new Cache() },
 ): Promise<string> {
   const canvas = await toCanvas(node, options)
   return canvas.toDataURL('image/png', options.quality ?? 1)
@@ -86,7 +86,7 @@ export async function toPng<T extends HTMLElement>(
 
 export async function toJpeg<T extends HTMLElement>(
   node: T,
-  options: Options = {},
+  options: Options = { cache: new Cache() },
 ): Promise<string> {
   const canvas = await toCanvas(node, options)
   return canvas.toDataURL('image/jpeg', options.quality ?? 1)
@@ -94,7 +94,7 @@ export async function toJpeg<T extends HTMLElement>(
 
 export async function toBlob<T extends HTMLElement>(
   node: T,
-  options: Options = {},
+  options: Options = { cache: new Cache() },
 ): Promise<Blob | null> {
   const canvas = await toCanvas(node, options)
   const blob = await canvasToBlob(canvas)
@@ -103,7 +103,7 @@ export async function toBlob<T extends HTMLElement>(
 
 export async function getFontEmbedCSS<T extends HTMLElement>(
   node: T,
-  options: Options = {},
+  options: Options = { cache: new Cache() },
 ): Promise<string> {
   return getWebFontCSS(node, options)
 }
