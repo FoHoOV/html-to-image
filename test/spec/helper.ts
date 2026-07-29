@@ -10,8 +10,14 @@ export function getReferenceImage() {
   return document.getElementById('ref-image') as HTMLImageElement
 }
 
-export function getCanvasNode() {
+export function getResultCanvasNode() {
   return document.getElementById('canvas') as HTMLCanvasElement
+}
+
+export function getReferenceCanvasNode() {
+  const node = getResultCanvasNode().cloneNode(false) as HTMLCanvasElement
+  node.id = ''
+  return node
 }
 
 export function getStyleNode() {
@@ -87,12 +93,12 @@ function makeImage(src: string) {
 
 function makeCanvas(
   img: HTMLImageElement,
+  canvas: HTMLCanvasElement,
   size?: {
     width?: number
     height?: number
   },
 ) {
-  const canvas = getCanvasNode()
   const context = canvas.getContext('2d')!
 
   const width = (size && size.width) || img.width
@@ -110,12 +116,13 @@ function makeCanvas(
 
 function drawImg(
   img: HTMLImageElement,
+  canvas: HTMLCanvasElement,
   size?: {
     width?: number
     height?: number
   },
 ) {
-  const { context, width, height } = makeCanvas(img, size)
+  const { context, width, height } = makeCanvas(img, canvas, size)
   return context.getImageData(0, 0, width, height)
 }
 
@@ -128,24 +135,13 @@ export async function drawDataUrl(
 ) {
   return Promise.resolve(dataUrl)
     .then(makeImage)
-    .then((image) => drawImg(image, size))
+    .then((image) => drawImg(image, getResultCanvasNode(), size))
 }
 
 export async function check(dataUrl: string) {
   return Promise.resolve(dataUrl)
     .then(drawDataUrl)
     .then((imgData) => compareToRefImage(imgData))
-}
-
-export async function logDataUrl(node: HTMLDivElement = getCaptureNode()) {
-  return toPng(node)
-    .then(makeImage)
-    .then(makeCanvas)
-    .then(({ canvas }) => {
-      // eslint-disable-next-line
-      console.log(canvas.toDataURL())
-      return node
-    })
 }
 
 export async function renderAndCheck(
@@ -157,7 +153,7 @@ export async function renderAndCheck(
 
 export function compareToRefImage(sourceData: ImageData, threshold = 0.1) {
   const ref = getReferenceImage()
-  const refData = drawImg(ref)
+  const refData = drawImg(ref, getReferenceCanvasNode())
   expect(
     pixelmatch(sourceData.data, refData.data, null, ref.width, ref.height, {
       threshold,
@@ -186,7 +182,7 @@ export function assertTextRendered(lines: string[], options?: Options) {
 export async function recognizeImage(node: HTMLDivElement, options?: Options) {
   return toPng(node, options)
     .then(drawDataUrl)
-    .then(() => recognize(getCanvasNode().toDataURL()))
+    .then(() => recognize(getResultCanvasNode().toDataURL()))
 }
 
 // see: https://ocr.space/OCRAPI
