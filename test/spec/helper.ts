@@ -55,10 +55,19 @@ export async function bootstrap(
 
   if (refImageUrl) {
     const url = await fetchFile(refImageUrl)
-    getReferenceImage().setAttribute('src', url)
+    await loadImage(getReferenceImage(), url)
   }
 
   return captureNode
+}
+
+function loadImage(image: HTMLImageElement, src: string) {
+  return new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve()
+    image.onerror = () =>
+      reject(new Error(`Failed to load reference image: ${src.slice(0, 64)}`))
+    image.src = src
+  })
 }
 
 async function fetchFile(fileName: string) {

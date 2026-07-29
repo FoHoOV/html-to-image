@@ -28,7 +28,29 @@ export function applyStyle<TElement extends HTMLElement>(
   const manual = options.style
   if (manual != null) {
     Object.entries(manual).forEach(([key, value]) => {
-      node.style.setProperty(key, value?.toString() ?? null, 'important')
+      if (value == null) {
+        return
+      }
+      node.style.setProperty(
+        toCssPropertyName(key),
+        value.toString(),
+        'important',
+      )
     })
   }
+}
+
+function toCssPropertyName(property: string) {
+  if (property.startsWith('--') || property.includes('-')) {
+    return property
+  }
+  if (property === 'cssFloat') {
+    return 'float'
+  }
+
+  const cssProperty = property.replace(
+    /[A-Z]/g,
+    (letter) => `-${letter.toLowerCase()}`,
+  )
+  return cssProperty
 }

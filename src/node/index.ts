@@ -5,6 +5,7 @@ import {
   cloneUseElement,
   cloneIFrameElement,
   cloneInputElement,
+  cloneOptionElement,
   cloneSelectElement,
   cloneCanvasElement,
   cloneTextAreaElement,
@@ -77,29 +78,40 @@ function cloneSingleNode(
   clonedParentNode: Node | null,
   options: Options,
 ) {
+  function createContext<TNode extends Node>(node: TNode) {
+    return {
+      originalNode: node,
+      options,
+      clonedParentNode,
+    }
+  }
+
   if (isInstanceOfElement(originalNode, HTMLCanvasElement)) {
-    return cloneCanvasElement({ originalNode, options, clonedParentNode })
+    return cloneCanvasElement(createContext(originalNode))
   }
   if (isInstanceOfElement(originalNode, HTMLVideoElement)) {
-    return cloneVideoElement({ originalNode, options, clonedParentNode })
+    return cloneVideoElement(createContext(originalNode))
   }
   if (isInstanceOfElement(originalNode, HTMLIFrameElement)) {
-    return cloneIFrameElement({ originalNode, options, clonedParentNode })
+    return cloneIFrameElement(createContext(originalNode))
   }
   if (isInstanceOfElement(originalNode, HTMLTextAreaElement)) {
-    return cloneTextAreaElement({ originalNode, options, clonedParentNode })
+    return cloneTextAreaElement(createContext(originalNode))
   }
   if (isInstanceOfElement(originalNode, HTMLInputElement)) {
-    return cloneInputElement({ originalNode, options, clonedParentNode })
+    return cloneInputElement(createContext(originalNode))
+  }
+  if (isInstanceOfElement(originalNode, HTMLOptionElement)) {
+    return cloneOptionElement(createContext(originalNode))
   }
   if (isInstanceOfElement(originalNode, HTMLSelectElement)) {
-    return cloneSelectElement({ originalNode, options, clonedParentNode })
-  }
-  if (isInstanceOfElement(originalNode, SVGElement)) {
-    return cloneSvgElement({ originalNode, options, clonedParentNode })
+    return cloneSelectElement(createContext(originalNode))
   }
   if (isInstanceOfElement(originalNode, SVGUseElement)) {
-    return cloneUseElement({ originalNode, options, clonedParentNode })
+    return cloneUseElement(createContext(originalNode))
+  }
+  if (isInstanceOfElement(originalNode, SVGElement)) {
+    return cloneSvgElement(createContext(originalNode))
   }
 
   return originalNode.cloneNode(false)

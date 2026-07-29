@@ -7,7 +7,8 @@ export const embedStyles: Embedder<HTMLElement | SVGElement> = ({
   options,
 }) => {
   const styleProps = getStyleProperties(options)
-  if (isChildOfSvg(clonedNode)) {
+  // TODO: why not the clonedNode
+  if (isChildOfSvg(originalNode)) {
     return
   }
 
@@ -30,7 +31,7 @@ export const embedStyles: Embedder<HTMLElement | SVGElement> = ({
       return
     }
 
-    let value = computedStyles.get(name)
+    let value = computedStyles.get(name)?.toString() ?? ''
     if (name === 'font-kerning') {
       value = 'normal'
     }
