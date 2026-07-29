@@ -259,8 +259,7 @@ describe('work with options', () => {
     const clone = await cloneNodeTree(root, {
       filter: (node) => (node === root ? 'unwrap' : 'keep'),
     })
-
-    expect(clone?.tagName).toBe('DIV')
+    expect(clone instanceof DocumentFragment).toBe(true)
     expect(clone?.textContent).toBe('preserved')
   })
 
