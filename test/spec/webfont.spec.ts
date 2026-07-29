@@ -24,8 +24,8 @@ describe('font embedding', () => {
           </style>
           <p style="font-family: 'Font 1'">Hello world</p>
         `
-        const svg = await htmlToImage.toSvg(root)
-        const doc = await getSvgDocument(svg)
+        const dataUrl = await htmlToImage.toDataUrl(root)
+        const doc = await getSvgDocument(dataUrl)
         const [style] = Array.from(doc.getElementsByTagName('style'))
         expect(style.textContent).toContain('Font 1')
         expect(style.textContent).not.toContain('Font 0')
@@ -56,7 +56,7 @@ describe('font embedding', () => {
           <p style="font-family: 'Font 0'">Hello world</p>
           <p style="font-family: 'Font 2'">Hello world</p>
         `
-        const svg = await htmlToImage.toSvg(root)
+        const svg = await htmlToImage.toDataUrl(root)
         const doc = await getSvgDocument(svg)
         const [style] = Array.from(doc.getElementsByTagName('style'))
         expect(style.textContent).toContain('Font 0')
@@ -93,7 +93,7 @@ describe('font embedding', () => {
             </div>
           </div>
         `
-        const svg = await htmlToImage.toSvg(root)
+        const svg = await htmlToImage.toDataUrl(root)
         const doc = await getSvgDocument(svg)
         const [style] = Array.from(doc.getElementsByTagName('style'))
         expect(style.textContent).toContain('Font 1')

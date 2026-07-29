@@ -38,6 +38,7 @@ import {
   toPixelData,
   toPng,
   toSvg,
+  toDataUrl
 } from '@fohoov/html-to-image';
 
 /* ES5 */
@@ -46,6 +47,7 @@ var htmlToImage = require('@fohoov/html-to-image');
 
 The rendering functions below accept a DOM node and rendering options, and return a promise with the corresponding output:
 
+- [toDataUrl](#toDataUrl)
 - [toPng](#toPng)
 - [toSvg](#toSvg)
 - [toJpeg](#toJpeg)
@@ -82,7 +84,7 @@ htmlToImage
 ```
 
 #### toSvg
-Get an SVG data URL, but filter out all the `<i>` elements:
+Get an SVG element, but filter out all the `<i>` elements:
 
 ```js
 function filter(node) {
@@ -91,8 +93,19 @@ function filter(node) {
 
 htmlToImage
   .toSvg(document.getElementById('my-node'), { filter: filter })
-  .then(function (dataUrl) {
+  .then(function (svgElement) {
     /* do something */
+  });
+```
+
+#### toDataUrl
+Get an SVG element as dataUrl:
+
+```js
+htmlToImage
+  .toSvg(document.getElementById('my-node'))
+  .then(function (dataUrl) {
+    document.querySelector("#my-image-element").src = dataUrl
   });
 ```
 

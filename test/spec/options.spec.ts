@@ -9,7 +9,7 @@ import {
   assertTextRendered,
 } from './helper'
 import { cloneNodeTree } from '../../src/node'
-import { toCanvas, toPng, toSvg } from '../../src'
+import { toCanvas, toPng, toDataUrl } from '../../src'
 
 describe('work with options', () => {
   it('should apply width and height options to node copy being rendered', (done) => {
@@ -44,10 +44,10 @@ describe('work with options', () => {
       .catch(done)
   })
 
-  it('should render backgroundColor in SVG', (done) => {
+  it('should render backgroundColor in SVG as dataurl', (done) => {
     bootstrap('bgcolor/node.html', 'bgcolor/style.css', 'bgcolor/image')
       .then((node) => {
-        return toSvg(node, {
+        return toDataUrl(node, {
           style: {
             backgroundColor: '#ff0000',
           },
@@ -305,7 +305,7 @@ describe('work with options', () => {
         }
       `
     bootstrap('fonts/web-fonts/empty.html', 'fonts/web-fonts/remote.css')
-      .then((node) => toSvg(node, { fontEmbedCSS: testCss }))
+      .then((node) => toDataUrl(node, { fontEmbedCSS: testCss }))
       .then(getSvgDocument)
       .then((doc) => {
         const styles = Array.from(doc.getElementsByTagName('style'))
@@ -318,7 +318,7 @@ describe('work with options', () => {
 
   it('should embed only the preferred font', (done) => {
     bootstrap('fonts/web-fonts/empty.html', 'fonts/web-fonts/remote.css')
-      .then((node) => toSvg(node, { preferredFontFormat: 'woff2' }))
+      .then((node) => toDataUrl(node, { preferredFontFormat: 'woff2' }))
       .then(getSvgDocument)
       .then((doc) => {
         const [style] = Array.from(doc.getElementsByTagName('style'))

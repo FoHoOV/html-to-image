@@ -3,7 +3,7 @@ import { Options } from '@/types'
 let styleProps: string[] | null = null
 export function getStyleProperties(options: Options = {}): string[] {
   if (options.includeStyleProperties) {
-    styleProps = options.includeStyleProperties
+    return options.includeStyleProperties
   }
 
   if (!styleProps) {

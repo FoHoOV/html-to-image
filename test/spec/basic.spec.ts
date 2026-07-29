@@ -19,9 +19,9 @@ afterAll(() => {
 })
 
 describe('basic usage', () => {
-  it('should render to svg', (done) => {
+  it('should render to svg as dataurl', (done) => {
     bootstrap('small/node.html', 'small/style.css', 'small/image')
-      .then(htmlToImage.toSvg)
+      .then(htmlToImage.toDataUrl)
       .then(check)
       .then(done)
       .catch(done)

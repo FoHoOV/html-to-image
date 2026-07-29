@@ -1,8 +1,8 @@
-import '../spec/setup'
-import { toSvg } from '../../src'
-import { bootstrap, renderAndCheck, getSvgDocument } from '../spec/helper'
+import './setup'
+import { toDataUrl } from '../../src'
+import { bootstrap, renderAndCheck, getSvgDocument } from './helper'
 
-describe('work with svg element', () => {
+describe('work with svg element as dataurl', () => {
   it('should render nested svg with broken namespace', (done) => {
     bootstrap('svg-ns/node.html', 'svg-ns/style.css', 'svg-ns/image')
       .then(renderAndCheck)
@@ -26,7 +26,7 @@ describe('work with svg element', () => {
 
   it('should include a viewBox attribute', (done) => {
     bootstrap('small/node.html', 'small/style.css', 'small/image')
-      .then(toSvg)
+      .then(toDataUrl)
       .then(getSvgDocument)
       .then((doc) => {
         const width = doc.documentElement.getAttribute('width')
@@ -61,7 +61,7 @@ describe('work with svg element', () => {
     const sourceUse = node.querySelector('use')
     const sourceHref = sourceUse?.getAttribute('href')
 
-    const dataUrl = await toSvg(node)
+    const dataUrl = await toDataUrl(node)
     const document = await getSvgDocument(dataUrl)
     const clonedUse = document.querySelector('use')
 
@@ -79,7 +79,7 @@ describe('work with svg element', () => {
     )
     node.style.cssText = 'width: 40px; height: 20px; overflow: hidden;'
 
-    const dataUrl = await toSvg(node, { skipFonts: true })
+    const dataUrl = await toDataUrl(node, { skipFonts: true })
     const document = await getSvgDocument(dataUrl)
     const uses = Array.from(document.querySelectorAll('use'))
     const targetIds = uses.map(

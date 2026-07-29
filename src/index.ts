@@ -7,8 +7,16 @@ import { canvasToBlob, isIOS, nextFrame, nodeToDataUrl } from './utils'
 export async function toSvg<T extends HTMLElement>(
   node: T,
   options: Options = {},
-): Promise<string> {
+): Promise<SVGSVGElement> {
   const { svg } = await cloneAsSvg(node, options)
+  return svg
+}
+
+export async function toDataUrl<T extends HTMLElement>(
+  node: T,
+  options: Options = {},
+): Promise<string> {
+  const svg = await toSvg(node, options)
   return nodeToDataUrl(svg)
 }
 
