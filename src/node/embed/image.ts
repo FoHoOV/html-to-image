@@ -1,27 +1,27 @@
+import { Context } from '@/context'
 import { isInstanceOfElement } from '@/node/utils'
-import { Options } from '@/types'
 import { getMimeType, resourceToDataUrl, isDataUrl } from '@/utils'
 import { embedResources } from '../utils/resources'
 import { Embedder } from './types'
 
 export const embedImages: Embedder<HTMLElement | SVGElement> = async ({
   clonedNode,
-  options,
+  context,
 }) => {
   await Promise.all([
-    embedBackground(clonedNode, options),
-    embedImageNode(clonedNode, options),
+    embedBackground(clonedNode, context),
+    embedImageNode(clonedNode, context),
   ])
 }
 
 async function embedProp(
   propName: string,
   node: HTMLElement | SVGElement,
-  options: Options,
+  context: Context,
 ) {
   const propValue = node.style?.getPropertyValue(propName)
   if (propValue) {
-    const cssString = await embedResources(propValue, null, options)
+    const cssString = await embedResources(propValue, null, context)
     node.style.setProperty(
       propName,
       cssString,
@@ -34,19 +34,19 @@ async function embedProp(
 
 async function embedBackground<T extends HTMLElement | SVGElement>(
   clonedNode: T,
-  options: Options,
+  context: Context,
 ) {
-  ;(await embedProp('background', clonedNode, options)) ||
-    (await embedProp('background-image', clonedNode, options))
-  ;(await embedProp('mask', clonedNode, options)) ||
-    (await embedProp('-webkit-mask', clonedNode, options)) ||
-    (await embedProp('mask-image', clonedNode, options)) ||
-    (await embedProp('-webkit-mask-image', clonedNode, options))
+  ;(await embedProp('background', clonedNode, context)) ||
+    (await embedProp('background-image', clonedNode, context))
+  ;(await embedProp('mask', clonedNode, context)) ||
+    (await embedProp('-webkit-mask', clonedNode, context)) ||
+    (await embedProp('mask-image', clonedNode, context)) ||
+    (await embedProp('-webkit-mask-image', clonedNode, context))
 }
 
 async function embedImageNode<T extends HTMLElement | SVGElement>(
   clonedNode: T,
-  options: Options,
+  context: Context,
 ) {
   const isImageElement = isInstanceOfElement(clonedNode, HTMLImageElement)
 
@@ -62,12 +62,12 @@ async function embedImageNode<T extends HTMLElement | SVGElement>(
 
   const url = isImageElement ? clonedNode.src : clonedNode.href.baseVal
 
-  const dataURL = await resourceToDataUrl(url, getMimeType(url), options)
+  const dataURL = await resourceToDataUrl(url, getMimeType(url), context)
   let imageErrorHandled = false
   await new Promise((resolve, reject) => {
     clonedNode.onload = resolve
     clonedNode.onerror = (...args: Parameters<OnErrorEventHandlerNonNull>) => {
-      if (!options.onImageErrorHandler) {
+      if (!context.options.onImageErrorHandler) {
         const imageLoadError = new Error('image load failed') as Error & {
           cause: unknown
         }
@@ -78,7 +78,7 @@ async function embedImageNode<T extends HTMLElement | SVGElement>(
 
       try {
         imageErrorHandled = true
-        resolve(options.onImageErrorHandler(...args))
+        resolve(context.options.onImageErrorHandler(...args))
       } catch (error) {
         reject(error)
       }

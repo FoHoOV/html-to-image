@@ -1,18 +1,20 @@
-import { Options } from '@/types'
+// TODO: cleanup and refactor + then review again
+
+import { Context } from '@/context'
 import { fetchResource, fontToDataUrl } from '@/utils'
 import { shouldEmbed, embedResources } from '../utils/resources'
 import type { Embedder } from './types'
 
 export const embedWebFonts: Embedder<HTMLElement> = async ({
   clonedNode,
-  options,
+  context,
 }) => {
   const cssText =
-    options.fontEmbedCSS != null
-      ? options.fontEmbedCSS
-      : options.skipFonts
+    context.options.fontEmbedCSS != null
+      ? context.options.fontEmbedCSS
+      : context.options.skipFonts
       ? null
-      : await getWebFontCSS(clonedNode, options)
+      : await getWebFontCSS(clonedNode, context)
 
   if (cssText) {
     const styleNode = document.createElement('style')
@@ -35,12 +37,12 @@ type Metadata = {
 
 const PROPERTY_FONT_FAMILY = 'font-family'
 
-async function fetchCSS(url: string, options: Options) {
-  const response = await fetchResource(url, undefined, options)
+async function fetchCSS(url: string, context: Context) {
+  const response = await fetchResource(url, undefined, context)
   return { url, cssText: response.asString() }
 }
 
-async function embedFonts(data: Metadata, options: Options): Promise<string> {
+async function embedFonts(data: Metadata, context: Context): Promise<string> {
   let cssText = data.cssText
   const regexUrl = /url\(["']?([^"')]+)["']?\)/g
   const fontLocs = cssText.match(/url\([^)]+\)/g) || []
@@ -50,7 +52,7 @@ async function embedFonts(data: Metadata, options: Options): Promise<string> {
       url = new URL(url, data.url).href
     }
 
-    const { dataUrl } = await fontToDataUrl(url, undefined, options)
+    const { dataUrl } = await fontToDataUrl(url, undefined, context)
     cssText = cssText.replace(loc, dataUrl)
     return [loc, dataUrl]
   })
@@ -113,7 +115,7 @@ function parseCSS(source: string) {
 
 async function getCSSRules(
   styleSheets: StyleSheetList,
-  options: Options,
+  context: Context,
 ): Promise<CSSStyleRule[]> {
   const ret: CSSStyleRule[] = []
   const deferreds: Promise<number | void>[] = []
@@ -137,8 +139,8 @@ async function getCSSRules(
         }
         let importIndex = y + 1
         const url = (rule as CSSImportRule).href
-        const deferred = fetchCSS(url, options)
-          .then((metadata) => embedFonts(metadata, options))
+        const deferred = fetchCSS(url, context)
+          .then((metadata) => embedFonts(metadata, context))
           .then((cssText) =>
             parseCSS(cssText).forEach((rule) => {
               try {
@@ -166,8 +168,8 @@ async function getCSSRules(
       const inline = sheetWithNullHref || document.styleSheets[0]
       if (sheet.href != null) {
         deferreds.push(
-          fetchCSS(sheet.href, options)
-            .then((metadata) => embedFonts(metadata, options))
+          fetchCSS(sheet.href, context)
+            .then((metadata) => embedFonts(metadata, context))
             .then((cssText) =>
               parseCSS(cssText).forEach((rule) => {
                 inline.insertRule(rule, inline.cssRules.length)
@@ -215,13 +217,13 @@ function getWebFontRules(cssRules: CSSStyleRule[]): CSSStyleRule[] {
 
 async function parseWebFontRules<T extends HTMLElement>(
   node: T,
-  options: Options,
+  context: Context,
 ) {
   if (node.ownerDocument == null) {
     throw new Error('Provided element is not within a Document')
   }
 
-  const cssRules = await getCSSRules(node.ownerDocument.styleSheets, options)
+  const cssRules = await getCSSRules(node.ownerDocument.styleSheets, context)
 
   return getWebFontRules(cssRules)
 }
@@ -253,9 +255,9 @@ function getUsedFonts(node: HTMLElement) {
 
 export async function getWebFontCSS<T extends HTMLElement>(
   node: T,
-  options: Options,
+  context: Context,
 ): Promise<string> {
-  const rules = await parseWebFontRules(node, options)
+  const rules = await parseWebFontRules(node, context)
   const usedFonts = getUsedFonts(node)
   const cssTexts = await Promise.all(
     rules
@@ -270,7 +272,7 @@ export async function getWebFontCSS<T extends HTMLElement>(
         const baseUrl = rule.parentStyleSheet
           ? rule.parentStyleSheet.href
           : null
-        return embedResources(rule.cssText, baseUrl, options)
+        return embedResources(rule.cssText, baseUrl, context)
       }),
   )
 

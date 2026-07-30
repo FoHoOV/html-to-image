@@ -1,12 +1,12 @@
-import { Options } from '@/types'
+import { Context } from '@/context'
 
 type EmbedContext<TNode extends Node> = Readonly<{
   originalNode: TNode
   clonedNode: TNode
-  options: Options
+  context: Context
   clonedParentNode: Node | null
 }>
 
 export type Embedder<TNode extends Node> = (
-  context: EmbedContext<TNode>,
+  config: EmbedContext<TNode>,
 ) => void | Promise<void>

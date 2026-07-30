@@ -1,3 +1,4 @@
+import { createContext } from '../../src/context'
 import { embed, parseURLs } from '../../src/node/utils/resources'
 
 describe('embeding', () => {
@@ -24,7 +25,7 @@ describe('embeding', () => {
         'url(http://acme.com/image.png), url(foo.com)',
         'http://acme.com/image.png',
         null,
-        {},
+        createContext(),
         () => Promise.resolve('AAA'),
       )
         .then((result) => {
@@ -39,7 +40,7 @@ describe('embeding', () => {
         'url(images/image.png)',
         'images/image.png',
         'http://acme.com/',
-        {},
+        createContext(),
         (url) =>
           Promise.resolve(
             (

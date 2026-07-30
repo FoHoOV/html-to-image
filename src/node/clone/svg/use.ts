@@ -1,13 +1,13 @@
 import { getHref, setHref, createOrGetSvgDefs } from './utils'
 import { Cloner } from '../types'
-import { Options } from '@/types'
 import { fetchResource } from '@/utils'
 import { isInstanceOfElement } from '@/node/utils'
+import { Context } from '@/context'
 
 export const cloneUseElement: Cloner<SVGUseElement> = async ({
   originalNode,
   clonedParentNode,
-  options,
+  context,
 }) => {
   const cloned = originalNode.cloneNode(false) as SVGUseElement
   if (!clonedParentNode || !isInstanceOfElement(clonedParentNode, Element)) {
@@ -26,7 +26,7 @@ export const cloneUseElement: Cloner<SVGUseElement> = async ({
   }
 
   if (!hasDefinition(ownerSvg, parsed.id)) {
-    await embedDefinition(ownerSvg, href, options)
+    await embedDefinition(ownerSvg, href, context)
     setHref(cloned, `#${parsed.id}`)
   }
 
@@ -80,14 +80,14 @@ function* collectDefinitionWithDependencies(
   }
 }
 
-async function fetchSvgDefinitions(href: string, options: Options) {
+async function fetchSvgDefinitions(href: string, context: Context) {
   const parsed = splitSvgHref(href)
   if (!parsed?.id) {
     return null
   }
 
   const ownerDocument = parsed.url
-    ? await fetchExternalSvgDocument(parsed.url, options)
+    ? await fetchExternalSvgDocument(parsed.url, context)
     : document
   if (!ownerDocument) {
     return null
@@ -101,9 +101,9 @@ async function fetchSvgDefinitions(href: string, options: Options) {
   return collectDefinitionWithDependencies(definition, ownerDocument)
 }
 
-async function fetchExternalSvgDocument(url: string, options: Options) {
+async function fetchExternalSvgDocument(url: string, context: Context) {
   try {
-    const response = await fetchResource(url, undefined, options)
+    const response = await fetchResource(url, undefined, context)
     const document = new DOMParser().parseFromString(
       response.asString(),
       'image/svg+xml',
@@ -166,9 +166,9 @@ function* getUrlReferenceIds(
 async function embedDefinition(
   ownerSvg: SVGSVGElement,
   href: string,
-  options: Options,
+  context: Context,
 ) {
-  const definitions = await fetchSvgDefinitions(href, options)
+  const definitions = await fetchSvgDefinitions(href, context)
   if (!definitions) {
     return
   }

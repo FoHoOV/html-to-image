@@ -1,7 +1,7 @@
-import { Options } from '@/types'
+import { Context } from '@/context'
 
 let styleProps: string[] | null = null
-export function getStyleProperties(options: Options = {}): string[] {
+export function getStyleProperties({ options }: Context): string[] {
   if (options.includeStyleProperties) {
     return options.includeStyleProperties
   }
@@ -15,7 +15,7 @@ export function getStyleProperties(options: Options = {}): string[] {
 
 export function applyStyle<TElement extends HTMLElement>(
   node: TElement,
-  options: Options,
+  { options }: Context,
 ) {
   if (options.width) {
     node.style.width = `${options.width}px`

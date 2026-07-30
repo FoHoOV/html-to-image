@@ -1,6 +1,7 @@
 import './setup'
 import { bootstrap, renderAndCheck } from './helper'
 import { cloneNodeTree } from '../../src/node'
+import { createContext } from '../../src/context'
 
 describe('work with select element', () => {
   ;['first', 'second', 'third'].forEach((text) => {
@@ -28,7 +29,10 @@ describe('work with select element', () => {
     select.append(first, second)
     second.selected = true
 
-    const clone = (await cloneNodeTree(select, {})) as HTMLSelectElement
+    const clone = (await cloneNodeTree(
+      select,
+      createContext(),
+    )) as HTMLSelectElement
     const clonedOptions = Array.from(clone.options)
 
     expect(clonedOptions[0].hasAttribute('selected')).toBe(false)

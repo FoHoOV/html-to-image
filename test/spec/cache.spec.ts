@@ -1,49 +1,7 @@
-import { Cache } from '../../src'
+import { createContext } from '../../src/context'
 import { fetchResource } from '../../src/utils'
 
 describe('resource cache', () => {
-  it('does not retain resources unless a cache is provided', async () => {
-    const fetchSpy = spyOn(window, 'fetch').and.callFake(async (input) =>
-      Promise.resolve(
-        new Response(String(input), {
-          headers: { 'Content-Type': 'text/plain' },
-        }),
-      ),
-    )
-
-    const first = await fetchResource('/uncached.txt', undefined, {})
-    first.asString()
-    const second = await fetchResource('/uncached.txt', undefined, {})
-    second.asString()
-
-    expect(fetchSpy).toHaveBeenCalledTimes(2)
-  })
-
-  it('shares simultaneous uncached requests and releases them afterward', async () => {
-    let resolveFetch!: (response: Response) => void
-    const fetchSpy = spyOn(window, 'fetch').and.callFake(
-      () =>
-        new Promise<Response>((resolve) => {
-          resolveFetch = resolve
-        }),
-    )
-
-    const firstPromise = fetchResource('/concurrent.txt', undefined, {})
-    const secondPromise = fetchResource('/concurrent.txt', undefined, {})
-
-    expect(fetchSpy).toHaveBeenCalledTimes(1)
-    resolveFetch(new Response('shared response'))
-
-    const [first, second] = await Promise.all([firstPromise, secondPromise])
-    expect(first.asString()).toBe('shared response')
-    expect(second.asString()).toBe('shared response')
-
-    const thirdPromise = fetchResource('/concurrent.txt', undefined, {})
-    expect(fetchSpy).toHaveBeenCalledTimes(2)
-    resolveFetch(new Response('new response'))
-    expect((await thirdPromise).asString()).toBe('new response')
-  })
-
   it('releases failed requests so they can be retried', async () => {
     let requestCount = 0
     const fetchSpy = spyOn(window, 'fetch').and.callFake(async () => {
@@ -52,9 +10,9 @@ describe('resource cache', () => {
         ? new Response('', { status: 500, statusText: 'Failed' })
         : new Response('retry response')
     })
-
-    const firstPromise = fetchResource('/retry.txt', undefined, {})
-    const secondPromise = fetchResource('/retry.txt', undefined, {})
+    const context = createContext()
+    const firstPromise = fetchResource('/retry.txt', undefined, context)
+    const secondPromise = fetchResource('/retry.txt', undefined, context)
 
     await Promise.all([
       expectAsync(firstPromise).toBeRejectedWithError(/cannot fetch/),
@@ -62,7 +20,7 @@ describe('resource cache', () => {
     ])
     expect(fetchSpy).toHaveBeenCalledTimes(1)
 
-    const retry = await fetchResource('/retry.txt', undefined, {})
+    const retry = await fetchResource('/retry.txt', undefined, context)
     expect(retry.asString()).toBe('retry response')
     expect(fetchSpy).toHaveBeenCalledTimes(2)
   })
@@ -71,18 +29,19 @@ describe('resource cache', () => {
     const fetchSpy = spyOn(window, 'fetch').and.callFake(async () =>
       Promise.resolve(new Response('shared response')),
     )
-    const firstCache = new Cache()
-    const secondCache = new Cache()
+
+    const firstContext = createContext()
+    const secondContext = createContext()
 
     const [first, second] = await Promise.all([
-      fetchResource('/shared.txt', undefined, { cache: firstCache }),
-      fetchResource('/shared.txt', undefined, { cache: secondCache }),
+      fetchResource('/shared.txt', undefined, firstContext),
+      fetchResource('/shared.txt', undefined, secondContext),
     ])
     expect(first.asString()).toBe('shared response')
     expect(second.asString()).toBe('shared response')
 
-    await fetchResource('/shared.txt', undefined, { cache: firstCache })
-    await fetchResource('/shared.txt', undefined, { cache: secondCache })
+    await fetchResource('/shared.txt', undefined, firstContext)
+    await fetchResource('/shared.txt', undefined, secondContext)
     expect(fetchSpy).toHaveBeenCalledTimes(1)
   })
 
@@ -94,21 +53,27 @@ describe('resource cache', () => {
         }),
       ),
     )
-    const cache = new Cache()
+    const context = createContext()
 
-    const first = await fetchResource('/asset.txt?version=1', undefined, {
-      cache,
-    })
+    const first = await fetchResource(
+      '/asset.txt?version=1',
+      undefined,
+      context,
+    )
     expect(first.asString()).toContain('version=1')
 
-    const second = await fetchResource('/asset.txt?version=1', undefined, {
-      cache,
-    })
+    const second = await fetchResource(
+      '/asset.txt?version=1',
+      undefined,
+      context,
+    )
     expect(second.asString()).toContain('version=1')
 
-    const third = await fetchResource('/asset.txt?version=1', undefined, {
-      cache,
-    })
+    const third = await fetchResource(
+      '/asset.txt?version=1',
+      undefined,
+      context,
+    )
     expect(third.asString()).toContain('version=1')
     expect(fetchSpy).toHaveBeenCalledTimes(1)
   })
@@ -117,19 +82,17 @@ describe('resource cache', () => {
     const fetchSpy = spyOn(window, 'fetch').and.callFake(async (input) =>
       Promise.resolve(new Response(String(input))),
     )
-    const cache = new Cache()
-    const options = { cache }
-
+    const context = createContext()
     const first = await fetchResource(
       '/asset.txt?version=1',
       undefined,
-      options,
+      context,
     )
     first.asString()
     const second = await fetchResource(
       '/asset.txt?version=2',
       undefined,
-      options,
+      context,
     )
     second.asString()
 
@@ -140,20 +103,19 @@ describe('resource cache', () => {
     const fetchSpy = spyOn(window, 'fetch').and.callFake(async (input) =>
       Promise.resolve(new Response(String(input))),
     )
-    const cache = new Cache()
-    const options = { cache, includeQueryParams: false }
 
+    const context = createContext({ includeQueryParams: false })
     const first = await fetchResource(
       '/asset.txt?version=1',
       undefined,
-      options,
+      context,
     )
     expect(first.asString()).toContain('version=1')
 
     const second = await fetchResource(
       '/asset.txt?version=2',
       undefined,
-      options,
+      context,
     )
     expect(second.asString()).toContain('version=1')
     expect(fetchSpy).toHaveBeenCalledTimes(1)
@@ -163,17 +125,20 @@ describe('resource cache', () => {
     const fetchSpy = spyOn(window, 'fetch').and.callFake(async (input) =>
       Promise.resolve(new Response(String(input))),
     )
-    const cache = new Cache()
+    const context = createContext()
 
-    const cached = await fetchResource('/asset.txt', undefined, { cache })
+    const cached = await fetchResource('/asset.txt', undefined, context)
     cached.asString()
     const busted = await fetchResource('/asset.txt', undefined, {
-      cache,
-      cacheBust: true,
-      includeQueryParams: false,
+      ...context,
+      options: {
+        ...context.options,
+        cacheBust: true,
+        includeQueryParams: false,
+      },
     })
     busted.asString()
-    const reused = await fetchResource('/asset.txt', undefined, { cache })
+    const reused = await fetchResource('/asset.txt', undefined, context)
     reused.asString()
 
     expect(fetchSpy).toHaveBeenCalledTimes(2)

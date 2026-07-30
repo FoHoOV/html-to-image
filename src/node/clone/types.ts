@@ -1,11 +1,11 @@
-import { Options } from '@/types'
+import { Context } from '@/context'
 
 type CloneContext<TNode extends Node> = Readonly<{
   originalNode: TNode
-  options: Options
+  context: Context
   clonedParentNode: Node | null
 }>
 
 export type Cloner<TNode extends Node> = (
-  context: CloneContext<TNode>,
+  config: CloneContext<TNode>,
 ) => Node | Promise<Node>

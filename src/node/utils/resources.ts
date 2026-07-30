@@ -1,8 +1,8 @@
 // TODO: review
 
-import { Options } from '@/types'
 import { getMimeType } from '../../utils/mimes'
 import { isDataUrl, makeDataUrl, resourceToDataUrl } from '../../utils/dataurl'
+import { Context } from '@/context'
 
 const URL_REGEX = /url\((['"]?)([^'"]+?)\1\)/g
 const URL_WITH_FORMAT_REGEX = /url\([^)]+\)\s*format\((["']?)([^"']+)\1\)/g
@@ -61,7 +61,7 @@ export async function embed(
   cssText: string,
   resourceURL: string,
   baseURL: string | null,
-  options: Options,
+  context: Context,
   getContentFromUrl?: (url: string) => Promise<string>,
 ): Promise<string> {
   try {
@@ -72,7 +72,7 @@ export async function embed(
       const content = await getContentFromUrl(resolvedURL)
       dataURL = makeDataUrl(content, contentType)
     } else {
-      dataURL = await resourceToDataUrl(resolvedURL, contentType, options)
+      dataURL = await resourceToDataUrl(resolvedURL, contentType, context)
     }
     return cssText.replace(toRegex(resourceURL), `$1${dataURL}$3`)
   } catch (error) {
@@ -81,11 +81,8 @@ export async function embed(
   return cssText
 }
 
-function filterPreferredFontFormat(
-  str: string,
-  { preferredFontFormat }: Options,
-): string {
-  return !preferredFontFormat
+function filterPreferredFontFormat(str: string, { options }: Context): string {
+  return !options.preferredFontFormat
     ? str
     : str.replace(FONT_SRC_REGEX, (match: string) => {
         // eslint-disable-next-line no-constant-condition
@@ -95,7 +92,7 @@ function filterPreferredFontFormat(
             return ''
           }
 
-          if (format === preferredFontFormat) {
+          if (format === options.preferredFontFormat) {
             return `src: ${src};`
           }
         }
@@ -109,17 +106,17 @@ export function shouldEmbed(url: string): boolean {
 export async function embedResources(
   cssText: string,
   baseUrl: string | null,
-  options: Options,
+  context: Context,
 ): Promise<string> {
   if (!shouldEmbed(cssText)) {
     return cssText
   }
 
-  const filteredCSSText = filterPreferredFontFormat(cssText, options)
+  const filteredCSSText = filterPreferredFontFormat(cssText, context)
   const urls = parseURLs(filteredCSSText)
   return urls.reduce(
     (deferred, url) =>
-      deferred.then((css) => embed(css, url, baseUrl, options)),
+      deferred.then((css) => embed(css, url, baseUrl, context)),
     Promise.resolve(filteredCSSText),
   )
 }

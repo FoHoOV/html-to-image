@@ -21,7 +21,7 @@ export function createImage(url: string): Promise<HTMLImageElement> {
   })
 }
 
-export function getImageSize(targetNode: HTMLElement, options: Options = {}) {
+export function getImageSize(targetNode: HTMLElement, options: Options) {
   const width = options.width ?? getNodeWidth(targetNode)
   const height = options.height ?? getNodeHeight(targetNode)
 

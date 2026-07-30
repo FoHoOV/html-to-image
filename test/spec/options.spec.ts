@@ -10,6 +10,7 @@ import {
 } from './helper'
 import { cloneNodeTree } from '../../src/node'
 import { toCanvas, toPng, toDataUrl } from '../../src'
+import { createContext } from '../../src/context'
 
 describe('work with options', () => {
   it('should apply width and height options to node copy being rendered', (done) => {
@@ -243,9 +244,12 @@ describe('work with options', () => {
   it('should apply node filter to root node', async () => {
     const root = document.createElement('div')
 
-    const clone = await cloneNodeTree(root, {
-      filter: (node) => (node === root ? 'remove' : 'keep'),
-    })
+    const clone = await cloneNodeTree(
+      root,
+      createContext({
+        filter: (node) => (node === root ? 'remove' : 'keep'),
+      }),
+    )
 
     expect(clone).toBeNull()
   })
@@ -256,9 +260,12 @@ describe('work with options', () => {
     child.textContent = 'preserved'
     root.appendChild(child)
 
-    const clone = await cloneNodeTree(root, {
-      filter: (node) => (node === root ? 'unwrap' : 'keep'),
-    })
+    const clone = await cloneNodeTree(
+      root,
+      createContext({
+        filter: (node) => (node === root ? 'unwrap' : 'keep'),
+      }),
+    )
     expect(clone instanceof DocumentFragment).toBe(true)
     expect(clone?.textContent).toBe('preserved')
   })
@@ -270,12 +277,15 @@ describe('work with options', () => {
     excluded.appendChild(document.createElement('span'))
     root.appendChild(excluded)
 
-    const clone = await cloneNodeTree(root, {
-      filter: (node) =>
-        (node as HTMLElement).classList.contains('excluded')
-          ? 'remove'
-          : 'keep',
-    })
+    const clone = await cloneNodeTree(
+      root,
+      createContext({
+        filter: (node) =>
+          (node as HTMLElement).classList.contains('excluded')
+            ? 'remove'
+            : 'keep',
+      }),
+    )
 
     expect(clone?.querySelector('.excluded')).toBeNull()
     expect(clone?.children).toHaveSize(0)
@@ -289,9 +299,12 @@ describe('work with options', () => {
     excluded.appendChild(preserved)
     root.appendChild(excluded)
 
-    const clone = await cloneNodeTree(root, {
-      filter: (node) => (node === excluded ? 'unwrap' : 'keep'),
-    })
+    const clone = await cloneNodeTree(
+      root,
+      createContext({
+        filter: (node) => (node === excluded ? 'unwrap' : 'keep'),
+      }),
+    )
 
     expect(clone?.querySelector('section')).toBeNull()
     expect(clone?.querySelector('.preserved')).not.toBeNull()

@@ -1,5 +1,5 @@
 import { fetchResource } from './fetch'
-import { Options } from '@/types'
+import { Context } from '@/context'
 
 export function isDataUrl(url: string) {
   return url.search(/^(data:)/) !== -1
@@ -18,13 +18,13 @@ export function nodeToDataUrl(node: Node) {
 export async function resourceToDataUrl(
   resourceUrl: string,
   forcedContentType: string | undefined,
-  options: Options,
+  context: Context,
 ) {
   try {
     const response = await fetchResource(
       resourceUrl,
       forcedContentType,
-      options,
+      context,
     )
     return makeDataUrl(
       getContentFromDataUrl(await response.asDataUrl()),
@@ -32,16 +32,16 @@ export async function resourceToDataUrl(
     )
   } catch (error) {
     console.warn('cannot convert image to dataurl', error)
-    return options.imagePlaceholder || ''
+    return context.options.imagePlaceholder || ''
   }
 }
 
 export async function fontToDataUrl(
   resourceUrl: string,
   forcedContentType: string | undefined,
-  options: Options,
+  context: Context,
 ) {
-  const response = await fetchResource(resourceUrl, forcedContentType, options)
+  const response = await fetchResource(resourceUrl, forcedContentType, context)
   const dataUrl = makeDataUrl(
     getContentFromDataUrl(await response.asDataUrl()),
     response.contentType,

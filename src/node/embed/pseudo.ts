@@ -1,12 +1,12 @@
+import { Context } from '@/context'
 import { getStyleProperties } from '@/node/utils'
-import { Options } from '@/types'
 import { uuid } from '@/utils'
 import { Embedder } from '../embed/types'
 
 export const embedPseudoElements: Embedder<Element> = ({
   originalNode,
   clonedNode,
-  options,
+  context,
 }) => {
   ;[':before', ':after'].forEach((target) => {
     const style = window.getComputedStyle(originalNode, target)
@@ -24,7 +24,7 @@ export const embedPseudoElements: Embedder<Element> = ({
 
     const styleElement = document.createElement('style')
     styleElement.appendChild(
-      getPseudoElementStyle(className, target, style, options),
+      getPseudoElementStyle(className, target, style, context),
     )
     clonedNode.appendChild(styleElement)
   })
@@ -35,8 +35,8 @@ function formatCSSText(style: CSSStyleDeclaration) {
   return `${style.cssText} content: '${content.replace(/'|"/g, '')}';`
 }
 
-function formatCSSProperties(style: CSSStyleDeclaration, options: Options) {
-  return getStyleProperties(options)
+function formatCSSProperties(style: CSSStyleDeclaration, context: Context) {
+  return getStyleProperties(context)
     .map((name) => {
       const value = style.getPropertyValue(name)
       const priority = style.getPropertyPriority(name)
@@ -50,12 +50,12 @@ function getPseudoElementStyle(
   className: string,
   target: string,
   style: CSSStyleDeclaration,
-  options: Options,
+  context: Context,
 ): Text {
   const selector = `.${className}:${target}`
   const cssText = style.cssText
     ? formatCSSText(style)
-    : formatCSSProperties(style, options)
+    : formatCSSProperties(style, context)
 
   return document.createTextNode(`${selector}{${cssText}}`)
 }

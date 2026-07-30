@@ -1,5 +1,6 @@
 import './setup'
 import { cloneNodeTree } from '../../src/node'
+import { createContext } from '../../src/context'
 
 describe('work with iframe element', () => {
   it('should clone same-origin iframe body contents', async () => {
@@ -12,7 +13,7 @@ describe('work with iframe element', () => {
       child.textContent = 'iframe content'
       iframeBody.appendChild(child)
 
-      const clone = await cloneNodeTree(iframe, {})
+      const clone = await cloneNodeTree(iframe, createContext())
 
       expect(clone?.nodeName).toBe('BODY')
       expect(clone?.querySelector('span')?.textContent).toBe('iframe content')

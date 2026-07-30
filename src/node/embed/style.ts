@@ -4,9 +4,9 @@ import { Embedder } from '../embed/types'
 export const embedStyles: Embedder<HTMLElement | SVGElement> = ({
   clonedNode,
   originalNode,
-  options,
+  context,
 }) => {
-  const styleProps = getStyleProperties(options)
+  const styleProps = getStyleProperties(context)
   // TODO: why not the clonedNode
   if (isChildOfSvg(originalNode)) {
     return

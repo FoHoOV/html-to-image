@@ -1,3 +1,4 @@
+import { createContext } from '../../src/context'
 import { embedImages } from '../../src/node/embed'
 
 describe('Error Handling in resourceToDataURL', () => {
@@ -15,7 +16,7 @@ describe('Error Handling in resourceToDataURL', () => {
       originalNode: node,
       clonedNode: node.cloneNode() as HTMLImageElement,
       clonedParentNode: null,
-      options,
+      context: createContext(options),
     })
     expect(handlers.onError).toHaveBeenCalled()
   })
@@ -30,7 +31,7 @@ describe('Error Handling in resourceToDataURL', () => {
         originalNode: node,
         clonedNode: node.cloneNode() as HTMLImageElement,
         clonedParentNode: null,
-        options: {},
+        context: createContext(),
       })
     } catch (error) {
       rejection = error
@@ -50,7 +51,9 @@ describe('Error Handling in resourceToDataURL', () => {
         originalNode: node,
         clonedNode: node.cloneNode() as HTMLImageElement,
         clonedParentNode: null,
-        options: { onImageErrorHandler: () => Promise.reject(handlerError) },
+        context: createContext({
+          onImageErrorHandler: () => Promise.reject(handlerError),
+        }),
       })
     } catch (error) {
       rejection = error

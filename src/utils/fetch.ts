@@ -1,46 +1,41 @@
-import type { Options } from '@/types'
-
-type Resource = {
-  contentType: string
-  asString: (encoding?: string) => string
-  asDataUrl: () => string | Promise<string>
-}
+import { Context } from '@/context'
+import type { Resource } from './cache'
 
 const pendingRequests = new Map<string, Promise<Resource>>()
 
 export async function fetchResource(
   url: string,
   forcedContentType: string | undefined,
-  options: Options,
+  context: Context,
 ) {
   let requestUrl = url
-  if (options.cacheBust) {
+  if (context.options.cacheBust) {
     requestUrl += `${/\?/.test(requestUrl) ? '&' : '?'}${Date.now()}`
   }
   const cacheUrl =
-    options.includeQueryParams === false
+    context.options.includeQueryParams === false
       ? requestUrl.replace(/\?.*/, '')
       : requestUrl
   const cacheKey = cacheUrl + forcedContentType
 
-  if (options.cacheBust) {
-    return makeRequest(requestUrl, forcedContentType, options)
+  if (context.options.cacheBust) {
+    return makeRequest(requestUrl, forcedContentType, context)
   }
 
-  const cachedResource = options.cache?.get(cacheKey)
+  const cachedResource = context.options.cache?.get(cacheKey)
   if (cachedResource) {
     return cachedResource
   }
 
   let request = pendingRequests.get(cacheKey)
   if (!request) {
-    request = makeRequest(requestUrl, forcedContentType, options)
+    request = makeRequest(requestUrl, forcedContentType, context)
     pendingRequests.set(cacheKey, request)
   }
 
   try {
     const resource = await request
-    options.cache?.add(cacheKey, resource)
+    context.options.cache?.add(cacheKey, resource)
     return resource
   } finally {
     if (pendingRequests.get(cacheKey) === request) {
@@ -52,7 +47,7 @@ export async function fetchResource(
 async function makeRequest(
   requestUrl: string,
   forcedContentType: string | undefined,
-  options: Options,
+  { options }: Context,
 ): Promise<Resource> {
   const res = await fetch(requestUrl, options.fetchRequestInit)
 

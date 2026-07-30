@@ -1,6 +1,7 @@
 import './setup'
 import { bootstrap, renderAndCheck, delay } from './helper'
 import { cloneNodeTree } from '../../src/node'
+import { createContext } from '../../src/context'
 
 describe('work with video element', () => {
   it('should render video element', (done) => {
@@ -26,7 +27,7 @@ describe('work with video element', () => {
     video.style.objectPosition = '25% 75%'
     const originalNodeStyles = window.getComputedStyle(video)
 
-    const image = await cloneNodeTree(video, {})
+    const image = await cloneNodeTree(video, createContext())
     const clonedNodeStyles = window.getComputedStyle(image)
     root.appendChild(image)
     expect(image).toEqual(jasmine.any(HTMLImageElement))
