@@ -3,8 +3,7 @@ import { Cache, Resource } from '@/utils'
 
 export type Context = {
   options: Options & { cache: Cache }
-  queuedFetchRequests: Promise<Resource>[]
-  queuedEmbedCalls: Promise<void>[]
+  queuedFetchRequests: Map<string, Promise<Resource>>
 }
 
 export function createContext(options?: Options) {
@@ -13,7 +12,6 @@ export function createContext(options?: Options) {
       ? // TODO: why this cast is required
         ({ ...options } as Context['options'])
       : { ...options, cache: new Cache() },
-    queuedFetchRequests: [],
-    queuedEmbedCalls: [],
+    queuedFetchRequests: new Map(),
   } satisfies Context
 }

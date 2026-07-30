@@ -1,8 +1,6 @@
 import { Context } from '@/context'
 import type { Resource } from './cache'
 
-const pendingRequests = new Map<string, Promise<Resource>>()
-
 export async function fetchResource(
   url: string,
   forcedContentType: string | undefined,
@@ -27,10 +25,10 @@ export async function fetchResource(
     return cachedResource
   }
 
-  let request = pendingRequests.get(cacheKey)
+  let request = context.queuedFetchRequests.get(cacheKey)
   if (!request) {
     request = makeRequest(requestUrl, forcedContentType, context)
-    pendingRequests.set(cacheKey, request)
+    context.queuedFetchRequests.set(cacheKey, request)
   }
 
   try {
@@ -38,8 +36,8 @@ export async function fetchResource(
     context.options.cache?.add(cacheKey, resource)
     return resource
   } finally {
-    if (pendingRequests.get(cacheKey) === request) {
-      pendingRequests.delete(cacheKey)
+    if (context.queuedFetchRequests.get(cacheKey) === request) {
+      context.queuedFetchRequests.delete(cacheKey)
     }
   }
 }

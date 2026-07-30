@@ -25,7 +25,7 @@ describe('resource cache', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2)
   })
 
-  it('stores a shared request in each caller cache', async () => {
+  it('stores a shared request in each caller context', async () => {
     const fetchSpy = spyOn(window, 'fetch').and.callFake(async () =>
       Promise.resolve(new Response('shared response')),
     )
@@ -42,7 +42,7 @@ describe('resource cache', () => {
 
     await fetchResource('/shared.txt', undefined, firstContext)
     await fetchResource('/shared.txt', undefined, secondContext)
-    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    expect(fetchSpy).toHaveBeenCalledTimes(2)
   })
 
   it('reuses a cached string response', async () => {

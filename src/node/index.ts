@@ -48,6 +48,7 @@ export async function cloneAsSvg(node: Node, context: Context) {
 }
 
 export async function cloneNodeTree(startingNode: Node, context: Context) {
+  const queuedEmbedPromises: Promise<void>[] = []
   async function cloneSubtree(node: Node, clonedParentNode: Node | null) {
     const filter = context.options.filter?.(node as Node) ?? 'keep'
     if (filter === 'remove') {
@@ -65,12 +66,15 @@ export async function cloneNodeTree(startingNode: Node, context: Context) {
         clonedCurrentNode.appendChild(clonedChild)
       }
     }
-    // TODO: all embed calls can fired, but awaited at the end, that will be much faster
-    await embed(node, clonedCurrentNode, clonedParentNode, context)
+    queuedEmbedPromises.push(
+      embed(node, clonedCurrentNode, clonedParentNode, context),
+    )
     return clonedCurrentNode
   }
 
-  return (await cloneSubtree(startingNode, null)) as HTMLElement
+  const result = (await cloneSubtree(startingNode, null)) as HTMLElement
+  await Promise.all(queuedEmbedPromises)
+  return result
 }
 
 function cloneSingleNode(
