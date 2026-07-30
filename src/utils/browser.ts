@@ -1,17 +1,14 @@
 import { Options } from '@/types'
 
-export function isIOS() {
-  return (
-    [
-      'iPad Simulator',
-      'iPhone Simulator',
-      'iPod Simulator',
-      'iPad',
-      'iPhone',
-      'iPod',
-    ].includes(navigator.platform) ||
-    (navigator.userAgent.includes('Mac') && 'ontouchend' in document)
-  )
+const WEBKIT_ENGINE = /AppleWebKit\/[\d.]+/
+const BLINK_ENGINE = /(?:Chrome|Chromium|Edg|OPR)\/[\d.]+/
+
+export function isWebKit() {
+  // UA detection is intentional: there is no feature flag for this WebKit
+  // rendering bug, and Blink UAs also include the AppleWebKit token.
+  const userAgent = navigator.userAgent
+
+  return WEBKIT_ENGINE.test(userAgent) && !BLINK_ENGINE.test(userAgent)
 }
 
 export function addHiddenDomElement(originalNode: Node, clonedNode: Node) {

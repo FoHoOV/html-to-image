@@ -205,14 +205,17 @@ describe('work with options', () => {
     }
   })
 
-  test('should redraw canvas output on iOS', async () => {
-    const platformDescriptor = Object.getOwnPropertyDescriptor(
+  test('should redraw canvas output on WebKit', async () => {
+    const userAgentDescriptor = Object.getOwnPropertyDescriptor(
       navigator,
-      'platform',
+      'userAgent',
     )
-    Object.defineProperty(navigator, 'platform', {
+    Object.defineProperty(navigator, 'userAgent', {
       configurable: true,
-      value: 'iPhone',
+      value:
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ' +
+        'AppleWebKit/605.1.15 (KHTML, like Gecko) ' +
+        'Version/26.0 Safari/605.1.15',
     })
 
     const drawImage = vi.spyOn(CanvasRenderingContext2D.prototype, 'drawImage')
@@ -228,7 +231,7 @@ describe('work with options', () => {
       expect(clearRect).toHaveBeenCalledTimes(1)
     } finally {
       node.remove()
-      restoreProperty(navigator, 'platform', platformDescriptor)
+      restoreProperty(navigator, 'userAgent', userAgentDescriptor)
     }
   })
 

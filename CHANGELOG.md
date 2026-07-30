@@ -31,7 +31,7 @@
 
   **Bug fixes:**
 
-  - On iOS, wait for WebKit rendering to settle, then clear and redraw canvas-based output on a later frame to prevent images or other elements from being omitted by the first draw.
+  - On WebKit, wait for rendering to settle, then clear and redraw canvas-based output on a later frame to prevent images or other elements from being omitted by the first draw.
   - Use traversal compatible with older iOS versions when collecting SVG definitions and dependencies.
   - Honor consumer-provided dimensions and layout-changing styles before measuring the clone, including reflow when only one dimension is supplied.
   - Preserve logical dimensions and the full rendered image at high pixel ratios and after automatic canvas scaling.

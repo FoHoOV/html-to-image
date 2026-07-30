@@ -3,7 +3,7 @@ import { cloneAsSvg } from './node'
 import { getWebFontCSS } from './node/embed'
 import { checkCanvasDimensions, createImage, getImageSize } from './node/utils'
 import { Options } from './types'
-import { canvasToBlob, isIOS, nextFrame, nodeToDataUrl } from './utils'
+import { canvasToBlob, isWebKit, nextFrame, nodeToDataUrl } from './utils'
 
 export async function toSvg<T extends HTMLElement>(
   node: T,
@@ -58,8 +58,8 @@ export async function toCanvas<T extends HTMLElement>(
 
   context.drawImage(img, 0, 0, canvasWidth, canvasHeight)
 
-  // this is a workaround for Webkit, on first draw it might miss some parts for god knows why
-  if (isIOS()) {
+  // Work around WebKit occasionally omitting content from the first draw.
+  if (isWebKit()) {
     await nextFrame()
     context.clearRect(0, 0, canvasWidth, canvasHeight)
     context.drawImage(img, 0, 0, canvasWidth, canvasHeight)

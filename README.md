@@ -363,9 +363,9 @@ Only standard browser APIs are used, but make sure your browser supports:
 
 The library targets modern Chrome, Firefox, and Safari, with Chrome generally performing better on large DOM trees.
 
-### iOS/WebKit
+### WebKit
 
-For canvas-based outputs, iOS waits for rendering to settle and draws the generated SVG to the canvas a second time on a later frame. This is an automatic workaround for a WebKit issue where images or other elements can be missing from the first canvas draw. iPadOS devices using a desktop-style user agent are detected as well.
+For canvas-based outputs, WebKit browsers wait for rendering to settle and draw the generated SVG to the canvas a second time on a later frame. This is an automatic workaround for a WebKit issue where images or other elements can be missing from the first canvas draw.
 
 *Internet Explorer is not (and will not be) supported, as it does not support SVG `<foreignObject>` tag.*
 
@@ -389,7 +389,7 @@ This library uses a feature of SVG that allows having arbitrary HTML content ins
    - concatenate all the processed CSS rules and put them into one `<style>` element, then attach it to the clone
 6. Serialize the cloned node to XML
 7. Wrap XML into the `<foreignObject>` tag, then into the SVG, then make it a data URL
-8. Optionally, to get PNG content or raw pixel data as a Uint8Array, create an Image element with the SVG as a source, render it on an off-screen canvas, and read the content from the canvas. On iOS, clear and redraw the same canvas on a later frame to avoid incomplete first draws.
+8. Optionally, to get PNG content or raw pixel data as a Uint8Array, create an Image element with the SVG as a source, render it on an off-screen canvas, and read the content from the canvas. On WebKit, clear and redraw the same canvas on a later frame to avoid incomplete first draws.
 9. Done!
 
 
