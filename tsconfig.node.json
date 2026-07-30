@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "composite": true,
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "noEmit": true,
+    "target": "ES2022",
+    "tsBuildInfoFile": "./node_modules/.cache/typescript/tsconfig.node.tsbuildinfo",
+    "types": ["node"]
+  },
+  "include": [
+    "commitlint.config.js",
+    "eslint.config.js",
+    "prettier.config.js",
+    "rollup.config.js",
+    "vitest.config.ts"
+  ]
+}

@@ -88,7 +88,7 @@ After the Version Packages pull request is reviewed and merged, the next verifie
 pnpm release
 ```
 
-That command rebuilds `dist/`, publishes the new version to npm, creates the git tag, and allows the Changesets action to create the corresponding GitHub release. Maintainers can apply and review the versioning changes locally with `pnpm version-packages`, but should normally let the action own that mutating step; use `pnpm changeset:status` for a read-only preview.
+That command rebuilds `dist/`, publishes the new version to npm, creates the git tag, and allows the Changesets action to create the corresponding GitHub release. Maintainers can apply and review the versioning changes locally with `pnpm changeset:version`, but should normally let the action own that mutating step; use `pnpm changeset:status` for a read-only preview.
 
 ### Repository release setup
 

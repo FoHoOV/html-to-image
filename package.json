@@ -29,10 +29,11 @@
     "svg"
   ],
   "scripts": {
-    "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\" \"test/**/*.ts\" eslint.config.js vitest.config.ts",
+    "lint": "eslint \"src/**/*.{js,jsx,ts,tsx}\" \"test/**/*.ts\" \"*.config.{js,ts}\"",
     "lint:fix": "pnpm lint --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "node:typecheck": "tsc -p tsconfig.node.json --noEmit",
     "clean": "rimraf dist es lib",
     "build:code": "rollup -c --bundleConfigAsCjs",
     "build:types": "tsc -p tsconfig.lib.json",
@@ -40,15 +41,15 @@
     "prebuild": "pnpm run lint && pnpm run clean",
     "changeset": "changeset",
     "changeset:status": "changeset status",
-    "version-packages": "changeset version",
+    "changeset:version": "changeset version",
     "release": "pnpm build && changeset publish",
     "test": "vitest run --coverage",
     "test:typecheck": "tsc -p tsconfig.test.json --noEmit",
     "test:watch": "vitest --coverage",
     "test:debug": "vitest --project=chromium --browser.headless=false --browser.ui",
     "coveralls": "cat ./.vitest/coverage/lcov.info | coveralls",
-    "pretest": "rimraf ./.vitest && pnpm test:typecheck",
-    "prepare": "is-ci || husky install .husky"
+    "pretest": "rimraf ./.vitest && pnpm node:typecheck && pnpm test:typecheck",
+    "prepare": "husky"
   },
   "lint-staged": {
     "**/*.{ts,tsx}": [
@@ -81,8 +82,9 @@
   "homepage": "https://github.com/FoHoOV/html-to-image#readme",
   "devDependencies": {
     "@changesets/cli": "^2.31.1",
-    "@commitlint/cli": "^17.4.4",
-    "@commitlint/config-conventional": "^17.4.4",
+    "@commitlint/cli": "^21.2.1",
+    "@commitlint/config-conventional": "^21.2.0",
+    "@commitlint/types": "^21.2.0",
     "@eslint/js": "^10.0.1",
     "@fortawesome/fontawesome-free": "^6.1.2",
     "@rollup/plugin-commonjs": "^24.1.0",
@@ -98,8 +100,7 @@
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.8.0",
-    "husky": "^8.0.1",
-    "is-ci": "^3.0.1",
+    "husky": "^9.1.7",
     "lint-staged": "^15.2.10",
     "pixelmatch": "^5.3.0",
     "prettier": "^3.9.6",
