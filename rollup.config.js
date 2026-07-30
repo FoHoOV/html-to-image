@@ -62,7 +62,7 @@ export default defineConfig({
       swc: {
         configFile: false,
         inlineSourcesContent: false,
-        isModule: true,
+        isModule: "unknown",
         jsc: {
           externalHelpers: true,
           loose: false,
