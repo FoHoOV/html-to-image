@@ -29,7 +29,7 @@
     "svg"
   ],
   "scripts": {
-    "lint": "eslint 'src/**/*.{js,ts}?(x)'",
+    "lint": "eslint 'src/**/*.{js,ts}?(x)' 'test/**/*.ts' vitest.config.ts",
     "lint:fix": "pnpm lint --fix",
     "clean": "rimraf dist es lib",
     "build:code": "rollup -c --bundleConfigAsCjs",
@@ -44,8 +44,8 @@
     "test:typecheck": "tsc -p tsconfig.test.json --noEmit",
     "test:watch": "vitest --coverage",
     "test:debug": "vitest --project=chromium --browser.headless=false --browser.ui",
-    "coveralls": "cat ./test/coverage/lcov.info | coveralls",
-    "pretest": "rimraf ./test/coverage ./.vitest && pnpm test:typecheck",
+    "coveralls": "cat ./.vitest/coverage/lcov.info | coveralls",
+    "pretest": "rimraf ./.vitest && pnpm test:typecheck",
     "prepare": "is-ci || husky install .husky"
   },
   "lint-staged": {

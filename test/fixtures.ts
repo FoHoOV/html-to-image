@@ -4,6 +4,7 @@ import { toPng } from '../src'
 import type { Options } from '../src/types'
 
 const BASE_URL = '/'
+const nativeFetch = window.fetch.bind(window)
 const PASS_TEXT_MATCH = true
 const ROOT_ID = 'test-root'
 
@@ -77,7 +78,7 @@ function loadImage(image: HTMLImageElement, src: string) {
 }
 
 async function fetchFile(fileName: string) {
-  const response = await fetch(BASE_URL + fileName)
+  const response = await nativeFetch(BASE_URL + fileName)
   return response.text()
 }
 
@@ -165,7 +166,7 @@ function compareToRefImage(sourceData: ImageData, threshold = 0.1) {
 }
 
 async function getSvgDocument(dataUrl: string) {
-  const response = await fetch(dataUrl)
+  const response = await nativeFetch(dataUrl)
   const svg = await response.text()
   return new DOMParser().parseFromString(svg, 'text/xml')
 }
@@ -200,7 +201,7 @@ async function recognize(dataUrl: string) {
   data.append('apikey', 'K89675126388957')
 
   try {
-    const response = await fetch('https://api.ocr.space/parse/image', {
+    const response = await nativeFetch('https://api.ocr.space/parse/image', {
       method: 'post',
       body: data,
     })
@@ -240,6 +241,7 @@ interface BrowserFixtures {
   renderAndCheck: typeof renderAndCheck
 }
 
+/* eslint-disable no-empty-pattern -- Vitest requires fixture dependencies to use object destructuring. */
 export const test = base.extend<BrowserFixtures>({
   assertTextRendered: async ({}, use) => {
     await use(assertTextRendered)
@@ -266,3 +268,4 @@ export const test = base.extend<BrowserFixtures>({
     await use(renderAndCheck)
   },
 })
+/* eslint-enable no-empty-pattern */
