@@ -92,7 +92,7 @@
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "@vitest/browser-playwright": "^4.1.10",
-    "@vitest/coverage-istanbul": "^4.1.10",
+    "@vitest/coverage-v8": "^4.1.10",
     "coveralls": "^3.1.1",
     "eslint": "^8.22.0",
     "eslint-config-prettier": "^8.10.2",

@@ -3,7 +3,6 @@ import { expect, test as base } from 'vitest'
 import { toPng } from '../src'
 import type { Options } from '../src/types'
 
-const BASE_URL = '/'
 const nativeFetch = window.fetch.bind(window)
 const PASS_TEXT_MATCH = true
 const ROOT_ID = 'test-root'
@@ -78,7 +77,7 @@ function loadImage(image: HTMLImageElement, src: string) {
 }
 
 async function fetchFile(fileName: string) {
-  const response = await nativeFetch(BASE_URL + fileName)
+  const response = await nativeFetch(fileName)
   return response.text()
 }
 

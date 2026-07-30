@@ -24,7 +24,7 @@ export default defineConfig({
       ],
     },
     coverage: {
-      provider: 'istanbul',
+      provider: 'v8',
       reportsDirectory: '.vitest/coverage',
       reporter: ['html', 'lcovonly', 'cobertura', 'text-summary'],
       include: ['src/**/*.ts'],
