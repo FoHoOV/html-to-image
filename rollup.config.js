@@ -1,41 +1,69 @@
-import typescript from "@rollup/plugin-typescript";
+import alias from "@rollup/plugin-alias";
+import { nodeResolve } from "@rollup/plugin-node-resolve";
+import swc from "@rollup/plugin-swc";
 import terser from "@rollup/plugin-terser";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "rollup";
-import filesize from "rollup-plugin-filesize";
+
+const extensions = [".mjs", ".js", ".json", ".node", ".ts"];
+const sourceDirectory = fileURLToPath(new URL("./src", import.meta.url));
 
 export default defineConfig({
   input: "./src/index.ts",
   output: [
     {
-      dir: "dist",
-      entryFileNames: "esm/index.mjs",
+      file: "dist/esm/index.mjs",
       format: "es",
       generatedCode: "es5",
       sourcemap: true,
+      sourcemapExcludeSources: true,
     },
     {
-      dir: "dist",
-      entryFileNames: "cjs/index.cjs",
       exports: "named",
+      file: "dist/cjs/index.cjs",
       format: "cjs",
       generatedCode: "es5",
       sourcemap: true,
+      sourcemapExcludeSources: true,
     },
     {
-      dir: "dist",
-      entryFileNames: "browser/html-to-image.js",
+      file: "dist/browser/html-to-image.js",
       name: "htmlToImage",
       format: "umd",
       generatedCode: "es5",
       plugins: [terser({ ecma: 5 })],
       sourcemap: true,
+      sourcemapExcludeSources: true,
     },
   ],
   plugins: [
-    typescript({
-      outputToFilesystem: true,
-      tsconfig: "./tsconfig.lib.json",
+    alias({
+      entries: [{ find: "@", replacement: sourceDirectory }],
     }),
-    filesize(),
+    nodeResolve({ extensions }),
+    swc({
+      exclude: "node_modules/**",
+      include: "src/**/*.ts",
+      swc: {
+        configFile: false,
+        inlineSourcesContent: false,
+        isModule: true,
+        jsc: {
+          externalHelpers: true,
+          loose: false,
+          parser: {
+            decorators: false,
+            syntax: "typescript",
+            tsx: false,
+          },
+          target: "es5",
+          transform: {
+            useDefineForClassFields: false,
+          },
+        },
+        sourceMaps: true,
+        swcrc: false,
+      },
+    }),
   ],
 });

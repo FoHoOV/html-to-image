@@ -3,20 +3,18 @@
   "compilerOptions": {
     "composite": true,
     "declaration": true,
-    "declarationDir": "./dist/types",
-    "downlevelIteration": true,
-    "ignoreDeprecations": "6.0",
-    "module": "esnext",
+    "isolatedModules": true,
+    "module": "preserve",
     "moduleResolution": "bundler",
-    "outDir": "./dist",
+    "outDir": "./dist/types",
     "paths": {
       "@/*": ["./src/*"]
     },
     "rootDir": "./src",
-    "sourceMap": true,
-    "target": "es5",
+    "target": "ES2020",
     "tsBuildInfoFile": "./node_modules/.cache/typescript/tsconfig.lib.tsbuildinfo",
-    "types": []
+    "types": [],
+    "useDefineForClassFields": false
   },
   "exclude": ["node_modules", "dist", "test"],
   "include": ["src/**/*.ts"]
