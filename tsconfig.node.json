@@ -5,9 +5,10 @@
     "checkJs": true,
     "composite": true,
     "lib": ["ES2022"],
-    "module": "ESNext",
-    "moduleResolution": "node",
+    "module": "preserve",
+    "moduleResolution": "bundler",
     "noEmit": true,
+    "rootDir": ".",
     "target": "ES2022",
     "tsBuildInfoFile": "./node_modules/.cache/typescript/tsconfig.node.tsbuildinfo",
     "types": ["node"]

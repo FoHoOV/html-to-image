@@ -5,15 +5,18 @@
     "declaration": true,
     "downlevelIteration": true,
     "emitDeclarationOnly": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "outDir": "./dist/types",
     "paths": {
       "@/*": ["./src/*"]
     },
+    "rootDir": "./src",
     "sourceMap": true,
     "target": "es5",
-    "tsBuildInfoFile": "./node_modules/.cache/typescript/tsconfig.lib.tsbuildinfo"
+    "tsBuildInfoFile": "./node_modules/.cache/typescript/tsconfig.lib.tsbuildinfo",
+    "types": []
   },
   "exclude": ["node_modules", "dist", "test"],
   "include": ["src/**/*.ts"]

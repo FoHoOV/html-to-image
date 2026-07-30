@@ -7,9 +7,11 @@
     "noEmitOnError": true,
     "noImplicitAny": true,
     "noUnusedLocals": true,
+    "noUncheckedSideEffectImports": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "types": []
   }
 }
