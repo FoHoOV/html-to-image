@@ -48,7 +48,6 @@
     "test:typecheck": "tsc -p tsconfig.test.json --noEmit",
     "test:watch": "vitest --coverage",
     "test:debug": "vitest --project=chromium --browser.headless=false --browser.ui",
-    "coveralls": "cat ./.vitest/coverage/lcov.info | coveralls",
     "pretest": "rimraf ./.vitest && pnpm lib:typecheck && pnpm node:typecheck && pnpm test:typecheck",
     "prepare": "husky"
   },
@@ -98,7 +97,6 @@
     "@types/pixelmatch": "^5.2.4",
     "@vitest/browser-playwright": "^4.1.10",
     "@vitest/coverage-v8": "^4.1.10",
-    "coveralls": "^3.1.1",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.8.0",
