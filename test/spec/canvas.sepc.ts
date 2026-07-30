@@ -1,22 +1,24 @@
-import './setup'
-import { bootstrap, renderAndCheck } from './helper'
+import { test } from '../fixtures'
 
 describe('work with canvas element', () => {
-  xit('should render canvas element', (done) => {
-    bootstrap('canvas/node.html', 'canvas/style.css', 'canvas/image')
-      .then((node) => {
-        const canvas = node.querySelector('#content') as HTMLCanvasElement
-        const ctx = canvas.getContext('2d')!
-        ctx.fillStyle = '#ffffff'
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-        ctx.fillStyle = '#000000'
-        ctx.font = '40px serif'
-        ctx.fillText('AB2哈', 40, 40)
-        return node
-      })
-      // .then(logDataUrl)
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
+  test.skip('should render canvas element', async ({
+    bootstrap,
+    renderAndCheck,
+  }) => {
+    const node = await bootstrap(
+      'canvas/node.html',
+      'canvas/style.css',
+      'canvas/image',
+    )
+    const canvas = node.querySelector('#content') as HTMLCanvasElement
+    const context = canvas.getContext('2d')!
+
+    context.fillStyle = '#ffffff'
+    context.fillRect(0, 0, canvas.width, canvas.height)
+    context.fillStyle = '#000000'
+    context.font = '40px serif'
+    context.fillText('AB2哈', 40, 40)
+
+    await renderAndCheck(node)
   })
 })

@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "downlevelIteration": true,
+    "emitDeclarationOnly": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": "./dist/types",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "sourceMap": true,
+    "target": "es5",
+    "tsBuildInfoFile": "./node_modules/.cache/typescript/tsconfig.lib.tsbuildinfo"
+  },
+  "exclude": ["node_modules", "dist", "test"],
+  "include": ["src/**/*.ts"]
+}

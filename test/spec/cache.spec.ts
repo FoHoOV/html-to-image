@@ -2,9 +2,9 @@ import { createContext } from '../../src/context'
 import { fetchResource } from '../../src/utils'
 
 describe('resource cache', () => {
-  it('releases failed requests so they can be retried', async () => {
+  test('releases failed requests so they can be retried', async () => {
     let requestCount = 0
-    const fetchSpy = spyOn(window, 'fetch').and.callFake(async () => {
+    const fetchSpy = vi.spyOn(window, 'fetch').mockImplementation(async () => {
       requestCount += 1
       return requestCount === 1
         ? new Response('', { status: 500, statusText: 'Failed' })
@@ -15,8 +15,8 @@ describe('resource cache', () => {
     const secondPromise = fetchResource('/retry.txt', undefined, context)
 
     await Promise.all([
-      expectAsync(firstPromise).toBeRejectedWithError(/cannot fetch/),
-      expectAsync(secondPromise).toBeRejectedWithError(/cannot fetch/),
+      expect(firstPromise).rejects.toThrowError(/cannot fetch/),
+      expect(secondPromise).rejects.toThrowError(/cannot fetch/),
     ])
     expect(fetchSpy).toHaveBeenCalledTimes(1)
 
@@ -25,10 +25,12 @@ describe('resource cache', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2)
   })
 
-  it('stores a shared request in each caller context', async () => {
-    const fetchSpy = spyOn(window, 'fetch').and.callFake(async () =>
-      Promise.resolve(new Response('shared response')),
-    )
+  test('stores a shared request in each caller context', async () => {
+    const fetchSpy = vi
+      .spyOn(window, 'fetch')
+      .mockImplementation(async () =>
+        Promise.resolve(new Response('shared response')),
+      )
 
     const firstContext = createContext()
     const secondContext = createContext()
@@ -45,14 +47,16 @@ describe('resource cache', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2)
   })
 
-  it('reuses a cached string response', async () => {
-    const fetchSpy = spyOn(window, 'fetch').and.callFake(async (input) =>
-      Promise.resolve(
-        new Response(String(input), {
-          headers: { 'Content-Type': 'text/plain' },
-        }),
-      ),
-    )
+  test('reuses a cached string response', async () => {
+    const fetchSpy = vi
+      .spyOn(window, 'fetch')
+      .mockImplementation(async (input) =>
+        Promise.resolve(
+          new Response(String(input), {
+            headers: { 'Content-Type': 'text/plain' },
+          }),
+        ),
+      )
     const context = createContext()
 
     const first = await fetchResource(
@@ -78,10 +82,12 @@ describe('resource cache', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1)
   })
 
-  it('includes query parameters in cache keys by default', async () => {
-    const fetchSpy = spyOn(window, 'fetch').and.callFake(async (input) =>
-      Promise.resolve(new Response(String(input))),
-    )
+  test('includes query parameters in cache keys by default', async () => {
+    const fetchSpy = vi
+      .spyOn(window, 'fetch')
+      .mockImplementation(async (input) =>
+        Promise.resolve(new Response(String(input))),
+      )
     const context = createContext()
     const first = await fetchResource(
       '/asset.txt?version=1',
@@ -99,10 +105,12 @@ describe('resource cache', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2)
   })
 
-  it('strips query parameters from cache keys when disabled', async () => {
-    const fetchSpy = spyOn(window, 'fetch').and.callFake(async (input) =>
-      Promise.resolve(new Response(String(input))),
-    )
+  test('strips query parameters from cache keys when disabled', async () => {
+    const fetchSpy = vi
+      .spyOn(window, 'fetch')
+      .mockImplementation(async (input) =>
+        Promise.resolve(new Response(String(input))),
+      )
 
     const context = createContext({ includeQueryParams: false })
     const first = await fetchResource(
@@ -121,10 +129,12 @@ describe('resource cache', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1)
   })
 
-  it('bypasses cache reads and writes when cache busting', async () => {
-    const fetchSpy = spyOn(window, 'fetch').and.callFake(async (input) =>
-      Promise.resolve(new Response(String(input))),
-    )
+  test('bypasses cache reads and writes when cache busting', async () => {
+    const fetchSpy = vi
+      .spyOn(window, 'fetch')
+      .mockImplementation(async (input) =>
+        Promise.resolve(new Response(String(input))),
+      )
     const context = createContext()
 
     const cached = await fetchResource('/asset.txt', undefined, context)
@@ -142,6 +152,6 @@ describe('resource cache', () => {
     reused.asString()
 
     expect(fetchSpy).toHaveBeenCalledTimes(2)
-    expect(fetchSpy.calls.argsFor(1)[0]).toMatch(/^\/asset\.txt\?\d+$/)
+    expect(fetchSpy.mock.calls[1][0]).toMatch(/^\/asset\.txt\?\d+$/)
   })
 })

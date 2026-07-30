@@ -9,6 +9,7 @@ CI uses Node.js 24 and the pnpm version pinned in `package.json`. Corepack can i
 ```shell
 corepack enable
 pnpm install
+pnpm exec playwright install --with-deps
 ```
 
 Create a focused branch from `master`, make the change, and add or update tests for behavior changes. Before opening a pull request, run:
@@ -61,6 +62,9 @@ A pull request should explain:
 5. Whether it includes a Changeset, or why one is unnecessary.
 
 Keep pull requests focused. CI installs with the frozen lockfile, builds every package format, and runs the browser test suite. A pull request must pass those checks before merge.
+
+Use `pnpm test:debug` to run the browser suite in Vitest's interactive UI while
+debugging locally.
 
 ## Commit messages
 

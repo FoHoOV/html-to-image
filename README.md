@@ -361,7 +361,7 @@ Only standard browser APIs are used, but make sure your browser supports:
 - `CSS.escape()`
 - `String.prototype.matchAll()`
 
-The automated test suite runs in Chrome. The library targets modern Chrome, Firefox, and Safari, with Chrome generally performing better on large DOM trees.
+The library targets modern Chrome, Firefox, and Safari, with Chrome generally performing better on large DOM trees.
 
 ### iOS/WebKit
 

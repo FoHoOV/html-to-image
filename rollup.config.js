@@ -32,9 +32,15 @@ export default {
   ],
   plugins: [
     typescript({
+      cacheDir: 'node_modules/.cache/rollup-plugin-typescript',
+      composite: false,
       declaration: false,
+      emitDeclarationOnly: false,
+      incremental: true,
       inlineSources: true,
       module: 'esnext',
+      outputToFilesystem: false,
+      tsconfig: './tsconfig.lib.json',
     }),
     nodeResolve(),
     commonjs(),

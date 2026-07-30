@@ -1,23 +1,23 @@
-import './setup'
-import { bootstrap, renderAndCheck } from './helper'
 import { cloneNodeTree } from '../../src/node'
 import { createContext } from '../../src/context'
+import { test } from '../fixtures'
 
 describe('work with select element', () => {
   ;['first', 'second', 'third'].forEach((text) => {
-    it(`should capture ${text} selected option`, (done) => {
-      bootstrap(
+    test(`should capture ${text} selected option`, async ({
+      bootstrap,
+      renderAndCheck,
+    }) => {
+      const node = await bootstrap(
         `select/${text}-option.html`,
         'select/style.css',
         `select/${text}`,
       )
-        .then(renderAndCheck)
-        .then(done)
-        .catch(done)
+      await renderAndCheck(node)
     })
   })
 
-  it('should preserve live selection without mutating the source options', async () => {
+  test('should preserve live selection without mutating the source options', async () => {
     const select = document.createElement('select')
     const first = document.createElement('option')
     const second = document.createElement('option')

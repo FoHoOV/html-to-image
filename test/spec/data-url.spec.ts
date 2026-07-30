@@ -1,77 +1,105 @@
-import './setup'
 import { toDataUrl } from '../../src'
-import { bootstrap, renderAndCheck, getSvgDocument } from './helper'
+import { test } from '../fixtures'
 
 describe('work with svg element as dataurl', () => {
-  it('should render nested svg with broken namespace', (done) => {
-    bootstrap('svg-ns/node.html', 'svg-ns/style.css', 'svg-ns/image')
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
+  test('should render nested svg with broken namespace', async ({
+    bootstrap,
+    renderAndCheck,
+  }) => {
+    const node = await bootstrap(
+      'svg-ns/node.html',
+      'svg-ns/style.css',
+      'svg-ns/image',
+    )
+    await renderAndCheck(node)
   })
 
-  it('should render svg `<rect>` with width and height', (done) => {
-    bootstrap('svg-rect/node.html', 'svg-rect/style.css', 'svg-rect/image')
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
+  test('should render svg `<rect>` with width and height', async ({
+    bootstrap,
+    renderAndCheck,
+  }) => {
+    const node = await bootstrap(
+      'svg-rect/node.html',
+      'svg-rect/style.css',
+      'svg-rect/image',
+    )
+    await renderAndCheck(node)
   })
 
-  it('should render svg `<rect>` with applied css styles', (done) => {
-    bootstrap('svg-color/node.html', 'svg-color/style.css', 'svg-color/image')
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
+  test('should render svg `<rect>` with applied css styles', async ({
+    bootstrap,
+    renderAndCheck,
+  }) => {
+    const node = await bootstrap(
+      'svg-color/node.html',
+      'svg-color/style.css',
+      'svg-color/image',
+    )
+    await renderAndCheck(node)
   })
 
-  it('should include a viewBox attribute', (done) => {
-    bootstrap('small/node.html', 'small/style.css', 'small/image')
-      .then(toDataUrl)
-      .then(getSvgDocument)
-      .then((doc) => {
-        const width = doc.documentElement.getAttribute('width')
-        const height = doc.documentElement.getAttribute('height')
-        const viewBox = doc.documentElement.getAttribute('viewBox')
-        expect(viewBox).toEqual(`0 0 ${width} ${height}`)
-      })
-      .then(done)
-      .catch(done)
+  test('should include a viewBox attribute', async ({
+    bootstrap,
+    getSvgDocument,
+  }) => {
+    const node = await bootstrap(
+      'small/node.html',
+      'small/style.css',
+      'small/image',
+    )
+    const dataUrl = await toDataUrl(node)
+    const svgDocument = await getSvgDocument(dataUrl)
+    const width = svgDocument.documentElement.getAttribute('width')
+    const height = svgDocument.documentElement.getAttribute('height')
+    const viewBox = svgDocument.documentElement.getAttribute('viewBox')
+
+    expect(viewBox).toEqual(`0 0 ${width} ${height}`)
   })
 
-  it('should render svg `<image>` with href', (done) => {
-    bootstrap('svg-image/node.html', 'svg-image/style.css', 'svg-image/image')
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
+  test('should render svg `<image>` with href', async ({
+    bootstrap,
+    renderAndCheck,
+  }) => {
+    const node = await bootstrap(
+      'svg-image/node.html',
+      'svg-image/style.css',
+      'svg-image/image',
+    )
+    await renderAndCheck(node)
   })
 
-  it('should render SVG use tags', function (done) {
-    bootstrap(
+  test('should render SVG use tags', async ({ bootstrap, renderAndCheck }) => {
+    const node = await bootstrap(
       'svg-use-tag/node.html',
       'svg-use-tag/style.css',
       'svg-use-tag/image',
     )
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
+    await renderAndCheck(node)
   })
 
-  it('should inline external SVG use definitions and dependencies', async () => {
+  test('should inline external SVG use definitions and dependencies', async ({
+    bootstrap,
+    getSvgDocument,
+  }) => {
     const node = await bootstrap('svg-use-external/node.html')
     const sourceUse = node.querySelector('use')
     const sourceHref = sourceUse?.getAttribute('href')
 
     const dataUrl = await toDataUrl(node)
-    const document = await getSvgDocument(dataUrl)
-    const clonedUse = document.querySelector('use')
+    const svgDocument = await getSvgDocument(dataUrl)
+    const clonedUse = svgDocument.querySelector('use')
 
     expect(clonedUse?.getAttribute('href')).toBe('#icon')
-    expect(document.querySelector('defs #icon')).not.toBeNull()
-    expect(document.querySelector('defs #paint')).not.toBeNull()
+    expect(svgDocument.querySelector('defs #icon')).not.toBeNull()
+    expect(svgDocument.querySelector('defs #paint')).not.toBeNull()
     expect(sourceUse?.getAttribute('href')).toBe(sourceHref)
   })
 
-  it('should render multiple parts from an external SVG sprite', async () => {
+  test('should render multiple parts from an external SVG sprite', async ({
+    bootstrap,
+    getSvgDocument,
+    renderAndCheck,
+  }) => {
     const node = await bootstrap(
       'svg-use-external-parts/node.html',
       undefined,
@@ -80,8 +108,8 @@ describe('work with svg element as dataurl', () => {
     node.style.cssText = 'width: 40px; height: 20px; overflow: hidden;'
 
     const dataUrl = await toDataUrl(node, { skipFonts: true })
-    const document = await getSvgDocument(dataUrl)
-    const uses = Array.from(document.querySelectorAll('use'))
+    const svgDocument = await getSvgDocument(dataUrl)
+    const uses = Array.from(svgDocument.querySelectorAll('use'))
     const targetIds = uses.map(
       (use) => use.getAttribute('href')?.match(/^#(.+)$/)?.[1],
     )
@@ -89,19 +117,24 @@ describe('work with svg element as dataurl', () => {
     expect(uses.length).toBe(2)
     expect(new Set(targetIds).size).toBe(2)
     expect(
-      document.querySelector('[data-sprite-part="part1"]')?.getAttribute('id'),
+      svgDocument.querySelector('[data-sprite-part="part1"]')?.getAttribute('id'),
     ).toBe(targetIds[0])
     expect(
-      document.querySelector('[data-sprite-part="part2"]')?.getAttribute('id'),
+      svgDocument.querySelector('[data-sprite-part="part2"]')?.getAttribute('id'),
     ).toBe(targetIds[1])
 
     await renderAndCheck(node, { skipFonts: true })
   })
 
-  it('should render SVG with clip-path', function (done) {
-    bootstrap('svg-same-doc-ref/node.html', undefined, 'svg-same-doc-ref/image')
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
+  test('should render SVG with clip-path', async ({
+    bootstrap,
+    renderAndCheck,
+  }) => {
+    const node = await bootstrap(
+      'svg-same-doc-ref/node.html',
+      undefined,
+      'svg-same-doc-ref/image',
+    )
+    await renderAndCheck(node)
   })
 })

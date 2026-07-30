@@ -1,9 +1,9 @@
 import * as htmlToImage from '../../src'
-import { getSvgDocument } from './helper'
+import { test } from '../fixtures'
 
 describe('font embedding', () => {
   describe('should embed only used fonts', () => {
-    it('should embed 1 font when use 1', async () => {
+    test('should embed 1 font when use 1', async ({ getSvgDocument }) => {
       const root = document.createElement('div')
       document.body.append(root)
       try {
@@ -34,7 +34,7 @@ describe('font embedding', () => {
         root.remove()
       }
     })
-    it('should embed 2 fonts when use 2', async () => {
+    test('should embed 2 fonts when use 2', async ({ getSvgDocument }) => {
       const root = document.createElement('div')
       document.body.append(root)
       try {
@@ -66,7 +66,9 @@ describe('font embedding', () => {
         root.remove()
       }
     })
-    it('should embed font used by deeply nested child', async () => {
+    test('should embed font used by deeply nested child', async ({
+      getSvgDocument,
+    }) => {
       const root = document.createElement('div')
       document.body.append(root)
       try {

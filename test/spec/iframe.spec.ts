@@ -1,9 +1,8 @@
-import './setup'
 import { cloneNodeTree } from '../../src/node'
 import { createContext } from '../../src/context'
 
 describe('work with iframe element', () => {
-  it('should clone same-origin iframe body contents', async () => {
+  test('should clone same-origin iframe body contents', async () => {
     const iframe = document.createElement('iframe')
     document.body.appendChild(iframe)
 

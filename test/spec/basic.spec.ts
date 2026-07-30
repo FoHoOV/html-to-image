@@ -1,238 +1,254 @@
 import * as htmlToImage from '../../src'
-import {
-  clean,
-  bootstrap,
-  check,
-  renderAndCheck,
-  assertTextRendered,
-  delay,
-} from './helper'
-import './setup'
-
-beforeAll(() => {
-  window.devicePixelRatio = 1
-  jasmine.DEFAULT_TIMEOUT_INTERVAL = 20000
-})
-
-afterAll(() => {
-  clean()
-})
+import { test } from '../fixtures'
 
 describe('basic usage', () => {
-  it('should render to svg as dataurl', (done) => {
-    bootstrap('small/node.html', 'small/style.css', 'small/image')
-      .then(htmlToImage.toDataUrl)
-      .then(check)
-      .then(done)
-      .catch(done)
+  test('should render to svg as dataurl', async ({ bootstrap, check }) => {
+    const node = await bootstrap(
+      'small/node.html',
+      'small/style.css',
+      'small/image',
+    )
+    const dataUrl = await htmlToImage.toDataUrl(node)
+    await check(dataUrl)
   })
 
-  it('should render to png', (done) => {
-    bootstrap('small/node.html', 'small/style.css', 'small/image')
-      .then(htmlToImage.toPng)
-      .then(check)
-      .then(done)
-      .catch(done)
+  test('should render to png', async ({ bootstrap, check }) => {
+    const node = await bootstrap(
+      'small/node.html',
+      'small/style.css',
+      'small/image',
+    )
+    const dataUrl = await htmlToImage.toPng(node)
+    await check(dataUrl)
   })
 
-  it('should render to blob', (done) => {
-    bootstrap('small/node.html', 'small/style.css', 'small/image')
-      .then(htmlToImage.toBlob)
-      .then((blob) => global.URL.createObjectURL(blob!))
-      .then(check)
-      .then(done)
-      .catch(done)
+  test('should render to blob', async ({ bootstrap, check }) => {
+    const node = await bootstrap(
+      'small/node.html',
+      'small/style.css',
+      'small/image',
+    )
+    const blob = await htmlToImage.toBlob(node)
+    const dataUrl = globalThis.URL.createObjectURL(blob!)
+    await check(dataUrl)
   })
 
-  it('should render to jpeg', (done) => {
-    bootstrap('small/node.html', 'small/style.css', 'small/image-jpeg')
-      .then((node) => htmlToImage.toJpeg(node))
-      .then(check)
-      .then(done)
-      .catch(done)
+  test('should render to jpeg', async ({ bootstrap, check }) => {
+    const node = await bootstrap(
+      'small/node.html',
+      'small/style.css',
+      'small/image-jpeg',
+    )
+    const dataUrl = await htmlToImage.toJpeg(node)
+    await check(dataUrl)
   })
 
-  it('should use quality parameter when rendering to jpeg', (done) => {
-    bootstrap('small/node.html', 'small/style.css', 'small/image-jpeg-low')
-      .then((node) => htmlToImage.toJpeg(node, { quality: 0.5 }))
-      .then(check)
-      .then(done)
-      .catch(done)
+  test('should use quality parameter when rendering to jpeg', async ({
+    bootstrap,
+    check,
+  }) => {
+    const node = await bootstrap(
+      'small/node.html',
+      'small/style.css',
+      'small/image-jpeg-low',
+    )
+    const dataUrl = await htmlToImage.toJpeg(node, { quality: 0.5 })
+    await check(dataUrl)
   })
 
-  it('should convert an element to an array of pixels', (done) => {
-    bootstrap('pixeldata/node.html', 'pixeldata/style.css')
-      .then((node) =>
-        htmlToImage.toPixelData(node).then((pixels) => ({ node, pixels })),
-      )
-      .then(({ node, pixels }) => {
-        for (let y = 0; y < node.scrollHeight; y += 1) {
-          for (let x = 0; x < node.scrollWidth; x += 1) {
-            const rgba = [0, 0, 0, 0]
+  test('should convert an element to an array of pixels', async ({
+    bootstrap,
+  }) => {
+    const node = await bootstrap('pixeldata/node.html', 'pixeldata/style.css')
+    const pixels = await htmlToImage.toPixelData(node)
 
-            if (y < 10) {
-              rgba[0] = 255
-            } else if (y < 20) {
-              rgba[1] = 255
-            } else {
-              rgba[2] = 255
-            }
+    for (let y = 0; y < node.scrollHeight; y += 1) {
+      for (let x = 0; x < node.scrollWidth; x += 1) {
+        const rgba = [0, 0, 0, 0]
 
-            if (x < 10) {
-              rgba[3] = 255
-            } else if (x < 20) {
-              rgba[3] = 0.4 * 255
-            } else {
-              rgba[3] = 0.2 * 255
-            }
-
-            const offset = 4 * y * node.scrollHeight + 4 * x
-
-            const target: number[] = []
-            pixels.slice(offset, offset + 4).forEach((i) => target.push(i))
-            expect(target).toEqual(rgba)
-          }
+        if (y < 10) {
+          rgba[0] = 255
+        } else if (y < 20) {
+          rgba[1] = 255
+        } else {
+          rgba[2] = 255
         }
-      })
-      .then(done)
-      .catch(done)
-  })
 
-  it('should handle border', (done) => {
-    bootstrap('border/node.html', 'border/style.css', 'border/image')
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
-  })
-
-  it('should render bigger node', (done) => {
-    bootstrap('bigger/node.html', 'bigger/style.css', 'bigger/image')
-      .then((parent) => {
-        const child = parent.querySelector('.dom-child-node') as HTMLDivElement
-        for (let i = 0; i < 10; i += 1) {
-          parent.appendChild(child.cloneNode(true))
+        if (x < 10) {
+          rgba[3] = 255
+        } else if (x < 20) {
+          rgba[3] = 0.4 * 255
+        } else {
+          rgba[3] = 0.2 * 255
         }
-        return parent
-      })
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
+
+        const offset = 4 * y * node.scrollHeight + 4 * x
+        const target: number[] = []
+        pixels.slice(offset, offset + 4).forEach((value) => target.push(value))
+        expect(target).toEqual(rgba)
+      }
+    }
   })
 
-  it('should handle "#" in colors and attributes', (done) => {
-    bootstrap('hash/node.html', 'hash/style.css', 'small/image')
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
+  test('should handle border', async ({ bootstrap, renderAndCheck }) => {
+    const node = await bootstrap(
+      'border/node.html',
+      'border/style.css',
+      'border/image',
+    )
+    await renderAndCheck(node)
   })
 
-  it('should render whole node when its scrolled', (done) => {
-    bootstrap('scroll/node.html', 'scroll/style.css', 'scroll/image')
-      .then((node) => node.querySelector('#scrolled') as HTMLDivElement)
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
+  test('should render bigger node', async ({ bootstrap, renderAndCheck }) => {
+    const parent = await bootstrap(
+      'bigger/node.html',
+      'bigger/style.css',
+      'bigger/image',
+    )
+    const child = parent.querySelector('.dom-child-node') as HTMLDivElement
+
+    for (let i = 0; i < 10; i += 1) {
+      parent.appendChild(child.cloneNode(true))
+    }
+
+    await renderAndCheck(parent)
   })
 
-  it('should render with external stylesheet', (done) => {
-    bootstrap('sheet/node.html', 'sheet/style.css', 'sheet/image')
-      .then(delay(1000))
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
+  test('should handle "#" in colors and attributes', async ({
+    bootstrap,
+    renderAndCheck,
+  }) => {
+    const node = await bootstrap(
+      'hash/node.html',
+      'hash/style.css',
+      'small/image',
+    )
+    await renderAndCheck(node)
   })
 
-  it('should render text nodes', (done) => {
-    bootstrap('text/node.html', 'text/style.css')
-      .then(assertTextRendered(['SOME TEXT', 'SOME MORE TEXT']))
-      .then(done)
-      .catch(done)
+  test('should render whole node when its scrolled', async ({
+    bootstrap,
+    renderAndCheck,
+  }) => {
+    const node = await bootstrap(
+      'scroll/node.html',
+      'scroll/style.css',
+      'scroll/image',
+    )
+    const scrolled = node.querySelector('#scrolled') as HTMLDivElement
+    await renderAndCheck(scrolled)
   })
 
-  it('should preserve content of ::before and ::after pseudo elements', (done) => {
-    bootstrap('pseudo/node.html', 'pseudo/style.css')
-      .then(
-        assertTextRendered([
-          'JUSTBEFORE',
-          'BOTHBEFORE',
-          'JUSTAFTER',
-          'BOTHAFTER',
-        ]),
-      )
-      .then(done)
-      .catch(done)
+  test('should render with external stylesheet', async ({
+    bootstrap,
+    delay,
+    renderAndCheck,
+  }) => {
+    const node = await bootstrap(
+      'sheet/node.html',
+      'sheet/style.css',
+      'sheet/image',
+    )
+    await delay(1000)
+    await renderAndCheck(node)
   })
 
-  it('should render web fonts', (done) => {
-    bootstrap('fonts/node.html', 'fonts/style.css')
-      .then(delay(1000))
-      .then(assertTextRendered(['apper']))
-      .then(done)
-      .catch(done)
+  test('should render text nodes', async ({
+    assertTextRendered,
+    bootstrap,
+  }) => {
+    const node = await bootstrap('text/node.html', 'text/style.css')
+    await assertTextRendered(['SOME TEXT', 'SOME MORE TEXT'], node)
   })
 
-  it('should render images', (done) => {
-    bootstrap('images/node.html', 'images/style.css')
-      .then(delay(500))
-      .then(assertTextRendered(['PNG', 'JPG']))
-      .then(done)
-      .catch(done)
+  test('should preserve content of ::before and ::after pseudo elements', async ({
+    assertTextRendered,
+    bootstrap,
+  }) => {
+    const node = await bootstrap('pseudo/node.html', 'pseudo/style.css')
+    await assertTextRendered(
+      ['JUSTBEFORE', 'BOTHBEFORE', 'JUSTAFTER', 'BOTHAFTER'],
+      node,
+    )
   })
 
-  it('should render webp images', (done) => {
-    bootstrap('webp/node.html', 'webp/style.css')
-      .then(delay(500))
-      .then(assertTextRendered(['PNG']))
-      .then(done)
-      .catch(done)
+  test('should render web fonts', async ({
+    assertTextRendered,
+    bootstrap,
+    delay,
+  }) => {
+    const node = await bootstrap('fonts/node.html', 'fonts/style.css')
+    await delay(1000)
+    await assertTextRendered(['apper'], node)
   })
 
-  it('should render background images', (done) => {
-    bootstrap('css-bg/node.html', 'css-bg/style.css')
-      .then(assertTextRendered(['JPG']))
-      .then(done)
-      .catch(done)
+  test('should render images', async ({
+    assertTextRendered,
+    bootstrap,
+    delay,
+  }) => {
+    const node = await bootstrap('images/node.html', 'images/style.css')
+    await delay(500)
+    await assertTextRendered(['PNG', 'JPG'], node)
   })
 
-  it('should render user input from <input>', (done) => {
+  test('should render webp images', async ({
+    assertTextRendered,
+    bootstrap,
+    delay,
+  }) => {
+    const node = await bootstrap('webp/node.html', 'webp/style.css')
+    await delay(500)
+    await assertTextRendered(['PNG'], node)
+  })
+
+  test('should render background images', async ({
+    assertTextRendered,
+    bootstrap,
+  }) => {
+    const node = await bootstrap('css-bg/node.html', 'css-bg/style.css')
+    await assertTextRendered(['JPG'], node)
+  })
+
+  test('should render user input from <input>', async ({
+    assertTextRendered,
+    bootstrap,
+  }) => {
     const text = 'USER INPUT'
-    bootstrap('input/node.html', 'input/style.css')
-      .then(() => {
-        const input = document.getElementById('input') as HTMLInputElement
-        input.value = text
-      })
-      .then(assertTextRendered([text]) as any)
-      .then(done)
-      .catch(done)
+    const node = await bootstrap('input/node.html', 'input/style.css')
+    const input = document.getElementById('input') as HTMLInputElement
+    input.value = text
+
+    await assertTextRendered([text], node)
   })
 
-  it('should render user input from <textarea>', (done) => {
+  test('should render user input from <textarea>', async ({
+    assertTextRendered,
+    bootstrap,
+  }) => {
     const text = `USER\nINPUT`
+    const node = await bootstrap('textarea/node.html', 'textarea/style.css')
+    const input = document.getElementById('input') as HTMLInputElement
+    input.value = text
 
-    bootstrap('textarea/node.html', 'textarea/style.css')
-      .then(() => {
-        const input = document.getElementById('input') as HTMLInputElement
-        input.value = text
-      })
-      .then(assertTextRendered([text]) as any)
-      .then(done)
-      .catch(done)
+    await assertTextRendered([text], node)
   })
 
-  xit('should render content from <canvas>', (done) => {
+  test.skip('should render content from <canvas>', async ({
+    assertTextRendered,
+    bootstrap,
+  }) => {
     const text = 'AB2哈'
-    bootstrap('canvas/node.html', 'canvas/style.css')
-      .then((node) => {
-        const canvas = node.querySelector('#content') as HTMLCanvasElement
-        const ctx = canvas.getContext('2d')!
-        ctx.fillStyle = '#ffffff'
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-        ctx.fillStyle = '#000000'
-        ctx.font = '40px serif'
-        ctx.fillText(text, 40, 40)
-      })
-      .then(assertTextRendered([text]) as any)
-      .then(done)
-      .catch(done)
+    const node = await bootstrap('canvas/node.html', 'canvas/style.css')
+    const canvas = node.querySelector('#content') as HTMLCanvasElement
+    const context = canvas.getContext('2d')!
+
+    context.fillStyle = '#ffffff'
+    context.fillRect(0, 0, canvas.width, canvas.height)
+    context.fillStyle = '#000000'
+    context.font = '40px serif'
+    context.fillText(text, 40, 40)
+
+    await assertTextRendered([text], node)
   })
 })
