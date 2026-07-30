@@ -1,11 +1,8 @@
 {
-  "semi": false,
-  "singleQuote": true,
+  "semi": true,
+  "singleQuote": false,
   "printWidth": 80,
   "trailingComma": "all",
   "proseWrap": "never",
-  "overrides": [
-    { "files": ".eslintrc", "options": { "parser": "json" } },
-    { "files": ".prettierrc", "options": { "parser": "json" } }
-  ]
+  "overrides": [{ "files": ".prettierrc", "options": { "parser": "json" } }]
 }

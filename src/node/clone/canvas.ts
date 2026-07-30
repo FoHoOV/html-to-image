@@ -1,14 +1,14 @@
-import { createImage } from '@/node/utils'
-import { Cloner } from './types'
+import { createImage } from "@/node/utils";
+import { Cloner } from "./types";
 
 export const cloneCanvasElement: Cloner<HTMLCanvasElement> = ({
   originalNode,
 }) => {
-  const dataURL = originalNode.toDataURL()
+  const dataURL = originalNode.toDataURL();
 
-  if (dataURL === 'data:,') {
-    return originalNode.cloneNode(false) as HTMLCanvasElement
+  if (dataURL === "data:,") {
+    return originalNode.cloneNode(false) as HTMLCanvasElement;
   }
 
-  return createImage(dataURL)
-}
+  return createImage(dataURL);
+};

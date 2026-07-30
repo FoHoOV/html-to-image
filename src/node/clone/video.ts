@@ -1,28 +1,28 @@
-import { createImage } from '@/node/utils'
-import { getMimeType, resourceToDataUrl } from '@/utils'
-import { Cloner } from './types'
+import { createImage } from "@/node/utils";
+import { getMimeType, resourceToDataUrl } from "@/utils";
+import { Cloner } from "./types";
 
 export const cloneVideoElement: Cloner<HTMLVideoElement> = async ({
   originalNode,
   context,
 }) => {
   if (originalNode.currentSrc) {
-    const canvas = document.createElement('canvas')
-    const canvasContext = canvas.getContext('2d')
+    const canvas = document.createElement("canvas");
+    const canvasContext = canvas.getContext("2d");
 
-    canvas.width = originalNode.clientWidth
-    canvas.height = originalNode.clientHeight
-    canvasContext?.drawImage(originalNode, 0, 0, canvas.width, canvas.height)
+    canvas.width = originalNode.clientWidth;
+    canvas.height = originalNode.clientHeight;
+    canvasContext?.drawImage(originalNode, 0, 0, canvas.width, canvas.height);
 
-    return createVideoImage(canvas.toDataURL())
+    return createVideoImage(canvas.toDataURL());
   }
 
-  const poster = originalNode.poster
-  const dataURL = await resourceToDataUrl(poster, getMimeType(poster), context)
-  return createVideoImage(dataURL)
-}
+  const poster = originalNode.poster;
+  const dataURL = await resourceToDataUrl(poster, getMimeType(poster), context);
+  return createVideoImage(dataURL);
+};
 
 async function createVideoImage(dataURL: string) {
-  const image = await createImage(dataURL)
-  return image
+  const image = await createImage(dataURL);
+  return image;
 }

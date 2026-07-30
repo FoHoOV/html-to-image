@@ -1,17 +1,17 @@
-import { Cloner } from './types'
+import { Cloner } from "./types";
 
 export const cloneSelectElement: Cloner<HTMLSelectElement> = ({
   originalNode,
-}) => originalNode.cloneNode(false)
+}) => originalNode.cloneNode(false);
 
 export const cloneOptionElement: Cloner<HTMLOptionElement> = ({
   originalNode,
 }) => {
-  const cloned = originalNode.cloneNode(false) as HTMLOptionElement
+  const cloned = originalNode.cloneNode(false) as HTMLOptionElement;
   if (originalNode.selected) {
-    cloned.setAttribute('selected', '')
+    cloned.setAttribute("selected", "");
   } else {
-    cloned.removeAttribute('selected')
+    cloned.removeAttribute("selected");
   }
-  return cloned
-}
+  return cloned;
+};

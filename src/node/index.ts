@@ -1,5 +1,5 @@
-import type { Context } from '@/context'
-import { addHiddenDomElement, createWorkPool, nextFrame } from '@/utils'
+import type { Context } from "@/context";
+import { addHiddenDomElement, createWorkPool, nextFrame } from "@/utils";
 import {
   cloneSvgElement,
   cloneUseElement,
@@ -10,78 +10,78 @@ import {
   cloneCanvasElement,
   cloneTextAreaElement,
   cloneVideoElement,
-} from './clone'
+} from "./clone";
 import {
   embedCssText,
   embedPseudoElements,
   embedStyles,
   embedImages,
   embedWebFonts,
-} from './embed'
+} from "./embed";
 import {
   isInstanceOfElement,
   traverseChildren,
   applyStyle,
   getImageSize,
   wrapInSvg,
-} from './utils'
+} from "./utils";
 
 export async function cloneAsSvg(node: Node, context: Context) {
   const clonedNode =
     ((await cloneNodeTree(node, context)) as HTMLElement | null) ??
-    document.createElement('div')
+    document.createElement("div");
 
-  applyStyle(clonedNode, context)
+  applyStyle(clonedNode, context);
 
-  const removeElement = addHiddenDomElement(node, clonedNode)
+  const removeElement = addHiddenDomElement(node, clonedNode);
   try {
-    await nextFrame()
-    const { width, height } = getImageSize(clonedNode, context.options)
-    removeElement()
+    await nextFrame();
+    const { width, height } = getImageSize(clonedNode, context.options);
+    removeElement();
     await embedWebFonts({
       clonedNode,
       clonedParentNode: null,
       context,
       originalNode: node as typeof clonedNode,
-    })
-    const svg = wrapInSvg(clonedNode, width, height)
-    return { svg, width, height }
+    });
+    const svg = wrapInSvg(clonedNode, width, height);
+    return { svg, width, height };
   } catch (error) {
-    removeElement()
-    throw error
+    removeElement();
+    throw error;
   }
 }
 
 export async function cloneNodeTree(startingNode: Node, context: Context) {
-  const embedWorkPool = createWorkPool(500)
+  const embedWorkPool = createWorkPool(500);
 
   async function cloneSubtree(node: Node, clonedParentNode: Node | null) {
-    const filter = context.options.filter?.(node as Node) ?? 'keep'
-    if (filter === 'remove') {
-      return null
+    const filter = context.options.filter?.(node as Node) ?? "keep";
+    if (filter === "remove") {
+      return null;
     }
 
     const clonedCurrentNode =
-      filter === 'unwrap'
+      filter === "unwrap"
         ? document.createDocumentFragment()
-        : await cloneSingleNode(node, clonedParentNode, context)
+        : await cloneSingleNode(node, clonedParentNode, context);
 
     for (const element of traverseChildren(node)) {
-      const clonedChild = await cloneSubtree(element, clonedCurrentNode)
+      const clonedChild = await cloneSubtree(element, clonedCurrentNode);
       if (clonedChild) {
-        clonedCurrentNode.appendChild(clonedChild)
+        clonedCurrentNode.appendChild(clonedChild);
       }
     }
     await embedWorkPool.add(
       embed(node, clonedCurrentNode, clonedParentNode, context),
-    )
+    );
 
-    return clonedCurrentNode
+    return clonedCurrentNode;
   }
 
-  const result = (await cloneSubtree(startingNode, null)) as HTMLElement
-  await embedWorkPool.drain()
-  return result
+  const result = (await cloneSubtree(startingNode, null)) as HTMLElement;
+  await embedWorkPool.drain();
+  return result;
 }
 
 function cloneSingleNode(
@@ -94,38 +94,38 @@ function cloneSingleNode(
       originalNode: node,
       context,
       clonedParentNode,
-    }
+    };
   }
 
   if (isInstanceOfElement(originalNode, HTMLCanvasElement)) {
-    return cloneCanvasElement(createConfig(originalNode))
+    return cloneCanvasElement(createConfig(originalNode));
   }
   if (isInstanceOfElement(originalNode, HTMLVideoElement)) {
-    return cloneVideoElement(createConfig(originalNode))
+    return cloneVideoElement(createConfig(originalNode));
   }
   if (isInstanceOfElement(originalNode, HTMLIFrameElement)) {
-    return cloneIFrameElement(createConfig(originalNode))
+    return cloneIFrameElement(createConfig(originalNode));
   }
   if (isInstanceOfElement(originalNode, HTMLTextAreaElement)) {
-    return cloneTextAreaElement(createConfig(originalNode))
+    return cloneTextAreaElement(createConfig(originalNode));
   }
   if (isInstanceOfElement(originalNode, HTMLInputElement)) {
-    return cloneInputElement(createConfig(originalNode))
+    return cloneInputElement(createConfig(originalNode));
   }
   if (isInstanceOfElement(originalNode, HTMLOptionElement)) {
-    return cloneOptionElement(createConfig(originalNode))
+    return cloneOptionElement(createConfig(originalNode));
   }
   if (isInstanceOfElement(originalNode, HTMLSelectElement)) {
-    return cloneSelectElement(createConfig(originalNode))
+    return cloneSelectElement(createConfig(originalNode));
   }
   if (isInstanceOfElement(originalNode, SVGUseElement)) {
-    return cloneUseElement(createConfig(originalNode))
+    return cloneUseElement(createConfig(originalNode));
   }
   if (isInstanceOfElement(originalNode, SVGElement)) {
-    return cloneSvgElement(createConfig(originalNode))
+    return cloneSvgElement(createConfig(originalNode));
   }
 
-  return originalNode.cloneNode(false)
+  return originalNode.cloneNode(false);
 }
 
 async function embed(
@@ -140,14 +140,14 @@ async function embed(
     (isInstanceOfElement(clonedNode, HTMLElement) ||
       isInstanceOfElement(clonedNode, SVGElement))
   ) {
-    const config = { originalNode, clonedNode, clonedParentNode, context }
-    embedCssText(config)
-    embedPseudoElements(config)
+    const config = { originalNode, clonedNode, clonedParentNode, context };
+    embedCssText(config);
+    embedPseudoElements(config);
     // TODO: think about this, i believe `embedStyles` should be done AFTER cloned dom tree is available
     // why? because an empty div that doesnt have its children yet, cannot inline its props using getPropertyValue
     // but, if that isnt the calculated browser value at that time, this could be ok and even a better approach,
     // meaning the value is the final applied css prop who won.
-    embedStyles(config)
-    await embedImages(config)
+    embedStyles(config);
+    await embedImages(config);
   }
 }

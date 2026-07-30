@@ -1,43 +1,43 @@
-import { Context } from '@/context'
-import type { Resource } from './cache'
+import { Context } from "@/context";
+import type { Resource } from "./cache";
 
 export async function fetchResource(
   url: string,
   forcedContentType: string | undefined,
   context: Context,
 ) {
-  let requestUrl = url
+  let requestUrl = url;
   if (context.options.cacheBust) {
-    requestUrl += `${/\?/.test(requestUrl) ? '&' : '?'}${Date.now()}`
+    requestUrl += `${/\?/.test(requestUrl) ? "&" : "?"}${Date.now()}`;
   }
   const cacheUrl =
     context.options.includeQueryParams === false
-      ? requestUrl.replace(/\?.*/, '')
-      : requestUrl
-  const cacheKey = cacheUrl + forcedContentType
+      ? requestUrl.replace(/\?.*/, "")
+      : requestUrl;
+  const cacheKey = cacheUrl + forcedContentType;
 
   if (context.options.cacheBust) {
-    return makeRequest(requestUrl, forcedContentType, context)
+    return makeRequest(requestUrl, forcedContentType, context);
   }
 
-  const cachedResource = context.options.cache?.get(cacheKey)
+  const cachedResource = context.options.cache?.get(cacheKey);
   if (cachedResource) {
-    return cachedResource
+    return cachedResource;
   }
 
-  let request = context.inFlightRequests.get(cacheKey)
+  let request = context.inFlightRequests.get(cacheKey);
   if (!request) {
-    request = makeRequest(requestUrl, forcedContentType, context)
-    context.inFlightRequests.set(cacheKey, request)
+    request = makeRequest(requestUrl, forcedContentType, context);
+    context.inFlightRequests.set(cacheKey, request);
   }
 
   try {
-    const resource = await request
-    context.options.cache?.add(cacheKey, resource)
-    return resource
+    const resource = await request;
+    context.options.cache?.add(cacheKey, resource);
+    return resource;
   } finally {
     if (context.inFlightRequests.get(cacheKey) === request) {
-      context.inFlightRequests.delete(cacheKey)
+      context.inFlightRequests.delete(cacheKey);
     }
   }
 }
@@ -47,57 +47,58 @@ async function makeRequest(
   forcedContentType: string | undefined,
   { options }: Context,
 ): Promise<Resource> {
-  const res = await fetch(requestUrl, options.fetchRequestInit)
+  const res = await fetch(requestUrl, options.fetchRequestInit);
 
   if (!res.ok) {
     throw new Error(
       `cannot fetch(${res.status} ${res.statusText}): "${res.url}"`,
-    )
+    );
   }
 
-  const response = await res.arrayBuffer()
-  const contentType = forcedContentType || res.headers.get('Content-Type') || ''
+  const response = await res.arrayBuffer();
+  const contentType =
+    forcedContentType || res.headers.get("Content-Type") || "";
 
   return {
     asDataUrl: createAsDataUrl(response, contentType),
     asString: createAsString(response),
     contentType,
-  }
+  };
 }
 
 function createAsString(response: ArrayBuffer) {
-  let cachedEncoding: string | undefined = undefined
-  let cachedResult: string | undefined = undefined
+  let cachedEncoding: string | undefined = undefined;
+  let cachedResult: string | undefined = undefined;
 
-  return (encoding = 'utf-8') => {
+  return (encoding = "utf-8") => {
     if (cachedEncoding === encoding && cachedResult) {
-      return cachedResult
+      return cachedResult;
     }
-    const result = new TextDecoder(encoding).decode(response)
-    cachedEncoding = encoding
-    cachedResult = result
-    return result
-  }
+    const result = new TextDecoder(encoding).decode(response);
+    cachedEncoding = encoding;
+    cachedResult = result;
+    return result;
+  };
 }
 
 function createAsDataUrl(response: ArrayBuffer, contentType: string) {
-  let cachedResult: string | undefined = undefined
+  let cachedResult: string | undefined = undefined;
   return () => {
     if (cachedResult) {
-      return cachedResult
+      return cachedResult;
     }
-    const blob = new Blob([response], { type: contentType })
+    const blob = new Blob([response], { type: contentType });
 
     return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
+      const reader = new FileReader();
 
-      reader.onerror = () => reject(reader.error)
+      reader.onerror = () => reject(reader.error);
       reader.onloadend = () => {
-        cachedResult = reader.result as string
-        resolve(reader.result as string)
-      }
+        cachedResult = reader.result as string;
+        resolve(reader.result as string);
+      };
 
-      reader.readAsDataURL(blob)
-    })
-  }
+      reader.readAsDataURL(blob);
+    });
+  };
 }

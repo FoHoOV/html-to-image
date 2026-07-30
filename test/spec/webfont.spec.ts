@@ -1,11 +1,11 @@
-import * as htmlToImage from '../../src'
-import { test } from '../fixtures'
+import * as htmlToImage from "../../src";
+import { test } from "../fixtures";
 
-describe('font embedding', () => {
-  describe('should embed only used fonts', () => {
-    test('should embed 1 font when use 1', async ({ getSvgDocument }) => {
-      const root = document.createElement('div')
-      document.body.append(root)
+describe("font embedding", () => {
+  describe("should embed only used fonts", () => {
+    test("should embed 1 font when use 1", async ({ getSvgDocument }) => {
+      const root = document.createElement("div");
+      document.body.append(root);
       try {
         root.innerHTML = `
           <style>
@@ -23,20 +23,20 @@ describe('font embedding', () => {
               }
           </style>
           <p style="font-family: 'Font 1'">Hello world</p>
-        `
-        const dataUrl = await htmlToImage.toDataUrl(root)
-        const doc = await getSvgDocument(dataUrl)
-        const [style] = Array.from(doc.getElementsByTagName('style'))
-        expect(style.textContent).toContain('Font 1')
-        expect(style.textContent).not.toContain('Font 0')
-        expect(style.textContent).not.toContain('Font 2')
+        `;
+        const dataUrl = await htmlToImage.toDataUrl(root);
+        const doc = await getSvgDocument(dataUrl);
+        const [style] = Array.from(doc.getElementsByTagName("style"));
+        expect(style.textContent).toContain("Font 1");
+        expect(style.textContent).not.toContain("Font 0");
+        expect(style.textContent).not.toContain("Font 2");
       } finally {
-        root.remove()
+        root.remove();
       }
-    })
-    test('should embed 2 fonts when use 2', async ({ getSvgDocument }) => {
-      const root = document.createElement('div')
-      document.body.append(root)
+    });
+    test("should embed 2 fonts when use 2", async ({ getSvgDocument }) => {
+      const root = document.createElement("div");
+      document.body.append(root);
       try {
         root.innerHTML = `
           <style>
@@ -55,22 +55,22 @@ describe('font embedding', () => {
           </style>
           <p style="font-family: 'Font 0'">Hello world</p>
           <p style="font-family: 'Font 2'">Hello world</p>
-        `
-        const svg = await htmlToImage.toDataUrl(root)
-        const doc = await getSvgDocument(svg)
-        const [style] = Array.from(doc.getElementsByTagName('style'))
-        expect(style.textContent).toContain('Font 0')
-        expect(style.textContent).toContain('Font 2')
-        expect(style.textContent).not.toContain('Font 1')
+        `;
+        const svg = await htmlToImage.toDataUrl(root);
+        const doc = await getSvgDocument(svg);
+        const [style] = Array.from(doc.getElementsByTagName("style"));
+        expect(style.textContent).toContain("Font 0");
+        expect(style.textContent).toContain("Font 2");
+        expect(style.textContent).not.toContain("Font 1");
       } finally {
-        root.remove()
+        root.remove();
       }
-    })
-    test('should embed font used by deeply nested child', async ({
+    });
+    test("should embed font used by deeply nested child", async ({
       getSvgDocument,
     }) => {
-      const root = document.createElement('div')
-      document.body.append(root)
+      const root = document.createElement("div");
+      document.body.append(root);
       try {
         root.innerHTML = `
           <style>
@@ -94,16 +94,16 @@ describe('font embedding', () => {
                 </div>
             </div>
           </div>
-        `
-        const svg = await htmlToImage.toDataUrl(root)
-        const doc = await getSvgDocument(svg)
-        const [style] = Array.from(doc.getElementsByTagName('style'))
-        expect(style.textContent).toContain('Font 1')
-        expect(style.textContent).not.toContain('Font 0')
-        expect(style.textContent).not.toContain('Font 2')
+        `;
+        const svg = await htmlToImage.toDataUrl(root);
+        const doc = await getSvgDocument(svg);
+        const [style] = Array.from(doc.getElementsByTagName("style"));
+        expect(style.textContent).toContain("Font 1");
+        expect(style.textContent).not.toContain("Font 0");
+        expect(style.textContent).not.toContain("Font 2");
       } finally {
-        root.remove()
+        root.remove();
       }
-    })
-  })
-})
+    });
+  });
+});

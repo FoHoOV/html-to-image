@@ -9,8 +9,6 @@
 .prettierignore
 .babelrc
 .editorconfig
-.eslintrc
-.eslintignore
 .stylelintrc.json
 package.json
 tsconfig.json
@@ -19,6 +17,7 @@ CNAME
 LICENSE
 dist/
 coverage/
+test/resources/
 yarn.lock
 yarn-error.log
 npm-debug.log

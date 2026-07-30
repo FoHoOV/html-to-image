@@ -8,15 +8,15 @@ export const isInstanceOfElement = <
 >(
   node: Element | HTMLElement | SVGElement | SVGImageElement | Node,
   instance: T,
-): node is T['prototype'] => {
-  if (node instanceof instance) return true
+): node is T["prototype"] => {
+  if (node instanceof instance) return true;
 
-  const nodePrototype = Object.getPrototypeOf(node)
+  const nodePrototype = Object.getPrototypeOf(node);
 
-  if (nodePrototype === null) return false
+  if (nodePrototype === null) return false;
 
   return (
     nodePrototype.constructor.name === instance.name ||
     isInstanceOfElement(nodePrototype, instance)
-  )
-}
+  );
+};

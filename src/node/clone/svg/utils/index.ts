@@ -1,2 +1,2 @@
-export * from './normalize-href'
-export * from './defs'
+export * from "./normalize-href";
+export * from "./defs";

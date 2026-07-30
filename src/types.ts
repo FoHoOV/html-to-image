@@ -1,107 +1,107 @@
-import type { Cache } from './utils/cache'
+import type { Cache } from "./utils/cache";
 
 export type Options = {
   /**
    * Width in pixels to be applied to node before rendering.
    */
-  width?: number
+  width?: number;
   /**
    * Height in pixels to be applied to node before rendering.
    */
-  height?: number
+  height?: number;
   /**
    * Width in pixels to be applied to canvas on export.
    */
-  canvasWidth?: number
+  canvasWidth?: number;
   /**
    * Height in pixels to be applied to canvas on export.
    */
-  canvasHeight?: number
+  canvasHeight?: number;
   /**
    * An object whose properties to be copied to node's style before rendering.
    */
-  style?: Partial<CSSStyleDeclaration>
+  style?: Partial<CSSStyleDeclaration>;
   /**
    * An array of style properties to be copied to node's style before rendering.
    * For performance-critical scenarios, users may want to specify only the
    * required properties instead of all styles.
    */
-  includeStyleProperties?: string[]
+  includeStyleProperties?: string[];
   /**
    * A function taking a DOM node as its argument. Return `keep` to preserve
    * the node, `unwrap` to remove only the node while preserving its children,
    * or `remove` to remove the node and all of its children.
    */
-  filter?: (node: Node) => 'keep' | 'unwrap' | 'remove'
+  filter?: (node: Node) => "keep" | "unwrap" | "remove";
   /**
    * A number between `0` and `1` indicating image quality (e.g. 0.92 => 92%)
    * of the JPEG image.
    */
-  quality?: number
+  quality?: number;
   /**
    * Set to `true` to append the current time as a query string to URL
    * requests to enable cache busting.
    */
-  cacheBust?: boolean
+  cacheBust?: boolean;
   /**
    * Whether query parameters are included in resource cache keys. Set to
    * `false` to strip them from cache keys. Defaults to `true`.
    */
-  includeQueryParams?: boolean
+  includeQueryParams?: boolean;
   /**
    * A data URL for a placeholder image that will be used when fetching
    * an image fails. Defaults to an empty string and will render empty
    * areas for failed images.
    */
-  imagePlaceholder?: string
+  imagePlaceholder?: string;
   /**
    * The pixel ratio of captured image. Defalut is the actual pixel ratio of
    * the device. Set 1 to use as initial-scale 1 for the image
    */
-  pixelRatio?: number
+  pixelRatio?: number;
   /**
    * Option to skip the fonts download and embed.
    */
-  skipFonts?: boolean
+  skipFonts?: boolean;
   /**
    * The preferred font format. If specified all other font formats are ignored.
    */
   preferredFontFormat?:
-    | 'woff'
-    | 'woff2'
-    | 'truetype'
-    | 'opentype'
-    | 'embedded-opentype'
-    | 'svg'
-    | string
+    | "woff"
+    | "woff2"
+    | "truetype"
+    | "opentype"
+    | "embedded-opentype"
+    | "svg"
+    | string;
   /**
    * A CSS string to specify for font embeds. If specified only this CSS will
    * be present in the resulting image. Use with `getFontEmbedCSS()` to
    * create embed CSS for use across multiple calls to library functions.
    */
-  fontEmbedCSS?: string
+  fontEmbedCSS?: string;
   /**
    * A boolean to turn off auto scaling for truly massive images..
    */
-  skipAutoScale?: boolean
+  skipAutoScale?: boolean;
   /**
    * A string indicating the image format. The default type is image/png; that type is also used if the given type isn't supported.
    */
-  type?: string
+  type?: string;
 
   /**
    *
    *the second parameter of  window.fetch (Promise<Response> fetch(input[, init]))
    *
    */
-  fetchRequestInit?: RequestInit
+  fetchRequestInit?: RequestInit;
   /**
    * An event handler for the error event when any image in html has problem with loading.
    */
-  onImageErrorHandler?: OnErrorEventHandler
+  onImageErrorHandler?: OnErrorEventHandler;
   /**
    * A caller-owned cache for resources fetched while rendering. Reusing a
    * cache across calls avoids downloading the same resources more than once.
    */
-  cache?: Cache
-}
+  cache?: Cache;
+};
