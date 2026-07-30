@@ -20,11 +20,11 @@ export default defineConfig({
         { browser: "chromium" },
         // Enable these once CSS Typed OM has a Firefox/WebKit fallback.
         // { browser: 'firefox' },
-        // { browser: 'webkit' },
+        // { browser: "webkit" },
       ],
     },
     coverage: {
-      provider: "v8",
+      provider: "istanbul",
       reportsDirectory: ".vitest/coverage",
       reporter: ["html", "lcovonly", "cobertura", "text-summary"],
       include: ["src/**/*.ts"],

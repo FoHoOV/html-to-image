@@ -53,9 +53,9 @@ importers:
       '@vitest/browser-playwright':
         specifier: ^4.1.10
         version: 4.1.10(playwright@1.62.0)(vite@8.1.5(@types/node@24.13.3)(jiti@2.6.1)(terser@5.49.0)(yaml@2.9.0))(vitest@4.1.10)
-      '@vitest/coverage-v8':
+      '@vitest/coverage-istanbul':
         specifier: ^4.1.10
-        version: 4.1.10(@vitest/browser@4.1.10)(vitest@4.1.10)
+        version: 4.1.10(vitest@4.1.10)
       eslint:
         specifier: ^10.8.0
         version: 10.8.0(jiti@2.6.1)
@@ -2289,8 +2289,7 @@ snapshots:
       js-tokens: 4.0.0
       picocolors: 1.1.1
 
-  '@babel/compat-data@7.29.7':
-    optional: true
+  '@babel/compat-data@7.29.7': {}
 
   '@babel/core@7.29.7':
     dependencies:
@@ -2311,7 +2310,6 @@ snapshots:
       semver: 6.3.1
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   '@babel/generator@7.29.7':
     dependencies:
@@ -2320,7 +2318,6 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
       jsesc: 3.1.0
-    optional: true
 
   '@babel/helper-compilation-targets@7.29.7':
     dependencies:
@@ -2329,10 +2326,8 @@ snapshots:
       browserslist: 4.28.6
       lru-cache: 5.1.1
       semver: 6.3.1
-    optional: true
 
-  '@babel/helper-globals@7.29.7':
-    optional: true
+  '@babel/helper-globals@7.29.7': {}
 
   '@babel/helper-module-imports@7.29.7':
     dependencies:
@@ -2340,7 +2335,6 @@ snapshots:
       '@babel/types': 7.29.7
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   '@babel/helper-module-transforms@7.29.7(@babel/core@7.29.7)':
     dependencies:
@@ -2350,20 +2344,17 @@ snapshots:
       '@babel/traverse': 7.29.7
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   '@babel/helper-string-parser@7.29.7': {}
 
   '@babel/helper-validator-identifier@7.29.7': {}
 
-  '@babel/helper-validator-option@7.29.7':
-    optional: true
+  '@babel/helper-validator-option@7.29.7': {}
 
   '@babel/helpers@7.29.7':
     dependencies:
       '@babel/template': 7.29.7
       '@babel/types': 7.29.7
-    optional: true
 
   '@babel/parser@7.29.7':
     dependencies:
@@ -2376,7 +2367,6 @@ snapshots:
       '@babel/code-frame': 7.29.7
       '@babel/parser': 7.29.7
       '@babel/types': 7.29.7
-    optional: true
 
   '@babel/traverse@7.29.7':
     dependencies:
@@ -2389,14 +2379,14 @@ snapshots:
       debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   '@babel/types@7.29.7':
     dependencies:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
 
-  '@bcoe/v8-coverage@1.0.2': {}
+  '@bcoe/v8-coverage@1.0.2':
+    optional: true
 
   '@blazediff/core@1.9.1': {}
 
@@ -2737,8 +2727,7 @@ snapshots:
     optionalDependencies:
       '@types/node': 24.13.3
 
-  '@istanbuljs/schema@0.1.6':
-    optional: true
+  '@istanbuljs/schema@0.1.6': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
@@ -2749,7 +2738,6 @@ snapshots:
     dependencies:
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
-    optional: true
 
   '@jridgewell/resolve-uri@3.1.2': {}
 
@@ -3209,7 +3197,6 @@ snapshots:
       vitest: 4.1.10(@types/node@24.13.3)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-istanbul@4.1.10)(@vitest/coverage-v8@4.1.10)(vite@8.1.5(@types/node@24.13.3)(jiti@2.6.1)(terser@5.49.0)(yaml@2.9.0))
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   '@vitest/coverage-v8@4.1.10(@vitest/browser@4.1.10)(vitest@4.1.10)':
     dependencies:
@@ -3226,6 +3213,7 @@ snapshots:
       vitest: 4.1.10(@types/node@24.13.3)(@vitest/browser-playwright@4.1.10)(@vitest/coverage-istanbul@4.1.10)(@vitest/coverage-v8@4.1.10)(vite@8.1.5(@types/node@24.13.3)(jiti@2.6.1)(terser@5.49.0)(yaml@2.9.0))
     optionalDependencies:
       '@vitest/browser': 4.1.10(vite@8.1.5(@types/node@24.13.3)(jiti@2.6.1)(terser@5.49.0)(yaml@2.9.0))(vitest@4.1.10)
+    optional: true
 
   '@vitest/expect@4.1.10':
     dependencies:
@@ -3317,13 +3305,13 @@ snapshots:
       '@jridgewell/trace-mapping': 0.3.31
       estree-walker: 3.0.3
       js-tokens: 10.0.0
+    optional: true
 
   balanced-match@1.0.2: {}
 
   balanced-match@4.0.4: {}
 
-  baseline-browser-mapping@2.10.43:
-    optional: true
+  baseline-browser-mapping@2.10.43: {}
 
   better-path-resolve@1.0.0:
     dependencies:
@@ -3348,14 +3336,12 @@ snapshots:
       electron-to-chromium: 1.5.393
       node-releases: 2.0.51
       update-browserslist-db: 1.2.3(browserslist@4.28.6)
-    optional: true
 
   buffer-from@1.1.2: {}
 
   callsites@3.1.0: {}
 
-  caniuse-lite@1.0.30001806:
-    optional: true
+  caniuse-lite@1.0.30001806: {}
 
   chai@6.2.2: {}
 
@@ -3437,8 +3423,7 @@ snapshots:
     dependencies:
       path-type: 4.0.0
 
-  electron-to-chromium@1.5.393:
-    optional: true
+  electron-to-chromium@1.5.393: {}
 
   emoji-regex@10.6.0: {}
 
@@ -3632,8 +3617,7 @@ snapshots:
 
   function-bind@1.1.2: {}
 
-  gensync@1.0.0-beta.2:
-    optional: true
+  gensync@1.0.0-beta.2: {}
 
   get-caller-file@2.0.5: {}
 
@@ -3753,7 +3737,8 @@ snapshots:
 
   jiti@2.6.1: {}
 
-  js-tokens@10.0.0: {}
+  js-tokens@10.0.0:
+    optional: true
 
   js-tokens@4.0.0: {}
 
@@ -3766,8 +3751,7 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
-  jsesc@3.1.0:
-    optional: true
+  jsesc@3.1.0: {}
 
   json-buffer@3.0.1: {}
 
@@ -3779,8 +3763,7 @@ snapshots:
 
   json-stable-stringify-without-jsonify@1.0.1: {}
 
-  json5@2.2.3:
-    optional: true
+  json5@2.2.3: {}
 
   jsonfile@4.0.0:
     optionalDependencies:
@@ -3895,7 +3878,6 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
-    optional: true
 
   magic-string@0.30.21:
     dependencies:
@@ -3946,8 +3928,7 @@ snapshots:
 
   natural-compare@1.4.0: {}
 
-  node-releases@2.0.51:
-    optional: true
+  node-releases@2.0.51: {}
 
   npm-run-path@5.3.0:
     dependencies:
@@ -4165,8 +4146,7 @@ snapshots:
 
   safer-buffer@2.1.2: {}
 
-  semver@6.3.1:
-    optional: true
+  semver@6.3.1: {}
 
   semver@7.8.5: {}
 
@@ -4311,7 +4291,6 @@ snapshots:
       browserslist: 4.28.6
       escalade: 3.2.0
       picocolors: 1.1.1
-    optional: true
 
   uri-js@4.4.1:
     dependencies:
@@ -4382,8 +4361,7 @@ snapshots:
 
   y18n@5.0.8: {}
 
-  yallist@3.1.1:
-    optional: true
+  yallist@3.1.1: {}
 
   yaml@2.9.0: {}
 
