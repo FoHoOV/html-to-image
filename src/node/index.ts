@@ -27,9 +27,7 @@ import {
 } from "./utils";
 
 export async function cloneAsSvg(node: Node, context: Context) {
-  const clonedNode =
-    ((await cloneNodeTree(node, context)) as HTMLElement | null) ??
-    document.createElement("div");
+  const clonedNode = await cloneNodeTree(node, context);
 
   applyStyle(clonedNode, context);
 
@@ -79,9 +77,26 @@ export async function cloneNodeTree(startingNode: Node, context: Context) {
     return clonedCurrentNode;
   }
 
-  const result = (await cloneSubtree(startingNode, null)) as HTMLElement;
+  const result = await cloneSubtree(startingNode, null);
   await embedWorkPool.drain();
-  return result;
+
+  if (!result) {
+    return createReplacementWrapper();
+  }
+
+  if (!result || result instanceof DocumentFragment) {
+    const wrapper = createReplacementWrapper();
+    wrapper.appendChild(result);
+    return wrapper;
+  }
+
+  return result as HTMLElement;
+}
+
+function createReplacementWrapper() {
+  const wrapper = document.createElement("div");
+  wrapper.style.display = "inline-block";
+  return wrapper;
 }
 
 function cloneSingleNode(

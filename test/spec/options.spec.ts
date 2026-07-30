@@ -257,6 +257,7 @@ describe("work with options", () => {
 
   test("should apply node filter to root node", async () => {
     const root = document.createElement("div");
+    root.appendChild(document.createElement("div"));
 
     const clone = await cloneNodeTree(
       root,
@@ -265,7 +266,8 @@ describe("work with options", () => {
       }),
     );
 
-    expect(clone).toBeNull();
+    expect(clone.style.display).toBe("inline-block");
+    expect(clone.childNodes.length).toEqual(0);
   });
 
   test("should preserve children when the filter unwraps the root", async () => {
@@ -280,8 +282,53 @@ describe("work with options", () => {
         filter: (node) => (node === root ? "unwrap" : "keep"),
       }),
     );
-    expect(clone instanceof DocumentFragment).toBe(true);
+    expect(clone instanceof HTMLDivElement).toBe(true);
     expect(clone?.textContent).toBe("preserved");
+  });
+
+  test("should render when the filter unwraps the root", async ({
+    bootstrap,
+    renderAndCheck,
+  }) => {
+    const root = await bootstrap(
+      "filter/node.html",
+      "filter/style.css",
+      "filter/image",
+    );
+
+    await renderAndCheck(root, {
+      width: 100,
+      height: 50,
+      skipFonts: true,
+      filter(node) {
+        if (node === root) {
+          return "unwrap";
+        }
+        return (node as HTMLElement).classList?.contains("omit")
+          ? "remove"
+          : "keep";
+      },
+    });
+  });
+
+  test("should apply styles and infer size when the filter unwraps the root", async ({
+    bootstrap,
+    renderAndCheck,
+  }) => {
+    const root = await bootstrap(
+      "filter/root-unwrap/node.html",
+      "filter/root-unwrap/style.css",
+      "filter/root-unwrap/image",
+    );
+
+    await renderAndCheck(root, {
+      filter: (node) => (node === root ? "unwrap" : "keep"),
+      skipFonts: true,
+      style: {
+        background: "#ff0000",
+        padding: "10px",
+      },
+    });
   });
 
   test("should exclude descendants when the filter removes their parent", async () => {
