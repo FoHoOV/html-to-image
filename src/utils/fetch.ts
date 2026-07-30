@@ -25,10 +25,10 @@ export async function fetchResource(
     return cachedResource
   }
 
-  let request = context.queuedFetchRequests.get(cacheKey)
+  let request = context.inFlightRequests.get(cacheKey)
   if (!request) {
     request = makeRequest(requestUrl, forcedContentType, context)
-    context.queuedFetchRequests.set(cacheKey, request)
+    context.inFlightRequests.set(cacheKey, request)
   }
 
   try {
@@ -36,8 +36,8 @@ export async function fetchResource(
     context.options.cache?.add(cacheKey, resource)
     return resource
   } finally {
-    if (context.queuedFetchRequests.get(cacheKey) === request) {
-      context.queuedFetchRequests.delete(cacheKey)
+    if (context.inFlightRequests.get(cacheKey) === request) {
+      context.inFlightRequests.delete(cacheKey)
     }
   }
 }
