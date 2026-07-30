@@ -1,7 +1,7 @@
 // TODO: review
 
 import { getMimeType } from '../../utils/mimes'
-import { isDataUrl, makeDataUrl, resourceToDataUrl } from '../../utils/dataurl'
+import { isDataUrl, makeDataUrl, resourceToDataUrl } from '../../utils/data-url'
 import { Context } from '@/context'
 
 const URL_REGEX = /url\((['"]?)([^'"]+?)\1\)/g

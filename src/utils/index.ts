@@ -1,6 +1,6 @@
 export * from './browser'
 export * from './mimes'
-export * from './dataurl'
+export * from './data-url'
 export * from './fetch'
 export * from './cache'
 export * from './uuid'

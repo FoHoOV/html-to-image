@@ -18,8 +18,13 @@ import {
   embedImages,
   embedWebFonts,
 } from './embed'
-import { applyStyle, getImageSize, wrapInSvg } from './utils'
-import { isInstanceOfElement, traverseChildren } from './utils/traverse'
+import {
+  isInstanceOfElement,
+  traverseChildren,
+  applyStyle,
+  getImageSize,
+  wrapInSvg,
+} from './utils'
 
 export async function cloneAsSvg(node: Node, context: Context) {
   const clonedNode =
