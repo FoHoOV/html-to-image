@@ -14,6 +14,12 @@ describe('work with video element', () => {
       'video/image',
     )
     await delay(1000)
+
+    const video = node.querySelector('video')!
+    video.pause()
+    video.currentTime = 0
+    await waitForVideoSeek(video)
+
     await renderAndCheck(node)
   })
 
@@ -55,3 +61,27 @@ describe('work with video element', () => {
     image.remove()
   })
 })
+
+function waitForVideoSeek(video: HTMLVideoElement) {
+  if (!video.seeking) {
+    return Promise.resolve()
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    const cleanup = () => {
+      video.removeEventListener('seeked', handleSeek)
+      video.removeEventListener('error', handleError)
+    }
+    const handleSeek = () => {
+      cleanup()
+      resolve()
+    }
+    const handleError = () => {
+      cleanup()
+      reject(video.error ?? new Error('Failed to load video frame'))
+    }
+
+    video.addEventListener('seeked', handleSeek)
+    video.addEventListener('error', handleError)
+  })
+}

@@ -1,7 +1,5 @@
 import { afterAll, beforeAll } from 'vitest'
 
-const ROOT_ID = 'test-root'
-
 beforeAll(() => {
   window.devicePixelRatio = 1
   window.history.replaceState(
@@ -12,5 +10,6 @@ beforeAll(() => {
 })
 
 afterAll(() => {
-  document.getElementById(ROOT_ID)?.remove()
+  const rootId = 'test-root'
+  document.getElementById(rootId)?.remove()
 })

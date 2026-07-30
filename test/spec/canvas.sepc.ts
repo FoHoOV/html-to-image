@@ -1,7 +1,7 @@
 import { test } from '../fixtures'
 
 describe('work with canvas element', () => {
-  test.skip('should render canvas element', async ({
+  test('should render canvas element', async ({
     bootstrap,
     renderAndCheck,
   }) => {
