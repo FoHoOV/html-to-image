@@ -1,5 +1,5 @@
 import type { Context } from '@/context'
-import { addHiddenDomElement, nextFrame } from '@/utils'
+import { addHiddenDomElement, createWorkPool, nextFrame } from '@/utils'
 import {
   cloneSvgElement,
   cloneUseElement,
@@ -53,7 +53,8 @@ export async function cloneAsSvg(node: Node, context: Context) {
 }
 
 export async function cloneNodeTree(startingNode: Node, context: Context) {
-  const queuedEmbedPromises: Promise<void>[] = []
+  const embedWorkPool = createWorkPool(500)
+
   async function cloneSubtree(node: Node, clonedParentNode: Node | null) {
     const filter = context.options.filter?.(node as Node) ?? 'keep'
     if (filter === 'remove') {
@@ -71,14 +72,15 @@ export async function cloneNodeTree(startingNode: Node, context: Context) {
         clonedCurrentNode.appendChild(clonedChild)
       }
     }
-    queuedEmbedPromises.push(
+    await embedWorkPool.add(
       embed(node, clonedCurrentNode, clonedParentNode, context),
     )
+
     return clonedCurrentNode
   }
 
   const result = (await cloneSubtree(startingNode, null)) as HTMLElement
-  await Promise.all(queuedEmbedPromises)
+  await embedWorkPool.drain()
   return result
 }
 
