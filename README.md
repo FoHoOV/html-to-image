@@ -209,7 +209,7 @@ const App: React.FC = () => {
 - `filter` now runs for the root and every descendant element and must return `keep`, `unwrap`, or `remove`. Boolean callbacks no longer exclude nodes.
 - The standalone `backgroundColor` option has been removed. Use `style: { backgroundColor: '...' }`.
 - Output bounds are measured from the styled and filtered clone. Consumer-provided dimensions and layout-changing styles can therefore change the output size, and filtering can reduce it.
-- Resource caching is now opt-in and caller-owned. The library no longer retains fetched resources in a module-global cache for the application lifecycle, and `includeQueryParams` now defaults to `true`.
+- Cross-call resource caching is now opt-in and caller-owned. Without a supplied `Cache`, resources are cached only for the duration of the current API call. The library no longer retains fetched resources in a module-global cache for the application lifecycle, and `includeQueryParams` now defaults to `true`.
 
 ## Options
 
@@ -264,13 +264,15 @@ Defaults to `1.0` (`100%`)
 
 ### cacheBust
 
-Set to `true` to append the current time as a query string to resource requests. Cache-busted requests bypass reads and writes for a caller-provided `Cache`.
+Set to `true` to append the current time as a query string to resource requests. Cache-busted requests bypass cache reads and writes.
 
 Defaults to `false`
 
 ### cache
 
-A caller-owned resource cache. Resource caching is opt-in: when `cache` is omitted, fetched images, fonts, stylesheets, and external SVG definitions are not retained between render calls. The library does not create a module-global resource cache that remains alive for the application lifecycle.
+Every top-level API call uses a resource cache. When `cache` is omitted, the library creates a temporary `Cache` for that call. This deduplicates repeated requests for images, fonts, stylesheets, and external SVG definitions within the operation, but neither the cache nor its entries are retained for later API calls. The library does not create a module-global resource cache that remains alive for the application lifecycle.
+
+Pass a caller-owned `Cache` to reuse fetched resources across API calls:
 
 ```js
 import { Cache, toPng } from '@fohoov/html-to-image';
@@ -284,7 +286,7 @@ Reuse the same instance to reuse fetched resources. Create a new instance, or st
 
 ### includeQueryParams
 
-Controls resource cache keys when `cache` is supplied. `true` keeps the query string, so `/image.png?v=1` and `/image.png?v=2` use different entries. `false` strips the query string before constructing the key, so those URLs share an entry. The requested URL is never changed by this option.
+Controls resource cache keys. `true` keeps the query string, so `/image.png?v=1` and `/image.png?v=2` use different entries. `false` strips the query string before constructing the key, so those URLs share an entry. The requested URL is never changed by this option.
 
 Defaults to `true`
 
