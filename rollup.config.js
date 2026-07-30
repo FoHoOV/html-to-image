@@ -4,8 +4,10 @@ import swc from "@rollup/plugin-swc";
 import terser from "@rollup/plugin-terser";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "rollup";
+import { visualizer } from "rollup-plugin-visualizer";
 
 const extensions = [".mjs", ".js", ".json", ".node", ".ts"];
+const shouldAnalyze = process.env.ANALYZE === "true";
 const sourceDirectory = fileURLToPath(new URL("./src", import.meta.url));
 
 export default defineConfig({
@@ -31,7 +33,19 @@ export default defineConfig({
       name: "htmlToImage",
       format: "umd",
       generatedCode: "es5",
-      plugins: [terser({ ecma: 5 })],
+      plugins: [
+        terser({ ecma: 5 }),
+        ...(shouldAnalyze
+          ? [
+              visualizer({
+                filename: ".rollup/stats.html",
+                sourcemap: true,
+                template: "treemap",
+                title: "html-to-image browser bundle",
+              }),
+            ]
+          : []),
+      ],
       sourcemap: true,
       sourcemapExcludeSources: true,
     },

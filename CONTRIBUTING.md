@@ -27,6 +27,14 @@ The build creates all publishable output under `dist/`:
 - `dist/browser` contains the minified UMD bundle.
 - `dist/types` contains TypeScript declarations.
 
+To inspect what contributes to the minified browser bundle, run:
+
+```shell
+pnpm analyze
+```
+
+This writes an interactive treemap that attributes the final minified browser bundle to its source modules at `.rollup/stats.html`. The report is diagnostic, ignored by git, and kept outside `dist/` so it cannot be included in the published package.
+
 ## Add a Changeset
 
 Changesets records the release impact and consumer-facing release notes alongside a change. Add one for a bug fix, feature, breaking change, or any other change that should appear in a release:
