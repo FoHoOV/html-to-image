@@ -4,6 +4,7 @@ import swc from "@rollup/plugin-swc";
 import terser from "@rollup/plugin-terser";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "rollup";
+import outputSize from "rollup-plugin-output-size";
 import { visualizer } from "rollup-plugin-visualizer";
 
 const extensions = [".mjs", ".js", ".json", ".node", ".ts"];
@@ -79,5 +80,6 @@ export default defineConfig({
         swcrc: false,
       },
     }),
+    outputSize({ hide: ["asset"], summary: false }),
   ],
 });

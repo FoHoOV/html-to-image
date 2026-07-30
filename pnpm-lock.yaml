@@ -83,6 +83,9 @@ importers:
       rollup:
         specifier: ^4.62.3
         version: 4.62.3
+      rollup-plugin-output-size:
+        specifier: ^2.0.0
+        version: 2.0.0(rollup@4.62.3)
       rollup-plugin-visualizer:
         specifier: ^7.0.1
         version: 7.0.1(rolldown@1.1.5)(rollup@4.62.3)
@@ -1996,6 +1999,15 @@ packages:
     resolution: {integrity: sha512-t9z29cJjXf/vxQ8dyhCSpt6H6aSwHTk8cT5I3iy6SMXuFpk5mB6PL6XfC8PCwrPTx93udwKUm9HRteAlTGBLiA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
+
+  rollup-plugin-output-size@2.0.0:
+    resolution: {integrity: sha512-cHipt0pm5IExHno4keBzVYihxvzICiw3uhGBvCMnjQoCvkF/RJsYpJZV/Lfh06nasp6codFpId4b+LrcL8iK6g==}
+    engines: {node: '>=20.12.0'}
+    peerDependencies:
+      rollup: ^2.0.0 || ^3.0.0 || ^4.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
 
   rollup-plugin-visualizer@7.0.1:
     resolution: {integrity: sha512-UJUT4+1Ho4OcWmPYU3sYXgUqI8B8Ayfe06MX7y0qCJ1K8aGoKtR/NDd/2nZqM7ADkrzny+I99Ul7GgyoiVNAgg==}
@@ -4214,6 +4226,10 @@ snapshots:
       '@rolldown/binding-wasm32-wasi': 1.1.5
       '@rolldown/binding-win32-arm64-msvc': 1.1.5
       '@rolldown/binding-win32-x64-msvc': 1.1.5
+
+  rollup-plugin-output-size@2.0.0(rollup@4.62.3):
+    optionalDependencies:
+      rollup: 4.62.3
 
   rollup-plugin-visualizer@7.0.1(rolldown@1.1.5)(rollup@4.62.3):
     dependencies:

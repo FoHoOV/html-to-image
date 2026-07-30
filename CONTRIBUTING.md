@@ -27,6 +27,9 @@ The build creates all publishable output under `dist/`:
 - `dist/browser` contains the minified UMD bundle.
 - `dist/types` contains TypeScript declarations.
 
+The build logs the uncompressed and gzip-compressed size of each generated
+JavaScript bundle. Source maps are excluded from this output.
+
 To inspect what contributes to the minified browser bundle, run:
 
 ```shell
