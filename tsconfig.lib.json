@@ -3,12 +3,12 @@
   "compilerOptions": {
     "composite": true,
     "declaration": true,
+    "declarationDir": "./dist/types",
     "downlevelIteration": true,
-    "emitDeclarationOnly": true,
     "ignoreDeprecations": "6.0",
     "module": "esnext",
     "moduleResolution": "bundler",
-    "outDir": "./dist/types",
+    "outDir": "./dist",
     "paths": {
       "@/*": ["./src/*"]
     },
