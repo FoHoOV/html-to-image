@@ -1,8 +1,8 @@
-import { Context } from "@/context";
+import type { Context } from "@/context";
 import { isInstanceOfElement } from "@/node/utils";
 import { getMimeType, resourceToDataUrl, isDataUrl } from "@/utils";
 import { embedResources } from "../utils/resources";
-import { Embedder } from "./types";
+import type { Embedder } from "./types";
 
 export const embedImages: Embedder<HTMLElement | SVGElement> = async ({
   clonedNode,

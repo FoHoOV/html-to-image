@@ -1,6 +1,6 @@
 // TODO: cleanup and refactor + then review again
 
-import { Context } from "@/context";
+import type { Context } from "@/context";
 import { fetchResource, fontToDataUrl } from "@/utils";
 import { shouldEmbed, embedResources } from "../utils/resources";
 import type { Embedder } from "./types";

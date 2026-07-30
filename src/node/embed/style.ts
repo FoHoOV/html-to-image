@@ -1,5 +1,5 @@
 import { getStyleProperties } from "@/node/utils";
-import { Embedder } from "../embed/types";
+import type { Embedder } from "../embed/types";
 
 export const embedStyles: Embedder<HTMLElement | SVGElement> = ({
   clonedNode,

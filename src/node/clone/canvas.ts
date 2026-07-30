@@ -1,5 +1,5 @@
 import { createImage } from "@/node/utils";
-import { Cloner } from "./types";
+import type { Cloner } from "./types";
 
 export const cloneCanvasElement: Cloner<HTMLCanvasElement> = ({
   originalNode,

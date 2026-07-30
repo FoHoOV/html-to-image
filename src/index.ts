@@ -2,7 +2,7 @@ import { createContext } from "@/context";
 import { cloneAsSvg } from "./node";
 import { getWebFontCSS } from "./node/embed";
 import { checkCanvasDimensions, createImage, getImageSize } from "./node/utils";
-import { Options } from "./types";
+import type { Options } from "./types";
 import { canvasToBlob, isWebKit, nextFrame, nodeToDataUrl } from "./utils";
 
 export async function toSvg<T extends HTMLElement>(

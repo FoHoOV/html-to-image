@@ -1,4 +1,4 @@
-import { Context } from "@/context";
+import type { Context } from "@/context";
 import type { Resource } from "./cache";
 
 export async function fetchResource(

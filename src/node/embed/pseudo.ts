@@ -1,7 +1,7 @@
-import { Context } from "@/context";
+import type { Context } from "@/context";
 import { getStyleProperties } from "@/node/utils";
 import { uuid } from "@/utils";
-import { Embedder } from "../embed/types";
+import type { Embedder } from "../embed/types";
 
 export const embedPseudoElements: Embedder<Element> = ({
   originalNode,

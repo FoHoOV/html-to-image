@@ -1,4 +1,4 @@
-import { Embedder } from "../embed/types";
+import type { Embedder } from "../embed/types";
 
 export const embedCssText: Embedder<HTMLElement | SVGElement> = ({
   originalNode,

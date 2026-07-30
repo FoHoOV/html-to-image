@@ -1,4 +1,4 @@
-import { Options } from "@/types";
+import type { Options } from "@/types";
 
 const WEBKIT_ENGINE = /AppleWebKit\/[\d.]+/;
 const BLINK_ENGINE = /(?:Chrome|Chromium|Edg|OPR)\/[\d.]+/;

@@ -1,4 +1,4 @@
-import { Context } from "@/context";
+import type { Context } from "@/context";
 
 let styleProps: string[] | null = null;
 export function getStyleProperties({ options }: Context): string[] {

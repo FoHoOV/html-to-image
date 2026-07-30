@@ -1,4 +1,4 @@
-import { Cloner } from "./types";
+import type { Cloner } from "./types";
 
 export const cloneSelectElement: Cloner<HTMLSelectElement> = ({
   originalNode,

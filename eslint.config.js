@@ -29,10 +29,19 @@ export default defineConfig([
     rules: {
       "no-console": ["error", { allow: ["warn", "error"] }],
       "no-unused-vars": "off",
+      "@typescript-eslint/consistent-type-imports": [
+        "error",
+        {
+          disallowTypeAnnotations: true,
+          fixStyle: "separate-type-imports",
+          prefer: "type-imports",
+        },
+      ],
       "@typescript-eslint/explicit-module-boundary-types": "off",
       "@typescript-eslint/no-empty-function": "off",
       "@typescript-eslint/no-empty-object-type": "off",
       "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-import-type-side-effects": "error",
       "@typescript-eslint/no-namespace": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/no-unused-vars": [

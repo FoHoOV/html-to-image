@@ -1,4 +1,4 @@
-import { Context } from "@/context";
+import type { Context } from "@/context";
 
 type CloneContext<TNode extends Node> = Readonly<{
   originalNode: TNode;

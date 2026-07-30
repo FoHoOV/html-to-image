@@ -1,5 +1,6 @@
-import { Options } from "@/types";
-import { Cache, Resource } from "@/utils";
+import type { Options } from "@/types";
+import type { Resource } from "@/utils";
+import { Cache } from "@/utils";
 
 export type Context = {
   options: Options & { cache: Cache };

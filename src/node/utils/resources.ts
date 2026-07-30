@@ -6,7 +6,7 @@ import {
   makeDataUrl,
   resourceToDataUrl,
 } from "../../utils/data-url";
-import { Context } from "@/context";
+import type { Context } from "@/context";
 
 const URL_REGEX = /url\((['"]?)([^'"]+?)\1\)/g;
 const URL_WITH_FORMAT_REGEX = /url\([^)]+\)\s*format\((["']?)([^"']+)\1\)/g;

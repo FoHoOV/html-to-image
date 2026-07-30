@@ -1,5 +1,5 @@
 import { fetchResource } from "./fetch";
-import { Context } from "@/context";
+import type { Context } from "@/context";
 
 export function isDataUrl(url: string) {
   return url.search(/^(data:)/) !== -1;

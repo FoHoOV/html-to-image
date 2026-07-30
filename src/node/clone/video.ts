@@ -1,6 +1,6 @@
 import { createImage } from "@/node/utils";
 import { getMimeType, resourceToDataUrl } from "@/utils";
-import { Cloner } from "./types";
+import type { Cloner } from "./types";
 
 export const cloneVideoElement: Cloner<HTMLVideoElement> = async ({
   originalNode,

@@ -1,4 +1,4 @@
-import { Options } from "@/types";
+import type { Options } from "@/types";
 import { getNodeHeight, getNodeWidth } from "./size";
 
 export function createImage(url: string): Promise<HTMLImageElement> {
