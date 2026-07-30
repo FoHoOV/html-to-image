@@ -234,7 +234,7 @@ describe('basic usage', () => {
     await assertTextRendered([text], node)
   })
 
-  test.skip('should render content from <canvas>', async ({
+  test('should render content from <canvas>', async ({
     assertTextRendered,
     bootstrap,
   }) => {
