@@ -26,17 +26,24 @@ export function applyStyle<TElement extends HTMLElement>(
   }
 
   const manual = options.style;
-  if (manual != null) {
-    Object.entries(manual).forEach(([key, value]) => {
-      if (value == null) {
-        return;
-      }
-      node.style.setProperty(
-        toCssPropertyName(key),
-        value.toString(),
-        "important",
-      );
-    });
+  if (!manual) {
+    return;
+  }
+  for (const key of Object.keys(manual)) {
+    const value = manual[key as keyof typeof manual];
+
+    if (value == null) {
+      continue;
+    }
+
+    if (value == null) {
+      return;
+    }
+    node.style.setProperty(
+      toCssPropertyName(key),
+      value.toString(),
+      "important",
+    );
   }
 }
 

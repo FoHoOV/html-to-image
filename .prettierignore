@@ -10,7 +10,6 @@
 .babelrc
 .editorconfig
 .stylelintrc.json
-package.json
 tsconfig.json
 tslint.json
 CNAME

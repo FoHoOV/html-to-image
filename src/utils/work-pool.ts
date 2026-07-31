@@ -10,15 +10,16 @@ export function createWorkPool(limit: number) {
       }
       pending.add(promise);
       void promise
+        .then(() => {
+          pending.delete(promise);
+        })
         .catch((error) => {
+          pending.delete(promise);
           if (!hasError) {
             hasError = true;
             firstSeenError = error;
           }
           throw error;
-        })
-        .finally(() => {
-          pending.delete(promise);
         });
 
       if (pending.size >= limit) {

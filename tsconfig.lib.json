@@ -11,7 +11,7 @@
       "@/*": ["./src/*"]
     },
     "rootDir": "./src",
-    "target": "ES2020",
+    "target": "es2015",
     "tsBuildInfoFile": "./node_modules/.cache/typescript/tsconfig.lib.tsbuildinfo",
     "types": [],
     "useDefineForClassFields": false

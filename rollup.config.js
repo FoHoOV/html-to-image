@@ -7,7 +7,7 @@ import { defineConfig } from "rollup";
 import outputSize from "rollup-plugin-output-size";
 import { visualizer } from "rollup-plugin-visualizer";
 
-const extensions = [".mjs", ".js", ".json", ".node", ".ts"];
+const extensions = [".mjs", ".js", ".json", ".ts"];
 const shouldAnalyze = process.env.ANALYZE === "true";
 const sourceDirectory = fileURLToPath(new URL("./src", import.meta.url));
 
@@ -17,25 +17,29 @@ export default defineConfig({
     {
       file: "dist/esm/index.mjs",
       format: "es",
-      generatedCode: "es5",
+      generatedCode: "es2015",
       sourcemap: true,
       sourcemapExcludeSources: true,
     },
     {
-      exports: "named",
       file: "dist/cjs/index.cjs",
       format: "cjs",
-      generatedCode: "es5",
+      exports: "named",
+      generatedCode: "es2015",
       sourcemap: true,
       sourcemapExcludeSources: true,
     },
     {
       file: "dist/browser/html-to-image.js",
-      name: "htmlToImage",
       format: "umd",
-      generatedCode: "es5",
+      name: "htmlToImage",
+      generatedCode: "es2015",
+      sourcemap: true,
+      sourcemapExcludeSources: true,
       plugins: [
-        terser({ ecma: 5 }),
+        terser({
+          ecma: 2015,
+        }),
         ...(shouldAnalyze
           ? [
               visualizer({
@@ -47,39 +51,42 @@ export default defineConfig({
             ]
           : []),
       ],
-      sourcemap: true,
-      sourcemapExcludeSources: true,
     },
   ],
   plugins: [
     alias({
       entries: [{ find: "@", replacement: sourceDirectory }],
     }),
-    nodeResolve({ extensions }),
+    nodeResolve({
+      extensions,
+    }),
     swc({
       exclude: "node_modules/**",
-      include: "src/**/*.ts",
+      include: "src/**/*.{ts,js,mjs}",
       swc: {
         configFile: false,
+        swcrc: false,
+        sourceMaps: true,
         inlineSourcesContent: false,
         isModule: "unknown",
         jsc: {
+          target: "es2015",
           externalHelpers: true,
           loose: false,
           parser: {
-            decorators: false,
             syntax: "typescript",
             tsx: false,
+            decorators: false,
           },
-          target: "es5",
           transform: {
             useDefineForClassFields: false,
           },
         },
-        sourceMaps: true,
-        swcrc: false,
       },
     }),
-    outputSize({ hide: ["asset"], summary: false }),
+    outputSize({
+      hide: ["asset"],
+      summary: false,
+    }),
   ],
 });

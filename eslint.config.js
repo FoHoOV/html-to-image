@@ -1,10 +1,9 @@
-// @ts-check
-
 import js from "@eslint/js";
 import { defineConfig } from "eslint/config";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
 import globals from "globals";
 import tseslint from "typescript-eslint";
+import compat from "eslint-plugin-compat";
 
 export default defineConfig([
   {
@@ -60,4 +59,5 @@ export default defineConfig([
     },
   },
   eslintConfigPrettier,
+  compat.configs["flat/recommended"],
 ]);
