@@ -15,8 +15,8 @@ describe("resource cache", () => {
     const secondPromise = fetchResource("/retry.txt", undefined, context);
 
     await Promise.all([
-      expect(firstPromise).rejects.toThrowError(/cannot fetch/),
-      expect(secondPromise).rejects.toThrowError(/cannot fetch/),
+      expect(firstPromise).rejects.toThrow(/cannot fetch/),
+      expect(secondPromise).rejects.toThrow(/cannot fetch/),
     ]);
     expect(fetchSpy).toHaveBeenCalledTimes(1);
 
