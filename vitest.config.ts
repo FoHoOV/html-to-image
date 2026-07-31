@@ -29,7 +29,7 @@ export default defineConfig({
       reporter: ["html", "lcovonly", "cobertura", "text-summary"],
       include: ["src/**/*.ts"],
     },
-    fileParallelism: false,
+    fileParallelism: true,
     globals: true,
     hookTimeout: 20_000,
     include: ["test/spec/**/*.spec.ts", "test/spec/**/*.sepc.ts"],
