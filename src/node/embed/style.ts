@@ -13,6 +13,7 @@ export const embedStyles: Embedder<HTMLElement | SVGElement> = ({
   }
 
   // TODO: bad min support
+  // eslint-disable-next-line no-restricted-syntax
   const computedStyles = originalNode.computedStyleMap();
   const isParentGridOrFlex =
     clonedNode.parentElement &&

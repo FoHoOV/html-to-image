@@ -7,7 +7,6 @@ import { defineConfig } from "rollup";
 import outputSize from "rollup-plugin-output-size";
 import { visualizer } from "rollup-plugin-visualizer";
 
-const extensions = [".mjs", ".js", ".json", ".ts"];
 const shouldAnalyze = process.env.ANALYZE === "true";
 const sourceDirectory = fileURLToPath(new URL("./src", import.meta.url));
 
@@ -58,7 +57,7 @@ export default defineConfig({
       entries: [{ find: "@", replacement: sourceDirectory }],
     }),
     nodeResolve({
-      extensions,
+      extensions: [".mjs", ".js", ".ts"],
     }),
     swc({
       exclude: "node_modules/**",
