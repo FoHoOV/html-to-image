@@ -18,7 +18,7 @@ export default defineConfig({
       screenshotDirectory: ".vitest/screenshots",
       instances: [
         { browser: "chromium" },
-        // Enable these once CSS Typed OM has a Firefox/WebKit fallback.
+        // Enable these after the remaining cross-engine differences are resolved.
         // { browser: 'firefox' },
         // { browser: "webkit" },
       ],

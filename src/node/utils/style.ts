@@ -36,9 +36,6 @@ export function applyStyle<TElement extends HTMLElement>(
       continue;
     }
 
-    if (value == null) {
-      return;
-    }
     node.style.setProperty(
       toCssPropertyName(key),
       value.toString(),

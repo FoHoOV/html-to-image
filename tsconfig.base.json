@@ -1,8 +1,6 @@
 {
   "compilerOptions": {
     "esModuleInterop": true,
-    "emitDeclarationOnly": true,
-    "lib": ["DOM", "ES2015"],
     "noEmitOnError": true,
     "noImplicitAny": true,
     "noUnusedLocals": true,

@@ -59,17 +59,27 @@ export default defineConfig([
     },
   },
   eslintConfigPrettier,
-  compat.configs["flat/recommended"],
   {
-    name: "project/custom-browser-compatibility",
+    name: "project/browser-compatibility",
     files: ["src/**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx}"],
+    extends: [compat.configs["flat/recommended"]],
+    settings: {
+      lintAllEsApis: true,
+    },
     rules: {
-      "no-restricted-syntax": [
+      // eslint-plugin-compat cannot infer these members, so guard its known gaps.
+      "no-restricted-properties": [
         "error",
         {
-          selector:
-            "CallExpression[callee.type='MemberExpression'][callee.property.name='computedStyleMap']",
-          message: "computedStyleMap() support is mixed, use another api",
+          property: "computedStyleMap",
+          message:
+            "CSS Typed OM is unavailable in supported Firefox and Safari versions. Feature-detect it and provide a CSSOM fallback.",
+        },
+        {
+          object: "navigator",
+          property: "share",
+          message:
+            "The Web Share API is unavailable by default in supported Firefox versions.",
         },
       ],
     },

@@ -2,6 +2,7 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
+    "lib": ["DOM", "ES2020"],
     "module": "preserve",
     "moduleResolution": "bundler",
     "outDir": ".vitest/typescript",

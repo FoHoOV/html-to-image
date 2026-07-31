@@ -9,18 +9,18 @@ export function createWorkPool(limit: number) {
         throw firstSeenError;
       }
       pending.add(promise);
-      void promise
-        .then(() => {
+      void promise.then(
+        () => {
           pending.delete(promise);
-        })
-        .catch((error) => {
+        },
+        (error) => {
           pending.delete(promise);
           if (!hasError) {
             hasError = true;
             firstSeenError = error;
           }
-          throw error;
-        });
+        },
+      );
 
       if (pending.size >= limit) {
         await Promise.race(pending);

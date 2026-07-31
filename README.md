@@ -27,7 +27,7 @@ npm install --save @fohoov/html-to-image
 ## Usage
 
 ```js
-/* ES6 */
+/* ES modules */
 import * as htmlToImage from '@fohoov/html-to-image';
 import {
   Cache,
@@ -41,7 +41,7 @@ import {
   toDataUrl
 } from '@fohoov/html-to-image';
 
-/* ES5 */
+/* CommonJS */
 var htmlToImage = require('@fohoov/html-to-image');
 ```
 
@@ -352,16 +352,25 @@ An array of style property names. Can be used to manually specify which style pr
 
 ## Browsers
 
-Only standard browser APIs are used, but make sure your browser supports:
+The published bundles use ES2015 syntax The supported browser floor is:
+
+- Chrome 64+
+- Edge 79+
+- Firefox 68+
+- Safari 12+
+- iOS Safari 12+
+
+These fixed minimums account for both the emitted syntax and the browser APIs
+used by the library. Only standard browser APIs are used, including:
 
 - [Promise](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Promise)
 - SVG `<foreignObject>` tag
+- `fetch()`
 - `HTMLImageElement.decode()`
 - `TextDecoder`
 - `CSS.escape()`
-- `String.prototype.matchAll()`
 
-The library targets modern Chrome, Firefox, and Safari, with Chrome generally performing better on large DOM trees.
+Chrome generally performs better on large DOM trees.
 
 ### WebKit
 

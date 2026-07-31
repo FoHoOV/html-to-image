@@ -9,6 +9,7 @@ import { visualizer } from "rollup-plugin-visualizer";
 
 const shouldAnalyze = process.env.ANALYZE === "true";
 const sourceDirectory = fileURLToPath(new URL("./src", import.meta.url));
+const outputTarget = "es2015";
 
 export default defineConfig({
   input: "./src/index.ts",
@@ -16,7 +17,7 @@ export default defineConfig({
     {
       file: "dist/esm/index.mjs",
       format: "es",
-      generatedCode: "es2015",
+      generatedCode: outputTarget,
       sourcemap: true,
       sourcemapExcludeSources: true,
     },
@@ -24,7 +25,7 @@ export default defineConfig({
       file: "dist/cjs/index.cjs",
       format: "cjs",
       exports: "named",
-      generatedCode: "es2015",
+      generatedCode: outputTarget,
       sourcemap: true,
       sourcemapExcludeSources: true,
     },
@@ -32,7 +33,7 @@ export default defineConfig({
       file: "dist/browser/html-to-image.js",
       format: "umd",
       name: "htmlToImage",
-      generatedCode: "es2015",
+      generatedCode: outputTarget,
       sourcemap: true,
       sourcemapExcludeSources: true,
       plugins: [
@@ -69,7 +70,7 @@ export default defineConfig({
         inlineSourcesContent: false,
         isModule: "unknown",
         jsc: {
-          target: "es2015",
+          target: outputTarget,
           externalHelpers: true,
           loose: false,
           parser: {
