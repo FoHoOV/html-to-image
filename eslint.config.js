@@ -60,4 +60,18 @@ export default defineConfig([
   },
   eslintConfigPrettier,
   compat.configs["flat/recommended"],
+  {
+    name: "project/custom-browser-compatibility",
+    files: ["src/**/*.{js,cjs,mjs,jsx,ts,cts,mts,tsx}"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "CallExpression[callee.type='MemberExpression'][callee.property.name='computedStyleMap']",
+          message: "computedStyleMap() support is mixed, use another api",
+        },
+      ],
+    },
+  },
 ]);
