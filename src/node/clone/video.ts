@@ -14,15 +14,18 @@ export const cloneVideoElement: Cloner<HTMLVideoElement> = async ({
     canvas.height = originalNode.clientHeight;
     canvasContext?.drawImage(originalNode, 0, 0, canvas.width, canvas.height);
 
-    return createVideoImage(canvas.toDataURL());
+    return createVideoImage(canvas.toDataURL(), originalNode);
   }
 
   const poster = originalNode.poster;
   const dataURL = await resourceToDataUrl(poster, getMimeType(poster), context);
-  return createVideoImage(dataURL);
+  return createVideoImage(dataURL, originalNode);
 };
 
-async function createVideoImage(dataURL: string) {
+async function createVideoImage(dataURL: string, originalNode: HTMLElement) {
   const image = await createImage(dataURL);
+  image.className = originalNode.className;
+  image.style.cssText = originalNode.style.cssText;
+  image.style.display = window.getComputedStyle(originalNode).display;
   return image;
 }

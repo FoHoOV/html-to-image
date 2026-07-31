@@ -1,13 +1,13 @@
 import type { Context } from "@/context";
 import { isInstanceOfElement } from "@/node/utils";
 import { getMimeType, resourceToDataUrl, isDataUrl } from "@/utils";
-import { embedResources } from "../utils/resources";
+import { getEmbeddableResource } from "../utils/resources";
 import type { Embedder } from "./types";
 
-export const embedImages: Embedder<HTMLElement | SVGElement> = async ({
-  clonedNode,
-  context,
-}) => {
+export const embedImages: Embedder<
+  HTMLElement | SVGElement,
+  Promise<void>
+> = async ({ clonedNode, context }) => {
   await Promise.all([
     embedBackground(clonedNode, context),
     embedMask(clonedNode, context),
@@ -21,7 +21,10 @@ async function embedProp(
   node: HTMLElement | SVGElement,
   context: Context,
 ) {
-  const cssString = await embedResources(propValue, null, context);
+  const cssString = await getEmbeddableResource(propValue, null, context);
+
+  await context.status.embedding.css.ready;
+
   node.style.setProperty(
     propName,
     cssString,

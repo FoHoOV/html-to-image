@@ -3,11 +3,12 @@ import { getStyleProperties } from "@/node/utils";
 import { uuid } from "@/utils";
 import type { Embedder } from "../embed/types";
 
-export const embedPseudoElements: Embedder<Element> = ({
+export const embedPseudoElements: Embedder<Element, Promise<void>> = async ({
   originalNode,
   clonedNode,
   context,
 }) => {
+  await context.status.addedToDom.ready;
   [":before", ":after"].forEach((target) => {
     const style = window.getComputedStyle(originalNode, target);
     const content = style.getPropertyValue("content");

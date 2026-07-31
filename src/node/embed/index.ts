@@ -1,4 +1,3 @@
-export * from "./css";
 export * from "./pseudo";
 export * from "./style";
 export * from "./image";

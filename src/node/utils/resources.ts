@@ -61,7 +61,7 @@ function resolveUrl(url: string, baseUrl: string | null): string {
   return a.href;
 }
 
-export async function embed(
+export async function createEmbeddableResource(
   cssText: string,
   resourceURL: string,
   baseURL: string | null,
@@ -108,7 +108,7 @@ export function shouldEmbed(url: string): boolean {
   return url.search(URL_REGEX) !== -1;
 }
 
-export async function embedResources(
+export async function getEmbeddableResource(
   cssText: string,
   baseUrl: string | null,
   context: Context,
@@ -121,7 +121,9 @@ export async function embedResources(
   const urls = parseURLs(filteredCSSText);
   return urls.reduce(
     (deferred, url) =>
-      deferred.then((css) => embed(css, url, baseUrl, context)),
+      deferred.then((css) =>
+        createEmbeddableResource(css, url, baseUrl, context),
+      ),
     Promise.resolve(filteredCSSText),
   );
 }

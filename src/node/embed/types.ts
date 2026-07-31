@@ -7,6 +7,6 @@ type EmbedContext<TNode extends Node> = Readonly<{
   clonedParentNode: Node | null;
 }>;
 
-export type Embedder<TNode extends Node> = (
+export type Embedder<TNode extends Node, TResult extends void | Promise<void>> = (
   config: EmbedContext<TNode>,
-) => void | Promise<void>;
+) => TResult;

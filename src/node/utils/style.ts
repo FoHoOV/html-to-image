@@ -13,7 +13,7 @@ export function getStyleProperties({ options }: Context): string[] {
   return styleProps;
 }
 
-export function applyStyle<TElement extends HTMLElement>(
+export function applyCustomStyles<TElement extends HTMLElement>(
   node: TElement,
   { options }: Context,
 ) {

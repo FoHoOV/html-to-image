@@ -9,7 +9,7 @@ CI uses Node.js 24 and the pnpm version pinned in `package.json`. Corepack can i
 ```shell
 corepack enable
 pnpm install
-pnpm exec playwright install --with-deps
+pnpm dlx playwright install --with-deps
 ```
 
 Create a focused branch from `master`, make the change, and add or update tests for behavior changes. Before opening a pull request, run:

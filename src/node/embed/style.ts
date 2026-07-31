@@ -1,55 +1,28 @@
+import type { Context } from "@/context";
 import { getStyleProperties } from "@/node/utils";
 import type { Embedder } from "../embed/types";
 
-export const embedStyles: Embedder<HTMLElement | SVGElement> = ({
-  clonedNode,
-  originalNode,
-  context,
-}) => {
-  const styleProps = getStyleProperties(context);
-  // TODO: why not the clonedNode
-  if (isChildOfSvg(originalNode)) {
+export const embedStyles: Embedder<
+  HTMLElement | SVGElement,
+  Promise<void>
+> = async ({ clonedNode, context }) => {
+  if (isChildOfSvg(clonedNode)) {
     return;
   }
 
-  // TODO: bad min support
-  // eslint-disable-next-line no-restricted-properties
-  const computedStyles = originalNode.computedStyleMap();
-  const isParentGridOrFlex =
-    clonedNode.parentElement &&
-    isFlexOrGridDisplay(
-      window.getComputedStyle(clonedNode.parentElement).display,
-    );
+  const targetStyle = clonedNode.style;
+  if (!targetStyle) {
+    return;
+  }
+  await context.status.addedToDom.ready;
+  const sourceWindow = clonedNode.ownerDocument.defaultView ?? window;
+  const sourceStyle = sourceWindow.getComputedStyle(clonedNode);
+  const transformOrigin = sourceStyle.transformOrigin;
+  const cssText = serializeComputedStyles(sourceStyle, clonedNode, context);
 
-  const nodeStyles = new Map<string, { value: string; priority: string }>();
-
-  styleProps.forEach((name) => {
-    if (SKIPPED_STYLE_PROPS.has(name)) {
-      return;
-    }
-
-    if ((name === "width" || name === "inline-size") && isParentGridOrFlex) {
-      return;
-    }
-
-    let value = computedStyles.get(name)?.toString() ?? "";
-    if (name === "font-kerning") {
-      value = "normal";
-    }
-
-    if (name === "d" && clonedNode.getAttribute("d")) {
-      value = `path(${clonedNode.getAttribute("d")})`;
-    }
-
-    nodeStyles.set(name, {
-      value,
-      priority: "",
-    });
-  });
-
-  nodeStyles.forEach(({ value, priority }, key) => {
-    clonedNode.style.setProperty(key, value, priority);
-  });
+  targetStyle.cssText = cssText;
+  // Safari historically omitted transform-origin from computed cssText.
+  targetStyle.transformOrigin = transformOrigin;
 };
 
 const SKIPPED_STYLE_PROPS = new Set([
@@ -59,12 +32,30 @@ const SKIPPED_STYLE_PROPS = new Set([
   "-webkit-text-stroke-width",
 ]);
 
-function isChildOfSvg(node: Element) {
-  const closestSvg = node.closest("svg");
+function serializeComputedStyles(
+  sourceStyles: CSSStyleDeclaration,
+  clonedNode: HTMLElement | SVGElement,
+  context: Context,
+) {
+  const path = clonedNode.getAttribute("d");
 
-  return closestSvg != null && closestSvg !== node;
+  return getStyleProperties(context)
+    .filter((property) => !SKIPPED_STYLE_PROPS.has(property))
+    .map((property) => {
+      let value = sourceStyles.getPropertyValue(property);
+      if (property === "font-kerning") {
+        value = "normal";
+      } else if (property === "d" && path) {
+        value = `path(${path})`;
+      }
+
+      const priority = sourceStyles.getPropertyPriority(property);
+      return `${property}: ${value}${priority ? " !important" : ""};`;
+    })
+    .join(" ");
 }
 
-function isFlexOrGridDisplay(display: string) {
-  return display.includes("flex") || display.includes("grid");
+function isChildOfSvg(node: Element) {
+  const closestSvg = node.closest("svg");
+  return closestSvg != null && closestSvg !== node;
 }

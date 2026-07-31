@@ -2,10 +2,10 @@
 
 import type { Context } from "@/context";
 import { fetchResource, fontToDataUrl } from "@/utils";
-import { shouldEmbed, embedResources } from "../utils/resources";
+import { shouldEmbed, getEmbeddableResource } from "../utils/resources";
 import type { Embedder } from "./types";
 
-export const embedWebFonts: Embedder<HTMLElement> = async ({
+export const embedWebFonts: Embedder<HTMLElement, Promise<void>> = async ({
   clonedNode,
   context,
 }) => {
@@ -269,7 +269,7 @@ export async function getWebFontCSS<T extends HTMLElement>(
         const baseUrl = rule.parentStyleSheet
           ? rule.parentStyleSheet.href
           : null;
-        return embedResources(rule.cssText, baseUrl, context);
+        return getEmbeddableResource(rule.cssText, baseUrl, context);
       }),
   );
 

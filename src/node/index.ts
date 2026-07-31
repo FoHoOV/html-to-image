@@ -1,5 +1,5 @@
 import type { Context } from "@/context";
-import { addHiddenDomElement, createWorkPool, nextFrame } from "@/utils";
+import { addHiddenDomElement, nextFrame } from "@/utils";
 import {
   cloneSvgElement,
   cloneUseElement,
@@ -12,7 +12,6 @@ import {
   cloneVideoElement,
 } from "./clone";
 import {
-  embedCssText,
   embedPseudoElements,
   embedStyles,
   embedImages,
@@ -21,38 +20,30 @@ import {
 import {
   isInstanceOfElement,
   traverseChildren,
-  applyStyle,
+  applyCustomStyles,
   getImageSize,
   wrapInSvg,
 } from "./utils";
 
 export async function cloneAsSvg(node: Node, context: Context) {
   const clonedNode = await cloneNodeTree(node, context);
-
-  applyStyle(clonedNode, context);
-
-  const removeElement = addHiddenDomElement(node, clonedNode);
-  try {
-    await nextFrame();
-    const { width, height } = getImageSize(clonedNode, context.options);
-    removeElement();
-    await embedWebFonts({
-      clonedNode,
-      clonedParentNode: null,
-      context,
-      originalNode: node as typeof clonedNode,
-    });
-    const svg = wrapInSvg(clonedNode, width, height);
-    return { svg, width, height };
-  } catch (error) {
-    removeElement();
-    throw error;
+  const renderedSize = context.status.renderedSize;
+  if (!renderedSize) {
+    throw new Error("The cloned node was not measured");
   }
+  const { width, height } = renderedSize;
+
+  await embedWebFonts({
+    clonedNode,
+    clonedParentNode: null,
+    context,
+    originalNode: node as typeof clonedNode,
+  });
+  const svg = wrapInSvg(clonedNode, width, height);
+  return { svg, width, height };
 }
 
 export async function cloneNodeTree(startingNode: Node, context: Context) {
-  const embedWorkPool = createWorkPool(500);
-
   async function cloneSubtree(node: Node, clonedParentNode: Node | null) {
     const filter = context.options.filter?.(node as Node) ?? "keep";
     if (filter === "remove") {
@@ -64,42 +55,66 @@ export async function cloneNodeTree(startingNode: Node, context: Context) {
         ? document.createDocumentFragment()
         : await cloneSingleNode(node, clonedParentNode, context);
 
+    registerEmbedding(node, clonedCurrentNode, clonedParentNode, context);
+
     for (const element of traverseChildren(node)) {
       const clonedChild = await cloneSubtree(element, clonedCurrentNode);
       if (clonedChild) {
         clonedCurrentNode.appendChild(clonedChild);
       }
     }
-    await embedWorkPool.add(
-      embed(node, clonedCurrentNode, clonedParentNode, context),
-    );
-
     return clonedCurrentNode;
   }
 
   const result = await cloneSubtree(startingNode, null);
-  await embedWorkPool.drain();
+  context.status.embedding.css.seal();
+  context.status.embedding.image.seal();
 
+  let node: HTMLElement | undefined = undefined;
   if (!result) {
-    return createReplacementWrapper();
+    node = createReplacementWrapper();
   }
 
-  if (!result || result instanceof DocumentFragment) {
+  if (!node && result instanceof DocumentFragment) {
     const wrapper = createReplacementWrapper();
     wrapper.appendChild(result);
-    return wrapper;
+    node = wrapper;
   }
 
-  return result as HTMLElement;
+  if (!node) {
+    node = result as HTMLElement;
+  }
+
+  // TODO: could create a race condition with embedStyles for root node
+  // TODO: another idea, what if we always apply the computed styles of original, but when adding svgWrapper
+  // scale it down/up using css based on user provided size? or scaling can cause bad quality, use
+  // a css prop, that the child with fixed values should resize based on fixed ROOT size of user custom provided values?
+  applyCustomStyles(node, context);
+
+  const removeElement = addHiddenDomElement(startingNode, node);
+  try {
+    await nextFrame();
+    context.status.addedToDom.markAsReady();
+
+    await context.status.embedding.css.ready;
+    removeElement();
+
+    await context.status.embedding.image.ready;
+    context.status.renderedSize = getImageSize(node, context.options);
+  } catch {
+    removeElement();
+  }
+
+  return node;
 }
 
 function createReplacementWrapper() {
   const wrapper = document.createElement("div");
-  wrapper.style.display = "inline-block";
+  wrapper.style.display = "block";
   return wrapper;
 }
 
-function cloneSingleNode(
+async function cloneSingleNode(
   originalNode: Node,
   clonedParentNode: Node | null,
   context: Context,
@@ -143,26 +158,29 @@ function cloneSingleNode(
   return originalNode.cloneNode(false);
 }
 
-async function embed(
+function registerEmbedding(
   originalNode: Node,
   clonedNode: Node,
   clonedParentNode: Node | null,
   context: Context,
 ) {
-  if (
-    (isInstanceOfElement(originalNode, HTMLElement) ||
-      isInstanceOfElement(originalNode, SVGElement)) &&
-    (isInstanceOfElement(clonedNode, HTMLElement) ||
-      isInstanceOfElement(clonedNode, SVGElement))
-  ) {
-    const config = { originalNode, clonedNode, clonedParentNode, context };
-    embedCssText(config);
-    embedPseudoElements(config);
-    // TODO: think about this, i believe `embedStyles` should be done AFTER cloned dom tree is available
-    // why? because an empty div that doesnt have its children yet, cannot inline its props using getPropertyValue
-    // but, if that isnt the calculated browser value at that time, this could be ok and even a better approach,
-    // meaning the value is the final applied css prop who won.
-    embedStyles(config);
-    await embedImages(config);
+  if (!isElementLike(originalNode) || !isElementLike(clonedNode)) {
+    return;
   }
+
+  const config = { originalNode, clonedNode, clonedParentNode, context };
+  context.status.embedding.css.add(async () => {
+    await embedStyles(config);
+    await embedPseudoElements(config);
+  });
+  context.status.embedding.image.add(async () => {
+    await embedImages(config);
+  });
+}
+
+function isElementLike(node: Node): node is HTMLElement | SVGElement {
+  return (
+    isInstanceOfElement(node, HTMLElement) ||
+    isInstanceOfElement(node, SVGElement)
+  );
 }

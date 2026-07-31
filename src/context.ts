@@ -1,15 +1,31 @@
 import type { Options } from "@/types";
-import type { Resource } from "@/utils";
-import { Cache } from "@/utils";
+import type { PendingWork, Resource, WorkStatus } from "@/utils";
+import { Cache, createWorkPromise, createWorkStatus } from "@/utils";
 
 export type Context = {
   options: Options & { cache: Cache };
   inFlightRequests: Map<string, Promise<Resource>>;
+  status: {
+    embedding: {
+      css: WorkStatus;
+      image: WorkStatus;
+    };
+    addedToDom: PendingWork;
+    renderedSize: { width: number; height: number } | null;
+  };
 };
 
 export function createContext(options?: Options) {
   return {
     options: { ...options, cache: options?.cache ?? new Cache() },
     inFlightRequests: new Map(),
+    status: {
+      embedding: {
+        css: createWorkStatus(),
+        image: createWorkStatus(),
+      },
+      addedToDom: createWorkPromise(),
+      renderedSize: null,
+    },
   } satisfies Context;
 }

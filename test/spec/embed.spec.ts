@@ -1,5 +1,8 @@
 import { createContext } from "../../src/context";
-import { embed, parseURLs } from "../../src/node/utils/resources";
+import {
+  createEmbeddableResource,
+  parseURLs,
+} from "../../src/node/utils/resources";
 import { test } from "../fixtures";
 
 describe("embeding", () => {
@@ -22,7 +25,7 @@ describe("embeding", () => {
 
   describe("embed", () => {
     test("should embed url", async () => {
-      const result = await embed(
+      const result = await createEmbeddableResource(
         "url(http://acme.com/image.png), url(foo.com)",
         "http://acme.com/image.png",
         null,
@@ -34,7 +37,7 @@ describe("embeding", () => {
     });
 
     test("should resolve urls if base url given", async () => {
-      const result = await embed(
+      const result = await createEmbeddableResource(
         "url(images/image.png)",
         "images/image.png",
         "http://acme.com/",

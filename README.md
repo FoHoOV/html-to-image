@@ -385,21 +385,22 @@ There might some day exist (or maybe already exists?) a simple and standard way 
 This library uses a feature of SVG that allows having arbitrary HTML content inside of the `<foreignObject>` tag. So, in order to render that DOM node for you, following steps are taken:
 
 1. Clone the original DOM node recursively and apply the configured filter. External SVG `<use>` definitions and their referenced dependencies are copied into the clone. Video frames and posters are replaced with images while preserving the computed video styles.
-2. Apply consumer-provided dimensions and styles, attach the clone to an off-screen container, and wait for browser layout and paint work to settle.
-3. Read browser-computed styles, then apply them to the clone in a batched write pass. Measure the output from this styled and filtered clone.
+2. Canvas elements that cannot produce a data URL through `toDataURL()`, as well as video elements, are replaced with `<img>` elements. The replacement image inherits the original element’s inline styles and class name. However, CSS selectors that specifically target `canvas` or `video` elements will no longer apply because the resulting element is an `<img>`.
+3. Apply consumer-provided dimensions and styles, attach the clone to an off-screen container, and wait for browser layout and paint work to settle.
+4. Read browser-computed styles, then apply them to the clone in a batched write pass. Measure the output from this styled and filtered clone.
    - and don't forget to recreate pseudo-elements, as they are not cloned in any way, of course
-4. Embed images
+5. Embed images
    - embed image URLs in `<img>` elements
    - inline images used in `background` CSS property, in a fashion similar to fonts
-5. Embed web fonts
+6. Embed web fonts
    - find all the `@font-face` declarations that might represent web fonts
    - parse file URLs, download corresponding files
    - base64-encode and inline content as dataURLs
    - concatenate all the processed CSS rules and put them into one `<style>` element, then attach it to the clone
-6. Serialize the cloned node to XML
-7. Wrap XML into the `<foreignObject>` tag, then into the SVG, then make it a data URL
-8. Optionally, to get PNG content or raw pixel data as a Uint8Array, create an Image element with the SVG as a source, render it on an off-screen canvas, and read the content from the canvas. On WebKit, clear and redraw the same canvas on a later frame to avoid incomplete first draws.
-9. Done!
+7. Serialize the cloned node to XML
+8. Wrap XML into the `<foreignObject>` tag, then into the SVG, then make it a data URL
+9. Optionally, to get PNG content or raw pixel data as a Uint8Array, create an Image element with the SVG as a source, render it on an off-screen canvas, and read the content from the canvas. On WebKit, clear and redraw the same canvas on a later frame to avoid incomplete first draws.
+10. Done!
 
 
 ## Things to watch out for

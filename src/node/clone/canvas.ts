@@ -1,7 +1,7 @@
 import { createImage } from "@/node/utils";
 import type { Cloner } from "./types";
 
-export const cloneCanvasElement: Cloner<HTMLCanvasElement> = ({
+export const cloneCanvasElement: Cloner<HTMLCanvasElement> = async ({
   originalNode,
 }) => {
   const dataURL = originalNode.toDataURL();
@@ -10,5 +10,8 @@ export const cloneCanvasElement: Cloner<HTMLCanvasElement> = ({
     return originalNode.cloneNode(false) as HTMLCanvasElement;
   }
 
-  return createImage(dataURL);
+  const cloned = await createImage(dataURL);
+  cloned.className = originalNode.className;
+  cloned.style.cssText = originalNode.style.cssText;
+  return cloned;
 };
