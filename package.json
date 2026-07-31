@@ -36,7 +36,7 @@
     "lib:typecheck": "tsc -p tsconfig.lib.json --noEmit",
     "node:typecheck": "tsc -p tsconfig.node.json --noEmit",
     "clean": "rimraf dist",
-    "build:types": "tsc -b tsconfig.lib.json --force --emitDeclarationOnly",
+    "build:types": "tsc -b tsconfig.lib.json --force",
     "build:code": "rollup -c",
     "build": "pnpm run build:types && pnpm run build:code",
     "analyze": "rollup -c --environment ANALYZE:true",
