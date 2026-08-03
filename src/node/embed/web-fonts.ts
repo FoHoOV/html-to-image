@@ -4,6 +4,7 @@ import type { Context } from "@/context";
 import { fetchResource, fontToDataUrl } from "@/utils";
 import { shouldEmbed, getEmbeddableResource } from "../utils/resources";
 import type { Embedder } from "./types";
+import { getComputedStyle } from "../utils";
 
 export const embedWebFonts: Embedder<HTMLElement, Promise<void>> = async ({
   clonedNode,
@@ -234,7 +235,7 @@ function getUsedFonts(node: HTMLElement) {
   function traverse(node: HTMLElement) {
     const fontFamily =
       node.style.getPropertyValue(PROPERTY_FONT_FAMILY) ||
-      window.getComputedStyle(node).getPropertyValue(PROPERTY_FONT_FAMILY) ||
+      getComputedStyle(node).getPropertyValue(PROPERTY_FONT_FAMILY) ||
       node.style.fontFamily;
     fontFamily.split(",").forEach((font) => {
       fonts.add(normalizeFontFamily(font));

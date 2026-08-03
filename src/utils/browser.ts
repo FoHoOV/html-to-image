@@ -1,3 +1,5 @@
+import { getComputedStyle, serializeComputedStyles } from "@/node/utils";
+import type { Context } from "@/context";
 import type { Options } from "@/types";
 
 const WEBKIT_ENGINE = /AppleWebKit\/[\d.]+/;
@@ -11,8 +13,21 @@ export function isWebKit() {
   return WEBKIT_ENGINE.test(userAgent) && !BLINK_ENGINE.test(userAgent);
 }
 
-export function addHiddenDomElement(originalNode: Node, clonedNode: Node) {
+export function addHiddenDomElement(
+  clonedNode: Node,
+  originalNode: Node,
+  context: Context,
+) {
   const hiddenNode = document.createElement("div");
+
+  const parent = originalNode.parentNode ?? document.body;
+  const parentComputedStyles = getComputedStyle(parent as HTMLElement);
+  hiddenNode.style.cssText = serializeComputedStyles(
+    parentComputedStyles,
+    hiddenNode,
+    context,
+  );
+
   hiddenNode.style.position = "fixed";
   hiddenNode.style.zIndex = "-100000";
   hiddenNode.style.opacity = "0";
@@ -20,10 +35,7 @@ export function addHiddenDomElement(originalNode: Node, clonedNode: Node) {
   hiddenNode.style.left = "-200%";
 
   hiddenNode.appendChild(clonedNode);
-
-  const parent = originalNode.parentNode ?? document.body;
   parent.insertBefore(hiddenNode, parent.firstChild);
-
   return () => {
     hiddenNode.remove();
   };

@@ -1,4 +1,4 @@
-import { createImage } from "@/node/utils";
+import { copyAttributes, createImage } from "@/node/utils";
 import { getMimeType, resourceToDataUrl } from "@/utils";
 import type { Cloner } from "./types";
 
@@ -24,8 +24,6 @@ export const cloneVideoElement: Cloner<HTMLVideoElement> = async ({
 
 async function createVideoImage(dataURL: string, originalNode: HTMLElement) {
   const image = await createImage(dataURL);
-  image.className = originalNode.className;
-  image.style.cssText = originalNode.style.cssText;
-  image.style.display = window.getComputedStyle(originalNode).display;
+  copyAttributes(image, originalNode);
   return image;
 }

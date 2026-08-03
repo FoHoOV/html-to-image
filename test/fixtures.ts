@@ -82,9 +82,10 @@ async function fetchFile(fileName: string) {
 }
 
 function makeImage(src: string) {
-  return new Promise<HTMLImageElement>((resolve) => {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
+    image.onerror = (e) => reject(e);
     image.src = src;
   });
 }

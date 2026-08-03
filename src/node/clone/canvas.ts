@@ -1,4 +1,4 @@
-import { createImage } from "@/node/utils";
+import { copyAttributes, createImage } from "@/node/utils";
 import type { Cloner } from "./types";
 
 export const cloneCanvasElement: Cloner<HTMLCanvasElement> = async ({
@@ -11,7 +11,6 @@ export const cloneCanvasElement: Cloner<HTMLCanvasElement> = async ({
   }
 
   const cloned = await createImage(dataURL);
-  cloned.className = originalNode.className;
-  cloned.style.cssText = originalNode.style.cssText;
+  copyAttributes(cloned, originalNode);
   return cloned;
 };

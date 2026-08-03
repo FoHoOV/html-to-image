@@ -4,3 +4,4 @@ export * from "./traverse";
 export * from "./svg-wrapper";
 export * from "./size";
 export * from "./instance";
+export * from "./attributes";

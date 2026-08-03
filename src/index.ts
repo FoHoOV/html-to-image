@@ -1,7 +1,7 @@
 import { createContext } from "@/context";
 import { cloneAsSvg } from "./node";
 import { getWebFontCSS } from "./node/embed";
-import { checkCanvasDimensions, createImage, getImageSize } from "./node/utils";
+import { checkCanvasDimensions, createImage } from "./node/utils";
 import type { Options } from "./types";
 import { canvasToBlob, isWebKit, nextFrame, nodeToDataUrl } from "./utils";
 
@@ -64,7 +64,6 @@ export async function toCanvas<T extends HTMLElement>(
     context.clearRect(0, 0, canvasWidth, canvasHeight);
     context.drawImage(img, 0, 0, canvasWidth, canvasHeight);
   }
-
   return canvas;
 }
 
@@ -72,10 +71,11 @@ export async function toPixelData<T extends HTMLElement>(
   node: T,
   options: Options = {},
 ): Promise<Uint8ClampedArray> {
-  const { width, height } = getImageSize(node, options);
   const canvas = await toCanvas(node, options);
   const ctx = canvas.getContext("2d")!;
-  return ctx.getImageData(0, 0, width, height).data;
+  const ratio = options.pixelRatio || window.devicePixelRatio || 1;
+  return ctx.getImageData(0, 0, canvas.width / ratio, canvas.height / ratio)
+    .data;
 }
 
 export async function toPng<T extends HTMLElement>(

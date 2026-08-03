@@ -27,91 +27,102 @@ import {
 
 export async function cloneAsSvg(node: Node, context: Context) {
   const clonedNode = await cloneNodeTree(node, context);
+
   const renderedSize = context.status.renderedSize;
   if (!renderedSize) {
     throw new Error("The cloned node was not measured");
   }
   const { width, height } = renderedSize;
-
-  await embedWebFonts({
-    clonedNode,
-    clonedParentNode: null,
-    context,
-    originalNode: node as typeof clonedNode,
-  });
   const svg = wrapInSvg(clonedNode, width, height);
   return { svg, width, height };
 }
 
 export async function cloneNodeTree(startingNode: Node, context: Context) {
-  async function cloneSubtree(node: Node, clonedParentNode: Node | null) {
+  async function cloneSubtree(
+    node: Node,
+    clonedParentNode: Node | null,
+    isRoot: boolean,
+  ) {
     const filter = context.options.filter?.(node as Node) ?? "keep";
     if (filter === "remove") {
       return null;
     }
 
-    const clonedCurrentNode =
+    let clonedCurrentNode =
       filter === "unwrap"
         ? document.createDocumentFragment()
         : await cloneSingleNode(node, clonedParentNode, context);
 
-    registerEmbedding(node, clonedCurrentNode, clonedParentNode, context);
+    if (isRoot) {
+      clonedCurrentNode = toHtmlElement(clonedCurrentNode);
+      applyCustomStyles(clonedCurrentNode as HTMLElement, context);
+    }
 
     for (const element of traverseChildren(node)) {
-      const clonedChild = await cloneSubtree(element, clonedCurrentNode);
+      const clonedChild = await cloneSubtree(element, clonedCurrentNode, false);
       if (clonedChild) {
         clonedCurrentNode.appendChild(clonedChild);
       }
     }
+
+    registerEmbedding(node, clonedCurrentNode, clonedParentNode, context);
     return clonedCurrentNode;
   }
 
-  const result = await cloneSubtree(startingNode, null);
+  const result = toHtmlElement(await cloneSubtree(startingNode, null, true));
   context.status.embedding.css.seal();
   context.status.embedding.image.seal();
-
-  let node: HTMLElement | undefined = undefined;
-  if (!result) {
-    node = createReplacementWrapper();
-  }
-
-  if (!node && result instanceof DocumentFragment) {
-    const wrapper = createReplacementWrapper();
-    wrapper.appendChild(result);
-    node = wrapper;
-  }
-
-  if (!node) {
-    node = result as HTMLElement;
-  }
 
   // TODO: could create a race condition with embedStyles for root node
   // TODO: another idea, what if we always apply the computed styles of original, but when adding svgWrapper
   // scale it down/up using css based on user provided size? or scaling can cause bad quality, use
   // a css prop, that the child with fixed values should resize based on fixed ROOT size of user custom provided values?
-  applyCustomStyles(node, context);
 
-  const removeElement = addHiddenDomElement(startingNode, node);
+  const removeElement = addHiddenDomElement(result, startingNode, context);
   try {
     await nextFrame();
     context.status.addedToDom.markAsReady();
 
     await context.status.embedding.css.ready;
+
+    context.status.renderedSize = getImageSize(result, context.options);
     removeElement();
 
-    await context.status.embedding.image.ready;
-    context.status.renderedSize = getImageSize(node, context.options);
-  } catch {
+    await Promise.all([
+      context.status.embedding.image.ready,
+      embedWebFonts({
+        clonedNode: result,
+        clonedParentNode: null,
+        originalNode: startingNode as typeof result,
+        context,
+      }),
+    ]);
+  } catch (error) {
     removeElement();
+    throw error;
   }
 
-  return node;
+  return result;
 }
 
-function createReplacementWrapper() {
-  const wrapper = document.createElement("div");
-  wrapper.style.display = "block";
-  return wrapper;
+function toHtmlElement(node: Node | null) {
+  const createWrapper = () => {
+    const wrapper = document.createElement("div");
+    wrapper.style.display = "inline-block";
+    return wrapper;
+  };
+
+  if (!node) {
+    return createWrapper();
+  }
+
+  if (node instanceof DocumentFragment) {
+    const wrapper = createWrapper();
+    wrapper.appendChild(node);
+    return wrapper;
+  }
+
+  return node as HTMLElement;
 }
 
 async function cloneSingleNode(

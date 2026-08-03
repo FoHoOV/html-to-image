@@ -1,6 +1,7 @@
+import { getComputedStyle } from "./style";
+
 function px(node: HTMLElement, styleProperty: string) {
-  const win = node.ownerDocument.defaultView || window;
-  const val = win.getComputedStyle(node).getPropertyValue(styleProperty);
+  const val = getComputedStyle(node).getPropertyValue(styleProperty);
   return val ? parseFloat(val.replace("px", "")) : 0;
 }
 

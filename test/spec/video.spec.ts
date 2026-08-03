@@ -1,5 +1,6 @@
 import { cloneNodeTree } from "../../src/node";
 import { createContext } from "../../src/context";
+import { getComputedStyle } from "../../src/node/utils";
 import { test } from "../fixtures";
 
 describe("work with video element", () => {
@@ -19,7 +20,6 @@ describe("work with video element", () => {
     video.pause();
     video.currentTime = 0;
     await waitForVideoSeek(video);
-
     await renderAndCheck(node);
   });
 
@@ -44,10 +44,10 @@ describe("work with video element", () => {
     const video = root.querySelector("video")!;
     video.style.objectFit = "cover";
     video.style.objectPosition = "25% 75%";
-    const originalNodeStyles = window.getComputedStyle(video);
+    const originalNodeStyles = getComputedStyle(video);
 
     const image = await cloneNodeTree(video, createContext());
-    const clonedNodeStyles = window.getComputedStyle(image);
+    const clonedNodeStyles = getComputedStyle(image);
     root.appendChild(image);
 
     expect(image).toEqual(expect.any(HTMLImageElement));

@@ -1,5 +1,12 @@
 import type { Context } from "@/context";
 
+const SKIPPED_STYLE_PROPS = new Set([
+  "-webkit-text-fill-color",
+  "-webkit-text-stroke",
+  "-webkit-text-stroke-color",
+  "-webkit-text-stroke-width",
+]);
+
 let styleProps: string[] | null = null;
 export function getStyleProperties({ options }: Context): string[] {
   if (options.includeStyleProperties) {
@@ -7,10 +14,38 @@ export function getStyleProperties({ options }: Context): string[] {
   }
 
   if (!styleProps) {
-    styleProps = Array.from(window.getComputedStyle(document.documentElement));
+    styleProps = Array.from(getComputedStyle(document.documentElement));
   }
 
   return styleProps;
+}
+
+export function getComputedStyle(element: HTMLElement | SVGElement) {
+  const sourceWindow = element.ownerDocument.defaultView ?? window;
+  return sourceWindow.getComputedStyle(element);
+}
+
+export function serializeComputedStyles(
+  sourceStyles: CSSStyleDeclaration,
+  clonedNode: HTMLElement | SVGElement,
+  context: Context,
+) {
+  const path = clonedNode.getAttribute("d");
+
+  return getStyleProperties(context)
+    .filter((property) => !SKIPPED_STYLE_PROPS.has(property))
+    .map((property) => {
+      let value = sourceStyles.getPropertyValue(property);
+      if (property === "font-kerning") {
+        value = "normal";
+      } else if (property === "d" && path) {
+        value = `path(${path})`;
+      }
+
+      const priority = sourceStyles.getPropertyPriority(property);
+      return `${property}: ${value}${priority ? " !important" : ""};`;
+    })
+    .join(" ");
 }
 
 export function applyCustomStyles<TElement extends HTMLElement>(

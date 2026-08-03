@@ -80,18 +80,14 @@ async function embedImageNode<T extends HTMLElement | SVGElement>(
   context: Context,
 ) {
   const isImageElement = isInstanceOfElement(clonedNode, HTMLImageElement);
-
-  if (
-    !(isImageElement && !isDataUrl(clonedNode.src)) &&
-    !(
-      isInstanceOfElement(clonedNode, SVGImageElement) &&
-      !isDataUrl(clonedNode.href.baseVal)
-    )
-  ) {
+  if (!isImageElement && !isInstanceOfElement(clonedNode, SVGImageElement)) {
     return;
   }
 
   const url = isImageElement ? clonedNode.src : clonedNode.href.baseVal;
+  if (isDataUrl(url)) {
+    return;
+  }
 
   const dataURL = await resourceToDataUrl(url, getMimeType(url), context);
   let imageErrorHandled = false;
