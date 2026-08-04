@@ -34,9 +34,11 @@ describe("basic usage", () => {
   });
 
   test("should render to jpeg", async ({ bootstrap, check }) => {
+    // JPEG encoders can apply different chroma subsampling. This grayscale
+    // fixture has distinct regions without browser-specific color artifacts.
     const node = await bootstrap(
       "small/node.html",
-      "small/style.css",
+      "small/jpeg-style.css",
       "small/image-jpeg",
     );
     const dataUrl = await htmlToImage.toJpeg(node);
