@@ -25,8 +25,7 @@ export default defineConfig({
       screenshotDirectory: ".vitest/screenshots",
       instances: [
         { browser: "chromium" },
-        // Enable these after the remaining cross-engine differences are resolved.
-        // { browser: 'firefox' },
+        { browser: "firefox" },
         { browser: "webkit" },
       ],
     },
