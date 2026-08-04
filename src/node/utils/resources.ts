@@ -64,13 +64,14 @@ function resolveUrl(url: string, baseUrl: string | null): string {
 export async function createEmbeddableResource(
   cssText: string,
   resourceURL: string,
-  baseURL: string | null,
+  baseUrl: string | undefined,
+  placeHolder: string | undefined,
   context: Context,
   getContentFromUrl?: (url: string) => Promise<string>,
 ): Promise<string> {
   try {
-    const resolvedURL = baseURL
-      ? resolveUrl(resourceURL, baseURL)
+    const resolvedURL = baseUrl
+      ? resolveUrl(resourceURL, baseUrl)
       : resourceURL;
     const contentType = getMimeType(resourceURL);
     let dataURL: string;
@@ -78,7 +79,12 @@ export async function createEmbeddableResource(
       const content = await getContentFromUrl(resolvedURL);
       dataURL = makeDataUrl(content, contentType);
     } else {
-      dataURL = await resourceToDataUrl(resolvedURL, contentType, context);
+      dataURL = await resourceToDataUrl(
+        resolvedURL,
+        contentType,
+        placeHolder,
+        context,
+      );
     }
     return cssText.replace(toRegex(resourceURL), `$1${dataURL}$3`);
   } catch (_error) {
@@ -109,20 +115,21 @@ export function shouldEmbed(url: string): boolean {
 }
 
 export async function getEmbeddableResource(
-  cssText: string,
-  baseUrl: string | null,
+  cssValue: string,
+  baseUrl: string | undefined,
+  placeHolder: string | undefined,
   context: Context,
 ): Promise<string> {
-  if (!shouldEmbed(cssText)) {
-    return cssText;
+  if (!shouldEmbed(cssValue)) {
+    return cssValue;
   }
 
-  const filteredCSSText = filterPreferredFontFormat(cssText, context);
+  const filteredCSSText = filterPreferredFontFormat(cssValue, context);
   const urls = parseURLs(filteredCSSText);
   return urls.reduce(
     (deferred, url) =>
       deferred.then((css) =>
-        createEmbeddableResource(css, url, baseUrl, context),
+        createEmbeddableResource(css, url, baseUrl, placeHolder, context),
       ),
     Promise.resolve(filteredCSSText),
   );

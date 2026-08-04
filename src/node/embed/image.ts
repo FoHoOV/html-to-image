@@ -21,7 +21,12 @@ async function embedProp(
   node: HTMLElement | SVGElement,
   context: Context,
 ) {
-  const cssString = await getEmbeddableResource(propValue, null, context);
+  const cssString = await getEmbeddableResource(
+    propValue,
+    undefined,
+    context.options.imagePlaceholder,
+    context,
+  );
 
   await context.status.embedding.css.ready;
 
@@ -89,7 +94,12 @@ async function embedImageNode<T extends HTMLElement | SVGElement>(
     return;
   }
 
-  const dataURL = await resourceToDataUrl(url, getMimeType(url), context);
+  const dataURL = await resourceToDataUrl(
+    url,
+    getMimeType(url),
+    context.options.imagePlaceholder,
+    context,
+  );
   let imageErrorHandled = false;
   await new Promise((resolve, reject) => {
     clonedNode.onload = resolve;

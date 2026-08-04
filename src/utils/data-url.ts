@@ -18,6 +18,7 @@ export function nodeToDataUrl(node: Node) {
 export async function resourceToDataUrl(
   resourceUrl: string,
   forcedContentType: string | undefined,
+  placeHolder: string | undefined,
   context: Context,
 ) {
   try {
@@ -31,8 +32,8 @@ export async function resourceToDataUrl(
       response.contentType,
     );
   } catch (error) {
-    console.warn("cannot convert image to dataurl", error);
-    return context.options.imagePlaceholder || "";
+    console.warn("cannot convert resource to dataurl", error);
+    return placeHolder || "";
   }
 }
 

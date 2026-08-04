@@ -28,7 +28,8 @@ describe("embeding", () => {
       const result = await createEmbeddableResource(
         "url(http://acme.com/image.png), url(foo.com)",
         "http://acme.com/image.png",
-        null,
+        undefined,
+        undefined,
         createContext(),
         () => Promise.resolve("AAA"),
       );
@@ -41,6 +42,7 @@ describe("embeding", () => {
         "url(images/image.png)",
         "images/image.png",
         "http://acme.com/",
+        undefined,
         createContext(),
         (url) =>
           Promise.resolve(

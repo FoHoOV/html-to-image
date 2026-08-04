@@ -18,7 +18,12 @@ export const cloneVideoElement: Cloner<HTMLVideoElement> = async ({
   }
 
   const poster = originalNode.poster;
-  const dataURL = await resourceToDataUrl(poster, getMimeType(poster), context);
+  const dataURL = await resourceToDataUrl(
+    poster,
+    getMimeType(poster),
+    context.options.imagePlaceholder,
+    context,
+  );
   return createVideoImage(dataURL, originalNode);
 };
 

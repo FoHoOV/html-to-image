@@ -270,7 +270,12 @@ export async function getWebFontCSS<T extends HTMLElement>(
         const baseUrl = rule.parentStyleSheet
           ? rule.parentStyleSheet.href
           : null;
-        return getEmbeddableResource(rule.cssText, baseUrl, context);
+        return getEmbeddableResource(
+          rule.cssText,
+          baseUrl ?? undefined,
+          undefined,
+          context,
+        );
       }),
   );
 
