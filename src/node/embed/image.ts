@@ -1,5 +1,5 @@
 import type { Context } from "@/context";
-import { isInstanceOfElement } from "@/node/utils";
+import { isInstanceOfElement, setHref } from "@/node/utils";
 import { getMimeType, resourceToDataUrl, isDataUrl } from "@/utils";
 import { getEmbeddableResource } from "../utils/resources";
 import type { Embedder } from "./types";
@@ -121,7 +121,7 @@ async function embedImageNode<T extends HTMLElement | SVGElement>(
       clonedNode.srcset = "";
       clonedNode.src = dataURL;
     } else {
-      clonedNode.href.baseVal = dataURL;
+      setHref(clonedNode, dataURL);
     }
   });
 

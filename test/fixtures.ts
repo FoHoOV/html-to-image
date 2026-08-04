@@ -137,17 +137,41 @@ async function drawDataUrl(
   return drawImage(image, getResultCanvasNode(), size);
 }
 
-async function check(dataUrl: string) {
+async function check(dataUrl: string, threshold = 0.1) {
   const imageData = await drawDataUrl(dataUrl);
-  compareToRefImage(imageData);
+  compareToRefImage(imageData, threshold);
 }
 
 async function renderAndCheck(
   node: HTMLDivElement = getCaptureNode(),
   options: Options = {},
+  threshold = 0.1,
 ) {
   const dataUrl = await toPng(node, options);
-  await check(dataUrl);
+  await check(dataUrl, threshold);
+}
+
+async function renderAndCompareToCanvas(
+  canvas: HTMLCanvasElement,
+  node: HTMLDivElement = getCaptureNode(),
+  options: Options = {},
+  threshold = 0.1,
+) {
+  const dataUrl = await toPng(node, options);
+  const output = await makeImage(dataUrl);
+  const actual = getImageData(output, output.width, output.height);
+  const expected = getImageData(canvas, output.width, output.height);
+
+  const mismatchedPixels = pixelmatch(
+    actual.data,
+    expected.data,
+    null,
+    output.width,
+    output.height,
+    { threshold },
+  );
+
+  expect(mismatchedPixels).toBeLessThan(100);
 }
 
 function compareToRefImage(sourceData: ImageData, threshold = 0.1) {
@@ -163,6 +187,20 @@ function compareToRefImage(sourceData: ImageData, threshold = 0.1) {
   );
 
   expect(mismatchedPixels).toBeLessThan(100);
+}
+
+function getImageData(
+  source: CanvasImageSource,
+  width: number,
+  height: number,
+) {
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d")!;
+  canvas.width = width;
+  canvas.height = height;
+  context.drawImage(source, 0, 0, width, height);
+
+  return context.getImageData(0, 0, width, height);
 }
 
 async function getSvgDocument(dataUrl: string) {
@@ -239,6 +277,7 @@ interface BrowserFixtures {
   drawDataUrl: typeof drawDataUrl;
   getSvgDocument: typeof getSvgDocument;
   renderAndCheck: typeof renderAndCheck;
+  renderAndCompareCanvas: typeof renderAndCompareToCanvas;
 }
 
 /* eslint-disable no-empty-pattern -- Vitest requires fixture dependencies to use object destructuring. */
@@ -266,6 +305,9 @@ export const test = base.extend<BrowserFixtures>({
   },
   renderAndCheck: async ({}, use) => {
     await use(renderAndCheck);
+  },
+  renderAndCompareCanvas: async ({}, use) => {
+    await use(renderAndCompareToCanvas);
   },
 });
 /* eslint-enable no-empty-pattern */

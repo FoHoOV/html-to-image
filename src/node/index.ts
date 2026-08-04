@@ -34,6 +34,7 @@ export async function cloneAsSvg(node: Node, context: Context) {
   }
   const { width, height } = renderedSize;
   const svg = wrapInSvg(clonedNode, width, height);
+
   return { svg, width, height };
 }
 

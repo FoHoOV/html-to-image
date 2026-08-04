@@ -1,7 +1,7 @@
-import { getHref, setHref, createOrGetSvgDefs } from "./utils";
+import { createOrGetSvgDefs } from "./utils";
 import type { Cloner } from "../types";
 import { fetchResource } from "@/utils";
-import { isInstanceOfElement } from "@/node/utils";
+import { getHref, isInstanceOfElement, setHref } from "@/node/utils";
 import type { Context } from "@/context";
 
 export const cloneUseElement: Cloner<SVGUseElement> = async ({

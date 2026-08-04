@@ -2,3 +2,7 @@
   width: 120px;
   overflow: hidden;
 }
+
+svg {
+  display: block;
+}

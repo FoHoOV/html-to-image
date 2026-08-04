@@ -14,13 +14,20 @@ export default defineConfig({
     browser: {
       enabled: true,
       headless: true,
-      provider: playwright(),
+      provider: playwright({
+        launchOptions: {
+          env: {
+            ...process.env,
+            GSETTINGS_BACKEND: "memory",
+          },
+        },
+      }),
       screenshotDirectory: ".vitest/screenshots",
       instances: [
         { browser: "chromium" },
         // Enable these after the remaining cross-engine differences are resolved.
         // { browser: 'firefox' },
-        // { browser: "webkit" },
+        { browser: "webkit" },
       ],
     },
     coverage: {

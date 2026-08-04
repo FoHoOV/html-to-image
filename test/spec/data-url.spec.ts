@@ -139,6 +139,7 @@ describe("work with svg element as dataurl", () => {
       undefined,
       "svg-same-doc-ref/image",
     );
+    node.style.cssText = "width: 680px; height: 180px; overflow: hidden;";
     await renderAndCheck(node);
   });
 });

@@ -6,3 +6,7 @@
 .rect {
   fill: black;
 }
+
+svg {
+  display: block;
+}

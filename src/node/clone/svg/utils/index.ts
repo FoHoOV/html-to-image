@@ -1,2 +1,2 @@
-export * from "./normalize-href";
+export * from "./clip-path";
 export * from "./defs";

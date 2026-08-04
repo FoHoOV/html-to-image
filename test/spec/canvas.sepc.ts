@@ -1,15 +1,11 @@
 import { test } from "../fixtures";
 
 describe("work with canvas element", () => {
-  test("should render canvas element", async ({
+  test("should render canvas element when it can be retrieved via toDataUrl", async ({
     bootstrap,
-    renderAndCheck,
+    renderAndCompareCanvas,
   }) => {
-    const node = await bootstrap(
-      "canvas/node.html",
-      "canvas/style.css",
-      "canvas/image",
-    );
+    const node = await bootstrap("canvas/node.html", "canvas/style.css");
     const canvas = node.querySelector("#content") as HTMLCanvasElement;
     const context = canvas.getContext("2d")!;
 
@@ -19,6 +15,8 @@ describe("work with canvas element", () => {
     context.font = "40px serif";
     context.fillText("AB2哈", 40, 40);
 
-    await renderAndCheck(node);
+    // since the tests run on mozilla/chromium/safari different browsers have different font rasterization,
+    // so we can just compare to the rendered browser node to prevent flaky tests
+    await renderAndCompareCanvas(canvas, node);
   });
 });

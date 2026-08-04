@@ -1,13 +1,3 @@
-const XLINK_NS = "http://www.w3.org/1999/xlink";
-
-export function normalizeHref(node: Element) {
-  const href = getHref(node);
-
-  if (href) {
-    setHref(node, href);
-  }
-}
-
 export function normalizeClipPath(node: Element) {
   const style =
     "style" in node ? (node as HTMLElement | SVGElement).style : null;
@@ -36,19 +26,6 @@ export function normalizeClipPath(node: Element) {
     style?.removeProperty("clip-path");
     node.setAttribute("clip-path", `url('${referenceUrl.hash}')`);
   }
-}
-
-export function getHref(node: Element) {
-  return (
-    node.getAttribute("href") ??
-    node.getAttribute("xlink:href") ??
-    node.getAttributeNS(XLINK_NS, "href")
-  );
-}
-
-export function setHref(node: Element, value: string) {
-  node.setAttribute("href", value);
-  node.setAttributeNS(XLINK_NS, "xlink:href", value);
 }
 
 function isInsideSrcdocIframe(element: Element) {
