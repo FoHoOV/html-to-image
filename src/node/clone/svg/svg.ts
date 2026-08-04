@@ -5,7 +5,8 @@ import { normalizeHref } from "@/node/utils";
 export const cloneSvgElement: Cloner<SVGElement> = ({ originalNode }) => {
   const cloned = originalNode.cloneNode(false) as SVGElement;
 
-  if (!cloned.hasAttribute("xmlns") && cloned.namespaceURI) {
+  // fix broken namespace issue on webkit which fails rendering
+  if (cloned.namespaceURI) {
     cloned.setAttribute("xmlns", cloned.namespaceURI);
   }
 
