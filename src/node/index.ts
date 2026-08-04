@@ -74,8 +74,7 @@ export async function cloneNodeTree(startingNode: Node, context: Context) {
   context.status.embedding.css.seal();
   context.status.embedding.image.seal();
 
-  // TODO: could create a race condition with embedStyles for root node
-  // TODO: another idea, what if we always apply the computed styles of original, but when adding svgWrapper
+  // what if we always apply the computed styles of original, but when adding svgWrapper
   // scale it down/up using css based on user provided size? or scaling can cause bad quality, use
   // a css prop, that the child with fixed values should resize based on fixed ROOT size of user custom provided values?
 
