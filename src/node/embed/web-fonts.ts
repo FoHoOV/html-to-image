@@ -10,24 +10,26 @@ export const embedWebFonts: Embedder<HTMLElement, Promise<void>> = async ({
   clonedNode,
   context,
 }) => {
+  if (context.options.skipFonts) {
+    return;
+  }
+
   const cssText =
-    context.options.fontEmbedCSS != null
-      ? context.options.fontEmbedCSS
-      : context.options.skipFonts
-        ? null
-        : await getWebFontCSS(clonedNode, context);
+    context.options.fontEmbedCSS ?? (await getWebFontCSS(clonedNode, context));
 
-  if (cssText) {
-    const styleNode = document.createElement("style");
-    const sytleContent = document.createTextNode(cssText);
+  if (!cssText) {
+    return;
+  }
 
-    styleNode.appendChild(sytleContent);
+  const styleNode = document.createElement("style");
+  const sytleContent = document.createTextNode(cssText);
 
-    if (clonedNode.firstChild) {
-      clonedNode.insertBefore(styleNode, clonedNode.firstChild);
-    } else {
-      clonedNode.appendChild(styleNode);
-    }
+  styleNode.appendChild(sytleContent);
+
+  if (clonedNode.firstChild) {
+    clonedNode.insertBefore(styleNode, clonedNode.firstChild);
+  } else {
+    clonedNode.appendChild(styleNode);
   }
 };
 
