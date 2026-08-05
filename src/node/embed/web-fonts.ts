@@ -146,9 +146,11 @@ async function getCSSRules(
     try {
       for (let y = 0; y < sheet.cssRules.length; y++) {
         const rule = sheet.cssRules[y];
-        // TODO: fix deprecated usage, but keep it for backward compatibility.
-        // meaning use new thing if it exists otherwise fallback to this deprecated thing
-        if (rule.type !== CSSRule.IMPORT_RULE) {
+        if (
+          rule.type !== CSSRule.IMPORT_RULE ||
+          rule.constructor.name === CSSImportRule.name ||
+          rule instanceof CSSImportRule
+        ) {
           continue;
         }
         let importIndex = y + 1;
