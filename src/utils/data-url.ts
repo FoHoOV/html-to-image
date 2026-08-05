@@ -37,22 +37,6 @@ export async function resourceToDataUrl(
   }
 }
 
-export async function fontToDataUrl(
-  resourceUrl: string,
-  forcedContentType: string | undefined,
-  context: Context,
-) {
-  const response = await fetchResource(resourceUrl, forcedContentType, context);
-  const dataUrl = makeDataUrl(
-    getContentFromDataUrl(await response.asDataUrl()),
-    response.contentType,
-  );
-  return {
-    resourceUrl,
-    dataUrl: `url(${dataUrl})`,
-  };
-}
-
-function getContentFromDataUrl(dataURL: string) {
+export function getContentFromDataUrl(dataURL: string) {
   return dataURL.split(/,/)[1];
 }

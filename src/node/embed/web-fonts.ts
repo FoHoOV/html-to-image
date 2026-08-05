@@ -1,7 +1,5 @@
-// TODO: cleanup and refactor + then review again
-
 import type { Context } from "@/context";
-import { fetchResource, fontToDataUrl } from "@/utils";
+import { fetchResource, getContentFromDataUrl, makeDataUrl } from "@/utils";
 import { shouldEmbed, getEmbeddableResource } from "../utils/resources";
 import type { Embedder } from "./types";
 import { getComputedStyle } from "../utils";
@@ -61,6 +59,22 @@ async function embedFonts(data: Metadata, context: Context): Promise<string> {
   });
 
   return Promise.all(loadFonts).then(() => cssText);
+}
+
+export async function fontToDataUrl(
+  resourceUrl: string,
+  forcedContentType: string | undefined,
+  context: Context,
+) {
+  const response = await fetchResource(resourceUrl, forcedContentType, context);
+  const dataUrl = makeDataUrl(
+    getContentFromDataUrl(await response.asDataUrl()),
+    response.contentType,
+  );
+  return {
+    resourceUrl,
+    dataUrl: `url(${dataUrl})`,
+  };
 }
 
 function parseCSS(source: string) {
