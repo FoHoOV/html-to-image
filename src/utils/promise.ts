@@ -33,6 +33,9 @@ export function createWorkStatus(): WorkStatus {
     markAsReady = resolve;
     markAsFailed = reject;
   });
+  // Observed up front: `ready` is awaited long after work is queued, and an
+  // early rejection must not surface as an unhandled rejection in between.
+  void ready.catch(() => undefined);
 
   function finishWork(failed: boolean, error?: unknown) {
     if (failed && !hasError) {

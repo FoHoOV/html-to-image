@@ -1,5 +1,5 @@
 import type { Context } from "@/context";
-import type { Resource } from "./cache";
+import type { Resource } from "@/cache";
 
 export async function fetchResource(
   url: string,
@@ -20,26 +20,9 @@ export async function fetchResource(
     return makeRequest(requestUrl, forcedContentType, context);
   }
 
-  const cachedResource = context.options.cache?.get(cacheKey);
-  if (cachedResource) {
-    return cachedResource;
-  }
-
-  let request = context.inFlightRequests.get(cacheKey);
-  if (!request) {
-    request = makeRequest(requestUrl, forcedContentType, context);
-    context.inFlightRequests.set(cacheKey, request);
-  }
-
-  try {
-    const resource = await request;
-    context.options.cache?.add(cacheKey, resource);
-    return resource;
-  } finally {
-    if (context.inFlightRequests.get(cacheKey) === request) {
-      context.inFlightRequests.delete(cacheKey);
-    }
-  }
+  return context.options.cache.fetchCache.load(cacheKey, () =>
+    makeRequest(requestUrl, forcedContentType, context),
+  );
 }
 
 async function makeRequest(
@@ -82,23 +65,33 @@ function createAsString(response: ArrayBuffer) {
 }
 
 function createAsDataUrl(response: ArrayBuffer, contentType: string) {
-  let cachedResult: string | undefined = undefined;
+  // Holds the pending read while it runs and the string once it settles, so
+  // concurrent callers share one read. A failed read is released to be retried.
+  let result: string | Promise<string> | undefined = undefined;
+
   return () => {
-    if (cachedResult) {
-      return cachedResult;
+    if (result === undefined) {
+      result = readAsDataUrl(response, contentType).then(
+        (dataUrl) => (result = dataUrl),
+        (error: unknown) => {
+          result = undefined;
+          throw error;
+        },
+      );
     }
-    const blob = new Blob([response], { type: contentType });
-
-    return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-
-      reader.onerror = () => reject(reader.error);
-      reader.onloadend = () => {
-        cachedResult = reader.result as string;
-        resolve(reader.result as string);
-      };
-
-      reader.readAsDataURL(blob);
-    });
+    return result;
   };
+}
+
+function readAsDataUrl(response: ArrayBuffer, contentType: string) {
+  const blob = new Blob([response], { type: contentType });
+
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = () => reject(reader.error);
+    reader.onloadend = () => resolve(reader.result as string);
+
+    reader.readAsDataURL(blob);
+  });
 }

@@ -24,7 +24,7 @@ async function embedProp(
   node: HTMLElement | SVGElement,
   context: Context,
 ) {
-  const cssString = await getEmbeddableResource(
+  const { cssText } = await getEmbeddableResource(
     propValue,
     undefined,
     context.options.imagePlaceholder,
@@ -35,7 +35,7 @@ async function embedProp(
 
   node.style.setProperty(
     propName,
-    cssString,
+    cssText,
     node.style.getPropertyPriority(propName),
   );
 }

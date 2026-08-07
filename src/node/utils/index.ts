@@ -1,4 +1,5 @@
 export * from "./image";
+export * from "./hidden-container";
 export * from "./style";
 export * from "./traverse";
 export * from "./svg-wrapper";

@@ -1,6 +1,5 @@
 import { createContext } from "@/context";
 import { cloneAsSvg } from "./node";
-import { getWebFontCSS } from "./node/embed";
 import { checkCanvasDimensions, createImage } from "./node/utils";
 import type { Options } from "./types";
 import { canvasToBlob, isWebKit, nextFrame, nodeToDataUrl } from "./utils";
@@ -103,12 +102,6 @@ export async function toBlob<T extends HTMLElement>(
   return blob;
 }
 
-export async function getFontEmbedCSS<T extends HTMLElement>(
-  node: T,
-  options: Options = {},
-): Promise<string> {
-  return getWebFontCSS(node, createContext(options));
-}
-
-export { Cache } from "./utils/cache";
+export { Cache, FetchCache, FontCache } from "./cache";
+export type { Resource } from "./cache";
 export type { Options } from "./types";

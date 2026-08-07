@@ -31,7 +31,6 @@ npm install --save @fohoov/html-to-image
 import * as htmlToImage from '@fohoov/html-to-image';
 import {
   Cache,
-  getFontEmbedCSS,
   toBlob,
   toCanvas,
   toJpeg,
@@ -270,19 +269,74 @@ Defaults to `false`
 
 ### cache
 
-Every top-level API call uses a resource cache. When `cache` is omitted, the library creates a temporary `Cache` for that call. This deduplicates repeated requests for images, fonts, stylesheets, and external SVG definitions within the operation, but neither the cache nor its entries are retained for later API calls. The library does not create a module-global resource cache that remains alive for the application lifecycle.
+Every top-level API call uses a composite cache. When `cache` is omitted, the library creates a temporary `Cache`, `FetchCache`, and `FontCache` for that call. This deduplicates repeated requests and font processing within the operation, but none of those caches are retained for later API calls. The library does not create a module-global cache that remains alive for the application lifecycle.
 
-Pass a caller-owned `Cache` to reuse fetched resources across API calls:
+Pass caller-owned component caches to control fetched-resource and processed-font persistence independently. `Cache` accepts a `FetchCache` followed by a `FontCache`. Each rendered node still receives only the font families it uses:
 
 ```js
-import { Cache, toPng } from '@fohoov/html-to-image';
+import {
+  Cache,
+  FetchCache,
+  FontCache,
+  toPng,
+} from '@fohoov/html-to-image';
 
-const cache = new Cache();
+const fetchCache = new FetchCache();
+const fontCache = new FontCache();
+const cache = new Cache(fetchCache, fontCache);
 await toPng(firstNode, { cache });
 await toPng(secondNode, { cache });
 ```
 
-Reuse the same instance to reuse fetched resources. Create a new instance, or stop retaining the old one, to start with an empty cache and allow its entries to be released.
+You can also reuse only one kind of cached work by creating a new composite cache for each call while retaining only the desired component:
+
+```js
+await toPng(firstNode, { cache: new Cache(fetchCache) });
+await toPng(secondNode, { cache: new Cache(fetchCache) });
+
+await toPng(firstNode, {
+  cache: new Cache(new FetchCache(), fontCache),
+});
+await toPng(secondNode, {
+  cache: new Cache(new FetchCache(), fontCache),
+});
+```
+
+Stop retaining a component cache, or replace it with a new instance, to allow its entries to be released. Resource entry methods live on `FetchCache`; `Cache` only composes the two cache types. A shared `FetchCache` also coalesces simultaneous requests for the same resource across renders.
+
+### Emptying a cache
+
+`Cache`, `FetchCache`, and `FontCache` each expose `reset()`, which drops their contents while keeping the instance usable. Use it instead of constructing a replacement when the cache is held somewhere awkward to reassign, such as a module singleton or a React ref:
+
+```js
+const cache = new Cache();
+
+cache.reset(); // both component caches
+cache.fontCache.reset(); // only the discovered fonts
+cache.fetchCache.reset(); // only the fetched resources
+```
+
+Requests already in flight when `FetchCache.reset()` is called still settle for whoever is awaiting them, but their results are not stored.
+
+Automatic font discovery normalizes family names before accessing `FontCache`; the cache itself does not parse or normalize CSS.
+
+`FontCache` is keyed by family name alone. If separate documents, such as a page and an iframe, define the same family name with different `@font-face` rules, the first document that successfully supplies the family wins, and the other document's nodes are rendered with those faces rather than their own. Use distinct family names across documents, or a separate `FontCache` per render, if that matters to you.
+
+Cached font definitions are snapshots. Reset the `FontCache` after adding, removing, or changing `@font-face` rules, or after enabling or disabling their stylesheets. If a changed font stylesheet was fetched externally, also reset the `FetchCache` so its previous response is not reused.
+
+A snapshot records the `@font-face` rules that were active when it was taken, and conditions are **not** reevaluated when it is reused. If you place `@font-face` rules inside `@media` or `@supports` blocks — a dark-mode or viewport-dependent font, for example — reset the `FontCache` when that condition changes:
+
+```js
+const cache = new Cache();
+
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  cache.fontCache.reset(); // conditions changed, so the font snapshot is stale
+});
+```
+
+Without this, a render after the change reuses the faces discovered before it. A single render is always correct; only a cache that outlives a condition change is affected. `@font-face` rules that are not inside a conditional block are unaffected.
+
+Fonts registered only through the `FontFace` constructor cannot be recovered from browser CSSOM because their original source is not exposed. Supply those fonts through `fontEmbedCSS`. Providing `fontEmbedCSS` bypasses automatic font discovery and does not populate `FontCache`.
 
 ### includeQueryParams
 
@@ -322,14 +376,12 @@ this option is not specified then all formats will be downloaded and embedded.
 
 ### fontEmbedCSS
 
-When supplied, the library will skip the process of parsing and embedding webfont URLs in CSS,
-instead using this value. This is useful when combined with `getFontEmbedCSS()` to only perform the
-embedding process a single time across multiple calls to library functions.
+When supplied, the library skips automatic web-font discovery and uses this CSS verbatim. An empty string disables automatic font embedding without adding a style element. `skipFonts` takes precedence and suppresses supplied CSS as well.
 
 ```javascript
-const fontEmbedCSS = await htmlToImage.getFontEmbedCSS(element1);
-html2Image.toSVG(element1, { fontEmbedCSS });
-html2Image.toSVG(element2, { fontEmbedCSS });
+htmlToImage.toSvg(element, {
+  fontEmbedCSS: '@font-face { font-family: "Inter"; src: url("data:..."); }',
+});
 ```
 
 ### skipAutoScale

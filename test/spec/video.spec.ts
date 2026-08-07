@@ -17,9 +17,11 @@ describe("work with video element", () => {
     await delay(1000);
 
     const video = node.querySelector("video")!;
+    await waitForVideoData(video);
     video.pause();
     video.currentTime = 0;
     await waitForVideoSeek(video);
+    await waitForVideoFrame(video);
     await renderAndCheck(node);
   });
 
@@ -62,17 +64,40 @@ describe("work with video element", () => {
   });
 });
 
+function waitForVideoData(video: HTMLVideoElement) {
+  if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+    return Promise.resolve();
+  }
+
+  return waitForVideoEvent(video, "loadeddata");
+}
+
 function waitForVideoSeek(video: HTMLVideoElement) {
   if (!video.seeking) {
     return Promise.resolve();
   }
 
+  return waitForVideoEvent(video, "seeked");
+}
+
+function waitForVideoFrame(video: HTMLVideoElement) {
+  return new Promise<void>((resolve) => {
+    video.ownerDocument.defaultView!.requestAnimationFrame(() => {
+      video.ownerDocument.defaultView!.requestAnimationFrame(() => resolve());
+    });
+  });
+}
+
+function waitForVideoEvent(
+  video: HTMLVideoElement,
+  event: "loadeddata" | "seeked",
+) {
   return new Promise<void>((resolve, reject) => {
     const cleanup = () => {
-      video.removeEventListener("seeked", handleSeek);
+      video.removeEventListener(event, handleEvent);
       video.removeEventListener("error", handleError);
     };
-    const handleSeek = () => {
+    const handleEvent = () => {
       cleanup();
       resolve();
     };
@@ -81,7 +106,7 @@ function waitForVideoSeek(video: HTMLVideoElement) {
       reject(video.error ?? new Error("Failed to load video frame"));
     };
 
-    video.addEventListener("seeked", handleSeek);
+    video.addEventListener(event, handleEvent);
     video.addEventListener("error", handleError);
   });
 }

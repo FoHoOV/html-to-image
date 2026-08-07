@@ -1,4 +1,4 @@
-import type { Cache } from "./utils/cache";
+import type { Cache } from "./cache";
 
 export type Options = {
   /**
@@ -75,9 +75,8 @@ export type Options = {
     | "svg"
     | string;
   /**
-   * A CSS string to specify for font embeds. If specified only this CSS will
-   * be present in the resulting image. Use with `getFontEmbedCSS()` to
-   * create embed CSS for use across multiple calls to library functions.
+   * A CSS string to specify for font embeds. If specified, automatic font
+   * discovery is skipped and only this CSS is added to the resulting image.
    */
   fontEmbedCSS?: string;
   /**
@@ -100,8 +99,8 @@ export type Options = {
    */
   onImageErrorHandler?: OnErrorEventHandler;
   /**
-   * A caller-owned cache for resources fetched while rendering. Reusing a
-   * cache across calls avoids downloading the same resources more than once.
+   * A caller-owned cache composed of fetched-resource and processed-font
+   * caches. Reusing it across calls avoids repeating that work.
    */
   cache?: Cache;
 };

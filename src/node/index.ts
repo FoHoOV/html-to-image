@@ -1,5 +1,5 @@
 import type { Context } from "@/context";
-import { addHiddenDomElement, nextFrame } from "@/utils";
+import { nextFrame } from "@/utils";
 import {
   cloneSvgElement,
   cloneUseElement,
@@ -17,7 +17,9 @@ import {
   embedImages,
   embedWebFonts,
 } from "./embed";
+import type { EmbedContext } from "./embed/types";
 import {
+  addHiddenDomElement,
   isInstanceOfElement,
   traverseChildren,
   applyCustomStyles,
@@ -59,6 +61,15 @@ export async function cloneNodeTree(startingNode: Node, context: Context) {
       applyCustomStyles(clonedCurrentNode as HTMLElement, context);
     }
 
+    registerEmbedding({
+      originalNode: node,
+      clonedNode: clonedCurrentNode,
+      clonedParentNode,
+      isRoot,
+      isUnwrapped: filter === "unwrap",
+      context,
+    });
+
     for (const element of traverseChildren(node)) {
       const clonedChild = await cloneSubtree(element, clonedCurrentNode, false);
       if (clonedChild) {
@@ -66,13 +77,18 @@ export async function cloneNodeTree(startingNode: Node, context: Context) {
       }
     }
 
-    registerEmbedding(node, clonedCurrentNode, clonedParentNode, context);
     return clonedCurrentNode;
   }
 
   const result = toHtmlElement(await cloneSubtree(startingNode, null, true));
+
+  // Every family the traversal could contribute is now recorded, which releases
+  // the deferred font job queued by the root.
+  context.cloning.markAsReady();
+
   context.embedding.css.seal();
   context.embedding.image.seal();
+  context.embedding.font.seal();
 
   // what if we always apply the computed styles of original, but when adding svgWrapper
   // scale it down/up using css based on user provided size? or scaling can cause bad quality, use
@@ -90,12 +106,7 @@ export async function cloneNodeTree(startingNode: Node, context: Context) {
 
     await Promise.all([
       context.embedding.image.ready,
-      embedWebFonts({
-        clonedNode: result,
-        clonedParentNode: null,
-        originalNode: startingNode as typeof result,
-        context,
-      }),
+      context.embedding.font.ready,
     ]);
   } catch (error) {
     removeElement();
@@ -169,23 +180,30 @@ async function cloneSingleNode(
   return originalNode.cloneNode(false);
 }
 
-function registerEmbedding(
-  originalNode: Node,
-  clonedNode: Node,
-  clonedParentNode: Node | null,
-  context: Context,
-) {
-  if (!isElementLike(originalNode) || !isElementLike(clonedNode)) {
+/**
+ * Called once per visited node, so it reuses the config object the caller
+ * already built rather than deriving another one per node.
+ */
+function registerEmbedding(config: EmbedContext<Node>) {
+  if (
+    !isElementLike(config.originalNode) ||
+    !isElementLike(config.clonedNode)
+  ) {
     return;
   }
 
-  const config = { originalNode, clonedNode, clonedParentNode, context };
-  context.embedding.css.add(async () => {
-    await embedStyles(config);
-    await embedPseudoElements(config);
+  const elementConfig = config as EmbedContext<HTMLElement | SVGElement>;
+
+  // Runs inline: it only records the families this node uses, and defers its
+  // own asynchronous work onto the font work status.
+  embedWebFonts(elementConfig);
+
+  config.context.embedding.css.add(async () => {
+    await embedStyles(elementConfig);
+    await embedPseudoElements(elementConfig);
   });
-  context.embedding.image.add(async () => {
-    await embedImages(config);
+  config.context.embedding.image.add(async () => {
+    await embedImages(elementConfig);
   });
 }
 
