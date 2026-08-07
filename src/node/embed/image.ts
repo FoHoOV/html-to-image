@@ -1,7 +1,10 @@
 import type { Context } from "@/context";
-import { isInstanceOfElement, setHref } from "@/node/utils";
+import {
+  isInstanceOfElement,
+  getEmbeddableResource,
+  setHref,
+} from "@/node/utils";
 import { getMimeType, resourceToDataUrl, isDataUrl } from "@/utils";
-import { getEmbeddableResource } from "../utils/resources";
 import type { Embedder } from "./types";
 
 export const embedImages: Embedder<
@@ -28,7 +31,7 @@ async function embedProp(
     context,
   );
 
-  await context.status.embedding.css.ready;
+  await context.embedding.css.ready;
 
   node.style.setProperty(
     propName,

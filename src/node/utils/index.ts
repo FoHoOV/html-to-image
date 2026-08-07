@@ -6,3 +6,4 @@ export * from "./size";
 export * from "./instance";
 export * from "./attributes";
 export * from "./normalize-href";
+export * from "./resources";

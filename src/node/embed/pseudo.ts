@@ -8,7 +8,7 @@ export const embedPseudoElements: Embedder<Element, Promise<void>> = async ({
   clonedNode,
   context,
 }) => {
-  await context.status.addedToDom.ready;
+  await context.addedToDom.ready;
   [":before", ":after"].forEach((target) => {
     const style = getComputedStyle(originalNode, target);
     const content = style.getPropertyValue("content");

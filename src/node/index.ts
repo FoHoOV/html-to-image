@@ -28,7 +28,7 @@ import {
 export async function cloneAsSvg(node: Node, context: Context) {
   const clonedNode = await cloneNodeTree(node, context);
 
-  const renderedSize = context.status.renderedSize;
+  const renderedSize = context.renderedSize;
   if (!renderedSize) {
     throw new Error("The cloned node was not measured");
   }
@@ -71,8 +71,8 @@ export async function cloneNodeTree(startingNode: Node, context: Context) {
   }
 
   const result = toHtmlElement(await cloneSubtree(startingNode, null, true));
-  context.status.embedding.css.seal();
-  context.status.embedding.image.seal();
+  context.embedding.css.seal();
+  context.embedding.image.seal();
 
   // what if we always apply the computed styles of original, but when adding svgWrapper
   // scale it down/up using css based on user provided size? or scaling can cause bad quality, use
@@ -81,15 +81,15 @@ export async function cloneNodeTree(startingNode: Node, context: Context) {
   const removeElement = addHiddenDomElement(result, startingNode, context);
   try {
     await nextFrame();
-    context.status.addedToDom.markAsReady();
+    context.addedToDom.markAsReady();
 
-    await context.status.embedding.css.ready;
+    await context.embedding.css.ready;
 
-    context.status.renderedSize = getImageSize(result, context.options);
+    context.renderedSize = getImageSize(result, context.options);
     removeElement();
 
     await Promise.all([
-      context.status.embedding.image.ready,
+      context.embedding.image.ready,
       embedWebFonts({
         clonedNode: result,
         clonedParentNode: null,
@@ -180,11 +180,11 @@ function registerEmbedding(
   }
 
   const config = { originalNode, clonedNode, clonedParentNode, context };
-  context.status.embedding.css.add(async () => {
+  context.embedding.css.add(async () => {
     await embedStyles(config);
     await embedPseudoElements(config);
   });
-  context.status.embedding.image.add(async () => {
+  context.embedding.image.add(async () => {
     await embedImages(config);
   });
 }

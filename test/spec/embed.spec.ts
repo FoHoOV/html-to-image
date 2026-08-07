@@ -1,8 +1,5 @@
 import { createContext } from "../../src/context";
-import {
-  createEmbeddableResource,
-  parseURLs,
-} from "../../src/node/utils/resources";
+import { createEmbeddableResource, parseURLs } from "../../src/node/utils";
 import { test } from "../fixtures";
 
 describe("embeding", () => {

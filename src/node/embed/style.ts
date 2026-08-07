@@ -13,7 +13,7 @@ export const embedStyles: Embedder<
   if (!targetStyle) {
     return;
   }
-  await context.status.addedToDom.ready;
+  await context.addedToDom.ready;
   const sourceStyle = getComputedStyle(clonedNode);
 
   const transformOrigin = sourceStyle.transformOrigin;

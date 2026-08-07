@@ -5,27 +5,30 @@ import { Cache, createWorkPromise, createWorkStatus } from "@/utils";
 export type Context = {
   options: Options & { cache: Cache };
   inFlightRequests: Map<string, Promise<Resource>>;
-  status: {
-    embedding: {
-      css: WorkStatus;
-      image: WorkStatus;
+  embedding: {
+    css: WorkStatus;
+    image: WorkStatus;
+    font: WorkStatus & {
+      documentToFonts: Map<
+        Document,
+        { status: PendingWork; data: Array<{ family: string; weight: string }> }
+      >;
     };
-    addedToDom: PendingWork;
-    renderedSize: { width: number; height: number } | null;
   };
+  addedToDom: PendingWork;
+  renderedSize: { width: number; height: number } | null;
 };
 
 export function createContext(options?: Options) {
   return {
     options: { ...options, cache: options?.cache ?? new Cache() },
     inFlightRequests: new Map(),
-    status: {
-      embedding: {
-        css: createWorkStatus(),
-        image: createWorkStatus(),
-      },
-      addedToDom: createWorkPromise(),
-      renderedSize: null,
+    embedding: {
+      css: createWorkStatus(),
+      image: createWorkStatus(),
+      font: { documentToFonts: new Map(), ...createWorkStatus() },
     },
+    addedToDom: createWorkPromise(),
+    renderedSize: null,
   } satisfies Context;
 }
