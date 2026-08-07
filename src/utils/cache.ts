@@ -4,6 +4,7 @@ export type Resource = {
   asDataUrl: () => string | Promise<string>;
 };
 
+// TODO: rename to ResourceCache
 export class Cache {
   private values = new Map<string, Resource>();
 
