@@ -336,6 +336,8 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
 
 Without this, a render after the change reuses the faces discovered before it. A single render is always correct; only a cache that outlives a condition change is affected. `@font-face` rules that are not inside a conditional block are unaffected.
 
+`@font-face` rules nested in `@media` are evaluated against the page when the render starts, and the matching faces are embedded without their `@media` wrapper. The exported SVG renders in its own context, where a media query would be resolved against the output size rather than the page, so replaying it could drop a font the page is really using. `@supports` and `@layer` are kept: the same engine resolves `@supports` identically, and `@layer` only affects cascade order.
+
 Fonts registered only through the `FontFace` constructor cannot be recovered from browser CSSOM because their original source is not exposed. Supply those fonts through `fontEmbedCSS`. Providing `fontEmbedCSS` bypasses automatic font discovery and does not populate `FontCache`.
 
 ### includeQueryParams

@@ -31,7 +31,7 @@ export class BlockReader {
   }
 
   createMediaWrapper(mediaText: string) {
-    return this.createWrapper(`@media ${mediaText}`);
+    return this.createWrapper(`@media ${mediaText}`, true);
   }
 
   /** The wrapper for a `@media`, `@supports`, or `@layer` block. */
@@ -109,8 +109,8 @@ export class BlockReader {
     return this.createWrapper(name ? `@layer ${name}` : "@layer");
   }
 
-  private createWrapper(prelude: string): WebFontWrapper {
+  private createWrapper(prelude: string, contextual = false): WebFontWrapper {
     this.nextWrapperId += 1;
-    return { id: this.nextWrapperId, prelude };
+    return { contextual, id: this.nextWrapperId, prelude };
   }
 }

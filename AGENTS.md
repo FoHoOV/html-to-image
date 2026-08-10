@@ -319,8 +319,14 @@ Rules:
   `catch`.
 - Preserve every applicable `@font-face` variant for a used family; do not
   reduce matching to weight/style equality.
-- Preserve source order, enclosing media/support/layer wrappers, import cycles,
-  declaring stylesheet base URLs, and relative font URL resolution.
+- Preserve source order, enclosing `@supports`/`@layer` wrappers, import
+  cycles, declaring stylesheet base URLs, and relative font URL resolution.
+- Do not re-emit `@media` wrappers. The query was already evaluated against the
+  live page when the face was collected, and the exported SVG resolves media
+  queries against the output size, not the page viewport — verified identical
+  in Chromium, WebKit, and Firefox. Replaying one can suppress a face the page
+  is using. `@supports` is engine-level and resolves the same in both contexts,
+  so it is kept.
 - Resolve every URL through the shared `resolveUrl` in `src/utils/url.ts`, so
   stylesheet and resource references resolve identically.
 - Never use `document.fonts` as a source collector; it does not expose original

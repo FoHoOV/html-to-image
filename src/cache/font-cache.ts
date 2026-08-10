@@ -4,6 +4,13 @@
  * serialization can reopen and close them in source order.
  */
 export type WebFontWrapper = Readonly<{
+  /**
+   * Resolved against the rendering context rather than the engine. The
+   * exported SVG renders in its own context — its viewport is the output size,
+   * not the page's — so re-emitting such a block would ask a question we have
+   * already answered against the live page, and can answer differently.
+   */
+  contextual: boolean;
   id: number;
   prelude: string;
 }>;
@@ -184,6 +191,7 @@ function isSameWrappers(
   }
   return cached.every(
     (wrapper, index) =>
+      wrapper.contextual === source[index].contextual &&
       wrapper.id === source[index].id &&
       wrapper.prelude === source[index].prelude,
   );

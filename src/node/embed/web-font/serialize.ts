@@ -88,6 +88,11 @@ function filterPreferredFontFormat(
 /**
  * Emits the faces in order, opening each enclosing block once and closing it
  * only when the next face no longer shares it.
+ *
+ * Contextual blocks are left out. Their condition was already evaluated
+ * against the live page when the face was collected, and the exported SVG
+ * renders in a different context, so re-emitting them could suppress a face
+ * the page is actually using.
  */
 function serializeFontSources(
   sources: ReadonlyArray<WebFontSource>,
@@ -107,7 +112,9 @@ function serializeFontSources(
       continue;
     }
 
-    const wrappers = sources[index].wrappers ?? [];
+    const wrappers = (sources[index].wrappers ?? []).filter(
+      (wrapper) => !wrapper.contextual,
+    );
     let sharedWrappers = 0;
     while (
       sharedWrappers < openWrappers.length &&

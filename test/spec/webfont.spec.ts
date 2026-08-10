@@ -152,7 +152,7 @@ describe("font embedding", () => {
     }
   });
 
-  test("preserves conditions around embedded font faces", async ({
+  test("emits a media-conditional face without its media wrapper", async ({
     getSvgDocument,
   }) => {
     const style = addStyle(`
@@ -172,12 +172,13 @@ describe("font embedding", () => {
       embeddedStyle.textContent = cssText;
       parsed.head.appendChild(embeddedStyle);
       const rules = embeddedStyle.sheet!.cssRules;
-      const mediaRule = rules[0] as CSSMediaRule;
 
+      // The media query was evaluated against the page when the face was
+      // collected. The exported SVG has its own viewport, so re-emitting it
+      // could suppress a face the page is really using.
       expect(rules).toHaveLength(1);
-      expect(mediaRule.type).toBe(CSSRule.MEDIA_RULE);
-      expect(mediaRule.cssRules).toHaveLength(1);
-      expect(mediaRule.cssRules[0].type).toBe(CSSRule.FONT_FACE_RULE);
+      expect(rules[0].type).toBe(CSSRule.FONT_FACE_RULE);
+      expect(cssText).not.toContain("@media");
       expect(cssText.match(/Q09ORElUSU9OQUw=/g)).toHaveLength(1);
     } finally {
       root.remove();
@@ -185,7 +186,36 @@ describe("font embedding", () => {
     }
   });
 
-  test("closes nested font conditions before an unwrapped face", async ({
+  test("embeds a media-conditional face that the output size would not match", async ({
+    getSvgDocument,
+  }) => {
+    // Active on the page, but false for an output narrower than the breakpoint.
+    // Re-emitting the query would drop the face from the rendered image.
+    const style = addStyle(`
+      @media (min-width: ${window.innerWidth - 1}px) {
+        @font-face {
+          font-family: "Narrow Output Font";
+          src: url("data:font/woff2;base64,TkFSUk9X") format("woff2");
+        }
+      }
+    `);
+    const root = addRoot("Narrow Output Font");
+
+    try {
+      const { cssText } = await getEmbeddedFontCSS(root, getSvgDocument, {
+        width: 40,
+        height: 40,
+      });
+
+      expect(cssText).toContain("TkFSUk9X");
+      expect(cssText).not.toContain("@media");
+    } finally {
+      root.remove();
+      style.remove();
+    }
+  });
+
+  test("keeps engine-level conditions while dropping media wrappers", async ({
     getSvgDocument,
   }) => {
     const style = addStyle(`
@@ -213,14 +243,16 @@ describe("font embedding", () => {
       embeddedStyle.textContent = cssText;
       parsed.head.appendChild(embeddedStyle);
       const rules = embeddedStyle.sheet!.cssRules;
-      const mediaRule = rules[0] as CSSMediaRule;
-      const supportsRule = mediaRule.cssRules[0] as CSSSupportsRule;
+      const supportsRule = rules[0] as CSSSupportsRule;
 
+      // `@supports` is resolved by the engine, which is the same engine that
+      // renders the SVG, so it survives. The enclosing `@media` does not.
       expect(rules).toHaveLength(2);
-      expect(mediaRule.type).toBe(CSSRule.MEDIA_RULE);
       expect(supportsRule.type).toBe(CSSRule.SUPPORTS_RULE);
+      expect(supportsRule.cssRules).toHaveLength(1);
       expect(supportsRule.cssRules[0].type).toBe(CSSRule.FONT_FACE_RULE);
       expect(rules[1].type).toBe(CSSRule.FONT_FACE_RULE);
+      expect(cssText).not.toContain("@media");
       expect(cssText).toContain("TkVTVEVE");
       expect(cssText).toContain("VU5XUkFQUEVE");
     } finally {
