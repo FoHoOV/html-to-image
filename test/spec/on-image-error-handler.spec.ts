@@ -17,7 +17,6 @@ describe("Error Handling in resourceToDataURL", () => {
       clonedNode: node.cloneNode() as HTMLImageElement,
       clonedParentNode: null,
       isRoot: false,
-      isUnwrapped: false,
       context: createContext(options),
     });
     expect(handlers.onError).toHaveBeenCalled();
@@ -34,7 +33,6 @@ describe("Error Handling in resourceToDataURL", () => {
         clonedNode: node.cloneNode() as HTMLImageElement,
         clonedParentNode: null,
         isRoot: false,
-        isUnwrapped: false,
         context: createContext(),
       });
     } catch (error) {
@@ -56,7 +54,6 @@ describe("Error Handling in resourceToDataURL", () => {
         clonedNode: node.cloneNode() as HTMLImageElement,
         clonedParentNode: null,
         isRoot: false,
-        isUnwrapped: false,
         context: createContext({
           onImageErrorHandler: () => Promise.reject(handlerError),
         }),

@@ -46,12 +46,10 @@ function trackUsedFamilies({
   originalNode,
   context,
   isRoot,
-  isUnwrapped,
 }: EmbedContext<HTMLElement | SVGElement>) {
   const fontSource = getFontSourceElement(originalNode);
 
-  // An unwrapped node is not rendered, so its own computed font does not apply.
-  if (!isUnwrapped && fontSource) {
+  if (fontSource) {
     trackFamilies(
       fontSource.ownerDocument,
       getComputedStyle(fontSource).getPropertyValue("font-family"),
@@ -59,7 +57,7 @@ function trackUsedFamilies({
     );
   }
 
-  // An unwrapped root still honors an explicit root font-family override.
+  // The root also honors an explicit root font-family override.
   if (isRoot) {
     const style = context.options.style as
       Record<string, string | number | null | undefined> | undefined;

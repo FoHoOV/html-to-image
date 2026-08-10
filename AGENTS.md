@@ -260,9 +260,10 @@ The filter result is one of:
 - `remove`: omit the node and its entire subtree.
 
 Do not preserve legacy boolean filter semantics. A removed node must not
-register embedding or font work. An unwrapped node must not contribute its own
-computed font, but an unwrapped root must still honor an explicit root
-`options.style.fontFamily` override.
+register embedding or font work. An unwrapped node registers nothing either:
+`cloneSubtree` skips `registerEmbedding` unless the node is kept or is the
+root. The root is always registered, because it carries the output's font
+style and any `options.style` override, even when it was unwrapped.
 
 The root is always converted to an `HTMLElement` wrapper when filtering or
 cloning produces a fragment/null result. Custom width, height, and styles are

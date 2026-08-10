@@ -61,14 +61,18 @@ export async function cloneNodeTree(startingNode: Node, context: Context) {
       applyCustomStyles(clonedCurrentNode as HTMLElement, context);
     }
 
-    registerEmbedding({
-      originalNode: node,
-      clonedNode: clonedCurrentNode,
-      clonedParentNode,
-      isRoot,
-      isUnwrapped: filter === "unwrap",
-      context,
-    });
+    // An unwrapped node is not rendered, so nothing embeds onto it. The root
+    // is the exception: it is still wrapped into an element that carries the
+    // output's font style and any root style override.
+    if (isRoot || filter === "keep") {
+      registerEmbedding({
+        originalNode: node,
+        clonedNode: clonedCurrentNode,
+        clonedParentNode,
+        isRoot,
+        context,
+      });
+    }
 
     for (const element of traverseChildren(node)) {
       const clonedChild = await cloneSubtree(element, clonedCurrentNode, false);
@@ -90,7 +94,7 @@ export async function cloneNodeTree(startingNode: Node, context: Context) {
   context.embedding.image.seal();
   context.embedding.font.seal();
 
-  // what if we always apply the computed styles of original, but when adding svgWrapper
+  // TODO: what if we always apply the computed styles of original, but when adding svgWrapper
   // scale it down/up using css based on user provided size? or scaling can cause bad quality, use
   // a css prop, that the child with fixed values should resize based on fixed ROOT size of user custom provided values?
 

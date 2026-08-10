@@ -7,8 +7,6 @@ export type EmbedContext<TNode extends Node> = Readonly<{
   clonedParentNode: Node | null;
   /** The node the render was started from. Always cloned as an `HTMLElement`. */
   isRoot: boolean;
-  /** The filter dropped this node but kept its descendants. */
-  isUnwrapped: boolean;
 }>;
 
 export type Embedder<
