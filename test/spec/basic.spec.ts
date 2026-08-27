@@ -158,84 +158,72 @@ describe("basic usage", () => {
     await renderAndCheck(node);
   });
 
-  test("should render text nodes", async ({
-    assertTextRendered,
-    bootstrap,
-  }) => {
+  test("should render text nodes", async ({ bootstrap, getSvgDocument }) => {
     const node = await bootstrap(
       "document/text/node.html",
       "document/text/style.css",
     );
-    await assertTextRendered(["SOME TEXT", "SOME MORE TEXT"], node);
+    const svg = await getSvgDocument(await htmlToImage.toDataUrl(node));
+
+    expect(svg.documentElement.textContent).toContain("SOME TEXT");
+    expect(svg.documentElement.textContent).toContain("SOME MORE TEXT");
   });
 
   test("should preserve content of ::before and ::after pseudo elements", async ({
-    assertTextRendered,
     bootstrap,
+    getSvgDocument,
   }) => {
     const node = await bootstrap(
       "document/pseudo/node.html",
       "document/pseudo/style.css",
     );
-    await assertTextRendered(
-      ["JUSTBEFORE", "BOTHBEFORE", "JUSTAFTER", "BOTHAFTER"],
-      node,
-    );
+    const svg = await getSvgDocument(await htmlToImage.toDataUrl(node));
+    // embedPseudoElements recreates each pseudo-element as a generated <style>
+    // rule rather than a DOM node, so its content lives in that rule's text.
+    // The quoting differs by engine ('...' vs "..."), so match the bare word.
+    const generated = Array.from(svg.getElementsByTagName("style"))
+      .map((style) => style.textContent)
+      .join("\n");
+
+    expect(generated).toMatch(/content:\s*['"]JUSTBEFORE['"]/);
+    expect(generated).toMatch(/content:\s*['"]BOTHBEFORE['"]/);
+    expect(generated).toMatch(/content:\s*['"]JUSTAFTER['"]/);
+    expect(generated).toMatch(/content:\s*['"]BOTHAFTER['"]/);
   });
 
-  test("should render web fonts", async ({
-    assertTextRendered,
-    bootstrap,
-    delay,
-  }) => {
-    const node = await bootstrap(
-      "fonts/icon-font/node.html",
-      "fonts/icon-font/style.css",
-    );
-    await delay(1000);
-    await assertTextRendered(["apper"], node);
-  });
-
-  test("should render images", async ({
-    assertTextRendered,
-    bootstrap,
-    delay,
-  }) => {
+  test("should render images", async ({ bootstrap, renderAndCheck }) => {
     const node = await bootstrap(
       "media/images/node.html",
       "media/images/style.css",
+      "media/images/reference",
     );
-    await delay(500);
-    await assertTextRendered(["PNG", "JPG"], node);
+    await renderAndCheck(node);
   });
 
-  test("should render webp images", async ({
-    assertTextRendered,
-    bootstrap,
-    delay,
-  }) => {
+  test("should render webp images", async ({ bootstrap, renderAndCheck }) => {
     const node = await bootstrap(
       "media/webp/node.html",
       "media/webp/style.css",
+      "media/webp/reference",
     );
-    await delay(500);
-    await assertTextRendered(["PNG"], node);
+    await renderAndCheck(node);
   });
 
   test("should render background images", async ({
-    assertTextRendered,
     bootstrap,
+    renderAndCheck,
   }) => {
     const node = await bootstrap(
       "media/background-image/node.html",
       "media/background-image/style.css",
+      "media/background-image/reference",
     );
-    await assertTextRendered(["JPG"], node);
+    await renderAndCheck(node);
   });
 
   test("should render user input from <input>", async ({
-    assertTextRendered,
     bootstrap,
+    getSvgDocument,
   }) => {
     const text = "USER INPUT";
     const node = await bootstrap(
@@ -245,42 +233,29 @@ describe("basic usage", () => {
     const input = document.getElementById("input") as HTMLInputElement;
     input.value = text;
 
-    await assertTextRendered([text], node);
+    const svg = await getSvgDocument(await htmlToImage.toDataUrl(node));
+
+    expect(svg.querySelector("input")?.getAttribute("value")).toBe(text);
   });
 
   test("should render user input from <textarea>", async ({
-    assertTextRendered,
     bootstrap,
+    getSvgDocument,
   }) => {
-    const text = `USER\nINPUT`;
     const node = await bootstrap(
       "forms/textarea/node.html",
       "forms/textarea/style.css",
     );
     const input = document.getElementById("input") as HTMLInputElement;
-    input.value = text;
+    input.value = "USER\nINPUT";
 
-    await assertTextRendered([text], node);
-  });
+    const svg = await getSvgDocument(await htmlToImage.toDataUrl(node));
 
-  test("should render content from <canvas>", async ({
-    assertTextRendered,
-    bootstrap,
-  }) => {
-    const text = "AB2哈";
-    const node = await bootstrap(
-      "media/canvas/node.html",
-      "media/canvas/style.css",
+    // cloneTextAreaElement preserves the newline via `innerText`, which turns
+    // it into a <br> rather than a literal "\n" character, so textContent
+    // alone would read back "USERINPUT" with no separator.
+    expect(svg.querySelector("textarea")?.innerHTML).toMatch(
+      /^USER<br[^>]*\/>INPUT$/,
     );
-    const canvas = node.querySelector("#content") as HTMLCanvasElement;
-    const context = canvas.getContext("2d")!;
-
-    context.fillStyle = "#ffffff";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = "#000000";
-    context.font = "40px serif";
-    context.fillText(text, 40, 40);
-
-    await assertTextRendered([text], node);
   });
 });

@@ -4,7 +4,6 @@ import { toPng } from "../src";
 import type { Options } from "../src/types";
 
 const nativeFetch = window.fetch.bind(window);
-const PASS_TEXT_MATCH = true;
 const ROOT_ID = "test-root";
 
 function getCaptureNode() {
@@ -209,59 +208,6 @@ async function getSvgDocument(dataUrl: string) {
   return new DOMParser().parseFromString(svg, "text/xml");
 }
 
-async function assertTextRendered(
-  lines: string[],
-  node: HTMLDivElement = getCaptureNode(),
-  options?: Options,
-) {
-  if (PASS_TEXT_MATCH) {
-    expect(true).toBe(true);
-    return;
-  }
-
-  const text = await recognizeImage(node, options);
-  expect(lines.every((line) => text.includes(line))).toBe(true);
-}
-
-async function recognizeImage(node: HTMLDivElement, options?: Options) {
-  const dataUrl = await toPng(node, options);
-  await drawDataUrl(dataUrl);
-  return recognize(getResultCanvasNode().toDataURL());
-}
-
-async function recognize(dataUrl: string) {
-  const data = new FormData();
-  data.append("base64Image", dataUrl);
-
-  // You may only perform this action upto maximum 180 number of times within
-  // 3600 seconds.
-  // data.append('apikey', 'aa8c3d7de088957')
-  data.append("apikey", "K89675126388957");
-
-  try {
-    const response = await nativeFetch("https://api.ocr.space/parse/image", {
-      method: "post",
-      body: data,
-    });
-    const result = await response.json();
-    const parsedText: string[] = [];
-
-    if (!result.IsErroredOnProcessing) {
-      result.ParsedResults.forEach(
-        ({ ParsedText }: { ParsedText?: string }) => {
-          if (ParsedText) {
-            parsedText.push(ParsedText);
-          }
-        },
-      );
-    }
-
-    return parsedText.join("\n").trim().replace("\r\n", "\n");
-  } catch {
-    return "";
-  }
-}
-
 function delay(ms: number) {
   return new Promise<void>((resolve) => {
     setTimeout(resolve, ms);
@@ -269,7 +215,6 @@ function delay(ms: number) {
 }
 
 interface BrowserFixtures {
-  assertTextRendered: typeof assertTextRendered;
   bootstrap: typeof bootstrap;
   check: typeof check;
   compareToRefImage: typeof compareToRefImage;
@@ -282,9 +227,6 @@ interface BrowserFixtures {
 
 /* eslint-disable no-empty-pattern -- Vitest requires fixture dependencies to use object destructuring. */
 export const test = base.extend<BrowserFixtures>({
-  assertTextRendered: async ({}, use) => {
-    await use(assertTextRendered);
-  },
   bootstrap: async ({}, use) => {
     await use(bootstrap);
   },

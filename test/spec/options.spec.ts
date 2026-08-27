@@ -428,15 +428,20 @@ describe("work with options", () => {
     await renderAndCheck(node, { imagePlaceholder });
   });
 
-  test("should support cache busting", async ({
-    assertTextRendered,
-    bootstrap,
-  }) => {
+  test("should support cache busting", async ({ bootstrap }) => {
+    const fetchSpy = vi.spyOn(window, "fetch");
     const node = await bootstrap(
       "media/images/node.html",
       "media/images/style.css",
     );
-    await assertTextRendered(["PNG", "JPG"], node, { cacheBust: true });
+
+    await toPng(node, { cacheBust: true });
+
+    // fetchResource appends a `?<timestamp>` to the request URL when
+    // cacheBust is set, bypassing both cache reads and writes.
+    expect(
+      fetchSpy.mock.calls.some(([input]) => /\?\d+$/.test(input.toString())),
+    ).toBe(true);
   });
 });
 

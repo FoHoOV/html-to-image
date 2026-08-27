@@ -14,14 +14,17 @@ describe("special cases", () => {
     await toPng(node);
   });
 
-  test("should caputre lazy loading images", async ({
-    assertTextRendered,
+  test("should render lazy loading images", async ({
     bootstrap,
+    renderAndCheck,
   }) => {
+    // embedImageNode forces `loading` to "eager" before decoding, so this
+    // renders identically to media/images and reuses its reference.
     const node = await bootstrap(
       "media/images/loading.html",
       "media/images/style.css",
+      "media/images/reference",
     );
-    await assertTextRendered(["PNG", "JPG"], node);
+    await renderAndCheck(node);
   });
 });
