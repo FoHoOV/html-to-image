@@ -28,6 +28,20 @@ function getStyleNode() {
   return document.getElementById("style") as HTMLStyleElement;
 }
 
+function createBackgroundNode(url: string) {
+  const node = document.createElement("div");
+  node.style.cssText = `width: 10px; height: 10px; background-image: url(${url});`;
+  return node;
+}
+
+function createImageNode(url: string) {
+  const node = document.createElement("div");
+  const img = document.createElement("img");
+  img.src = url;
+  node.appendChild(img);
+  return node;
+}
+
 function clean() {
   document.getElementById(ROOT_ID)?.remove();
 }
@@ -218,6 +232,8 @@ interface BrowserFixtures {
   bootstrap: typeof bootstrap;
   check: typeof check;
   compareToRefImage: typeof compareToRefImage;
+  createBackgroundNode: typeof createBackgroundNode;
+  createImageNode: typeof createImageNode;
   delay: typeof delay;
   drawDataUrl: typeof drawDataUrl;
   getSvgDocument: typeof getSvgDocument;
@@ -235,6 +251,12 @@ export const test = base.extend<BrowserFixtures>({
   },
   compareToRefImage: async ({}, use) => {
     await use(compareToRefImage);
+  },
+  createBackgroundNode: async ({}, use) => {
+    await use(createBackgroundNode);
+  },
+  createImageNode: async ({}, use) => {
+    await use(createImageNode);
   },
   delay: async ({}, use) => {
     await use(delay);

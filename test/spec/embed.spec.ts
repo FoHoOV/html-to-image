@@ -1,14 +1,10 @@
 import { toDataUrl } from "../../src";
 import { test } from "../fixtures";
 
-function createBackgroundNode(url: string) {
-  const node = document.createElement("div");
-  node.style.cssText = `width: 10px; height: 10px; background-image: url(${url});`;
-  return node;
-}
-
 describe("background-image embedding", () => {
-  test("should skip data urls without fetching them", async () => {
+  test("should skip data urls without fetching them", async ({
+    createBackgroundNode,
+  }) => {
     const fetchSpy = vi.spyOn(window, "fetch");
 
     await toDataUrl(createBackgroundNode("data:image/png;base64,AAAA"));
@@ -17,6 +13,7 @@ describe("background-image embedding", () => {
   });
 
   test("should leave a failed background image empty when no placeholder is given", async ({
+    createBackgroundNode,
     getSvgDocument,
   }) => {
     vi.spyOn(window, "fetch").mockRejectedValue(new Error("offline"));
@@ -33,6 +30,7 @@ describe("background-image embedding", () => {
   });
 
   test("should substitute a placeholder for a failed background image", async ({
+    createBackgroundNode,
     getSvgDocument,
   }) => {
     vi.spyOn(window, "fetch").mockRejectedValue(new Error("offline"));
@@ -49,7 +47,9 @@ describe("background-image embedding", () => {
     );
   });
 
-  test("should fetch and decode a background image shared by two elements only once", async () => {
+  test("should fetch and decode a background image shared by two elements only once", async ({
+    createBackgroundNode,
+  }) => {
     vi.spyOn(window, "fetch").mockResolvedValue(
       new Response("A", { headers: { "Content-Type": "image/png" } }),
     );

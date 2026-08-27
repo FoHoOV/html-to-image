@@ -1,10 +1,5 @@
 import { Cache, FetchCache, FontCache, toDataUrl } from "../../src";
-
-function createBackgroundNode(url: string) {
-  const node = document.createElement("div");
-  node.style.cssText = `width: 1px; height: 1px; background-image: url(${url});`;
-  return node;
-}
+import { test } from "../fixtures";
 
 function pngResponse(body = "resource") {
   return new Response(body, { headers: { "Content-Type": "image/png" } });
@@ -16,14 +11,6 @@ function decodablePngResponse() {
 
   const bytes = Uint8Array.from(atob(base64Png), (char) => char.charCodeAt(0));
   return new Response(bytes, { headers: { "Content-Type": "image/png" } });
-}
-
-function createImageNode(url: string) {
-  const node = document.createElement("div");
-  const img = document.createElement("img");
-  img.src = url;
-  node.appendChild(img);
-  return node;
 }
 
 describe("resource cache", () => {
@@ -71,7 +58,9 @@ describe("resource cache", () => {
     expect(fontCache.isMissing(document, "inter")).toBe(false);
   });
 
-  test("does not repopulate a reset cache from a request already in flight", async () => {
+  test("does not repopulate a reset cache from a request already in flight", async ({
+    createBackgroundNode,
+  }) => {
     let resolveFetch!: (response: Response) => void;
     let fetchStarted!: () => void;
     const started = new Promise<void>((resolve) => {
@@ -106,7 +95,9 @@ describe("resource cache", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
-  test("releases failed requests so they can be retried", async () => {
+  test("releases failed requests so they can be retried", async ({
+    createImageNode,
+  }) => {
     let requestCount = 0;
     const fetchSpy = vi.spyOn(window, "fetch").mockImplementation(async () => {
       requestCount += 1;
@@ -125,7 +116,9 @@ describe("resource cache", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
-  test("does not share requests between different fetch caches", async () => {
+  test("does not share requests between different fetch caches", async ({
+    createBackgroundNode,
+  }) => {
     const fetchSpy = vi
       .spyOn(window, "fetch")
       .mockImplementation(async () => pngResponse("shared response"));
@@ -139,7 +132,9 @@ describe("resource cache", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
-  test("coalesces concurrent requests across shared fetch caches", async () => {
+  test("coalesces concurrent requests across shared fetch caches", async ({
+    createBackgroundNode,
+  }) => {
     const fetchSpy = vi
       .spyOn(window, "fetch")
       .mockImplementation(async () => pngResponse("shared response"));
@@ -154,7 +149,9 @@ describe("resource cache", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  test("reuses a FetchCache through different Cache instances", async () => {
+  test("reuses a FetchCache through different Cache instances", async ({
+    createBackgroundNode,
+  }) => {
     const fetchSpy = vi
       .spyOn(window, "fetch")
       .mockImplementation(async () => pngResponse("shared response"));
@@ -171,7 +168,7 @@ describe("resource cache", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  test("reuses a cached response", async () => {
+  test("reuses a cached response", async ({ createBackgroundNode }) => {
     const fetchSpy = vi
       .spyOn(window, "fetch")
       .mockImplementation(async () => pngResponse());
@@ -185,7 +182,9 @@ describe("resource cache", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  test("includes query parameters in cache keys by default", async () => {
+  test("includes query parameters in cache keys by default", async ({
+    createBackgroundNode,
+  }) => {
     const fetchSpy = vi
       .spyOn(window, "fetch")
       .mockImplementation(async () => pngResponse());
@@ -197,7 +196,9 @@ describe("resource cache", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
-  test("strips query parameters from cache keys when disabled", async () => {
+  test("strips query parameters from cache keys when disabled", async ({
+    createBackgroundNode,
+  }) => {
     const fetchSpy = vi
       .spyOn(window, "fetch")
       .mockImplementation(async () => pngResponse());
@@ -210,7 +211,9 @@ describe("resource cache", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  test("bypasses cache reads and writes when cache busting", async () => {
+  test("bypasses cache reads and writes when cache busting", async ({
+    createBackgroundNode,
+  }) => {
     const fetchSpy = vi
       .spyOn(window, "fetch")
       .mockImplementation(async () => pngResponse());
