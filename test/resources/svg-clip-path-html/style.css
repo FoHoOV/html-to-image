@@ -1,0 +1,9 @@
+#dom-node {
+  width: 120px;
+  height: 120px;
+  overflow: hidden;
+}
+
+#probe {
+  clip-path: url("/context.html#clip-html");
+}

@@ -4,8 +4,8 @@ import type { Embedder } from "../embed/types";
 export const embedStyles: Embedder<
   HTMLElement | SVGElement,
   Promise<void>
-> = async ({ clonedNode, context }) => {
-  if (isChildOfSvg(clonedNode)) {
+> = async ({ originalNode, clonedNode, context }) => {
+  if (isChildOfSvg(originalNode)) {
     return;
   }
 

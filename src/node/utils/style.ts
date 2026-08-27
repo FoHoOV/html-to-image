@@ -1,4 +1,5 @@
 import type { Context } from "@/context";
+import { localizeClipPath } from "./clip-path";
 
 const SKIPPED_STYLE_PROPS = new Set([
   "-webkit-text-fill-color",
@@ -40,6 +41,8 @@ export function serializeComputedStyles(
         value = "normal";
       } else if (property === "d" && path) {
         value = `path(${path})`;
+      } else if (property === "clip-path") {
+        value = localizeClipPath(value, clonedNode) ?? value;
       }
 
       const priority = sourceStyles.getPropertyPriority(property);

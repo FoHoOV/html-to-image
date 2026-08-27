@@ -1,6 +1,5 @@
-import { normalizeClipPath } from "./utils";
+import { normalizeClipPath, normalizeHref } from "@/node/utils";
 import type { Cloner } from "../types";
-import { normalizeHref } from "@/node/utils";
 
 export const cloneSvgElement: Cloner<SVGElement> = ({ originalNode }) => {
   const cloned = originalNode.cloneNode(false) as SVGElement;

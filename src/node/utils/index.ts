@@ -8,3 +8,4 @@ export * from "./instance";
 export * from "./attributes";
 export * from "./normalize-href";
 export * from "./resources";
+export * from "./clip-path";
