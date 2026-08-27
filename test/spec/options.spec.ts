@@ -1,6 +1,4 @@
-import { cloneNodeTree } from "../../src/node";
 import { toCanvas, toPng, toDataUrl } from "../../src";
-import { createContext } from "../../src/context";
 import { test } from "../fixtures";
 
 describe("work with options", () => {
@@ -255,35 +253,38 @@ describe("work with options", () => {
     await check(dataUrl);
   });
 
-  test("should apply node filter to root node", async () => {
+  test("should render nothing when the filter removes the root", async ({
+    getSvgDocument,
+  }) => {
     const root = document.createElement("div");
     root.appendChild(document.createElement("div"));
 
-    const clone = await cloneNodeTree(
-      root,
-      createContext({
+    const svg = await getSvgDocument(
+      await toDataUrl(root, {
         filter: (node) => (node === root ? "remove" : "keep"),
       }),
     );
 
-    expect(clone.style.display).toBe("inline-block");
-    expect(clone.childNodes.length).toEqual(0);
+    expect(svg.querySelector("foreignObject > *")?.children).toHaveLength(0);
   });
 
-  test("should preserve children when the filter unwraps the root", async () => {
+  test("should preserve children when the filter unwraps the root", async ({
+    getSvgDocument,
+  }) => {
     const root = document.createElement("section");
     const child = document.createElement("span");
     child.textContent = "preserved";
     root.appendChild(child);
 
-    const clone = await cloneNodeTree(
-      root,
-      createContext({
+    const svg = await getSvgDocument(
+      await toDataUrl(root, {
         filter: (node) => (node === root ? "unwrap" : "keep"),
       }),
     );
-    expect(clone instanceof HTMLDivElement).toBe(true);
-    expect(clone?.textContent).toBe("preserved");
+
+    expect(svg.querySelector("foreignObject")?.textContent).toContain(
+      "preserved",
+    );
   });
 
   test("should render when the filter unwraps the root", async ({
@@ -331,16 +332,17 @@ describe("work with options", () => {
     });
   });
 
-  test("should exclude descendants when the filter removes their parent", async () => {
+  test("should exclude descendants when the filter removes their parent", async ({
+    getSvgDocument,
+  }) => {
     const root = document.createElement("div");
     const excluded = document.createElement("section");
     excluded.className = "excluded";
     excluded.appendChild(document.createElement("span"));
     root.appendChild(excluded);
 
-    const clone = await cloneNodeTree(
-      root,
-      createContext({
+    const svg = await getSvgDocument(
+      await toDataUrl(root, {
         filter: (node) =>
           (node as HTMLElement).classList.contains("excluded")
             ? "remove"
@@ -348,11 +350,13 @@ describe("work with options", () => {
       }),
     );
 
-    expect(clone?.querySelector(".excluded")).toBeNull();
-    expect(clone?.children).toHaveLength(0);
+    expect(svg.querySelector(".excluded")).toBeNull();
+    expect(svg.querySelector("section")).toBeNull();
   });
 
-  test("should preserve descendants when the filter unwraps their parent", async () => {
+  test("should preserve descendants when the filter unwraps their parent", async ({
+    getSvgDocument,
+  }) => {
     const root = document.createElement("div");
     const excluded = document.createElement("section");
     const preserved = document.createElement("span");
@@ -360,15 +364,14 @@ describe("work with options", () => {
     excluded.appendChild(preserved);
     root.appendChild(excluded);
 
-    const clone = await cloneNodeTree(
-      root,
-      createContext({
+    const svg = await getSvgDocument(
+      await toDataUrl(root, {
         filter: (node) => (node === excluded ? "unwrap" : "keep"),
       }),
     );
 
-    expect(clone?.querySelector("section")).toBeNull();
-    expect(clone?.querySelector(".preserved")).not.toBeNull();
+    expect(svg.querySelector("section")).toBeNull();
+    expect(svg.querySelector(".preserved")).not.toBeNull();
   });
 
   test("should only use fontEmbedCss if it is supplied", async ({

@@ -38,7 +38,7 @@ export default defineConfig({
     fileParallelism: true,
     globals: true,
     hookTimeout: 20_000,
-    include: ["test/spec/**/*.spec.ts", "test/spec/**/*.sepc.ts"],
+    include: ["test/spec/**/*.spec.ts"],
     restoreMocks: true,
     setupFiles: ["./test/setup.ts"],
     testTimeout: 20_000,

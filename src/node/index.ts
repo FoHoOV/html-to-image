@@ -40,7 +40,7 @@ export async function cloneAsSvg(node: Node, context: Context) {
   return { svg, width, height };
 }
 
-export async function cloneNodeTree(startingNode: Node, context: Context) {
+async function cloneNodeTree(startingNode: Node, context: Context) {
   async function cloneSubtree(
     node: Node,
     clonedParentNode: Node | null,

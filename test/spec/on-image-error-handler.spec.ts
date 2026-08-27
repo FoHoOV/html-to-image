@@ -1,67 +1,40 @@
-import { createContext } from "../../src/context";
-import { embedImages } from "../../src/node/embed";
+import { toPng } from "../../src";
 
-describe("Error Handling in resourceToDataURL", () => {
+function createBrokenImageNode() {
+  const node = document.createElement("div");
+  const img = document.createElement("img");
+  img.src = "invalid_url";
+  node.appendChild(img);
+  return node;
+}
+
+describe("onImageErrorHandler", () => {
   test("should call the onImageErrorHandler when an error occurs", async () => {
     const handlers = {
       onError: () => {},
     };
     vi.spyOn(handlers, "onError");
-    const options = { onImageErrorHandler: handlers.onError };
-    const node = document.createElement("img");
-    node.src = "invalid_url";
 
-    // Assuming resourceToDataURL is the function being tested
-    await embedImages({
-      originalNode: node,
-      clonedNode: node.cloneNode() as HTMLImageElement,
-      clonedParentNode: null,
-      isRoot: false,
-      context: createContext(options),
+    await toPng(createBrokenImageNode(), {
+      onImageErrorHandler: handlers.onError,
     });
+
     expect(handlers.onError).toHaveBeenCalled();
   });
 
   test("should reject with an error if no onImageErrorHandler is provided", async () => {
-    const node = document.createElement("img");
-    node.src = "invalid_url";
-    let rejection: unknown;
-
-    try {
-      await embedImages({
-        originalNode: node,
-        clonedNode: node.cloneNode() as HTMLImageElement,
-        clonedParentNode: null,
-        isRoot: false,
-        context: createContext(),
-      });
-    } catch (error) {
-      rejection = error;
-    }
-
-    expect(rejection).toEqual(expect.any(Error));
+    await expect(toPng(createBrokenImageNode())).rejects.toEqual(
+      expect.any(Error),
+    );
   });
 
   test("should propagate errors from onImageErrorHandler", async () => {
     const handlerError = new Error("image error handler failed");
-    const node = document.createElement("img");
-    node.src = "invalid_url";
-    let rejection: unknown;
 
-    try {
-      await embedImages({
-        originalNode: node,
-        clonedNode: node.cloneNode() as HTMLImageElement,
-        clonedParentNode: null,
-        isRoot: false,
-        context: createContext({
-          onImageErrorHandler: () => Promise.reject(handlerError),
-        }),
-      });
-    } catch (error) {
-      rejection = error;
-    }
-
-    expect(rejection).toBe(handlerError);
+    await expect(
+      toPng(createBrokenImageNode(), {
+        onImageErrorHandler: () => Promise.reject(handlerError),
+      }),
+    ).rejects.toBe(handlerError);
   });
 });

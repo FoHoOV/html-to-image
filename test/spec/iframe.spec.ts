@@ -1,8 +1,10 @@
-import { cloneNodeTree } from "../../src/node";
-import { createContext } from "../../src/context";
+import { toDataUrl } from "../../src";
+import { test } from "../fixtures";
 
 describe("work with iframe element", () => {
-  test("should clone same-origin iframe body contents", async () => {
+  test("should render same-origin iframe body contents", async ({
+    getSvgDocument,
+  }) => {
     const iframe = document.createElement("iframe");
     document.body.appendChild(iframe);
 
@@ -12,10 +14,9 @@ describe("work with iframe element", () => {
       child.textContent = "iframe content";
       iframeBody.appendChild(child);
 
-      const clone = await cloneNodeTree(iframe, createContext());
+      const svg = await getSvgDocument(await toDataUrl(iframe));
 
-      expect(clone?.nodeName).toBe("BODY");
-      expect(clone?.querySelector("span")?.textContent).toBe("iframe content");
+      expect(svg.querySelector("span")?.textContent).toBe("iframe content");
     } finally {
       iframe.remove();
     }
