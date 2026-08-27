@@ -4,11 +4,7 @@ import type { Embedder } from "../embed/types";
 export const embedStyles: Embedder<
   HTMLElement | SVGElement,
   Promise<void>
-> = async ({ originalNode, clonedNode, context }) => {
-  if (isChildOfSvg(originalNode)) {
-    return;
-  }
-
+> = async ({ clonedNode, context }) => {
   const targetStyle = clonedNode.style;
   if (!targetStyle) {
     return;
@@ -23,8 +19,3 @@ export const embedStyles: Embedder<
   // Safari historically omitted transform-origin from computed cssText.
   targetStyle.transformOrigin = transformOrigin;
 };
-
-function isChildOfSvg(node: Element) {
-  const closestSvg = node.closest("svg");
-  return closestSvg != null && closestSvg !== node;
-}
