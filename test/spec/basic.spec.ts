@@ -4,9 +4,9 @@ import { test } from "../fixtures";
 describe("basic usage", () => {
   test("should render to svg as dataurl", async ({ bootstrap, check }) => {
     const node = await bootstrap(
-      "small/node.html",
-      "small/style.css",
-      "small/image",
+      "document/baseline/node.html",
+      "document/baseline/style.css",
+      "document/baseline/reference",
     );
     const dataUrl = await htmlToImage.toDataUrl(node);
     await check(dataUrl);
@@ -14,9 +14,9 @@ describe("basic usage", () => {
 
   test("should render to png", async ({ bootstrap, check }) => {
     const node = await bootstrap(
-      "small/node.html",
-      "small/style.css",
-      "small/image",
+      "document/baseline/node.html",
+      "document/baseline/style.css",
+      "document/baseline/reference",
     );
     const dataUrl = await htmlToImage.toPng(node);
     await check(dataUrl);
@@ -24,9 +24,9 @@ describe("basic usage", () => {
 
   test("should render to blob", async ({ bootstrap, check }) => {
     const node = await bootstrap(
-      "small/node.html",
-      "small/style.css",
-      "small/image",
+      "document/baseline/node.html",
+      "document/baseline/style.css",
+      "document/baseline/reference",
     );
     const blob = await htmlToImage.toBlob(node);
     const dataUrl = globalThis.URL.createObjectURL(blob!);
@@ -37,9 +37,9 @@ describe("basic usage", () => {
     // JPEG encoders can apply different chroma subsampling. This grayscale
     // fixture has distinct regions without browser-specific color artifacts.
     const node = await bootstrap(
-      "small/node.html",
-      "small/jpeg-style.css",
-      "small/image-jpeg",
+      "document/baseline/node.html",
+      "document/baseline/jpeg-style.css",
+      "document/baseline/reference-jpeg",
     );
     const dataUrl = await htmlToImage.toJpeg(node);
     await check(dataUrl);
@@ -50,9 +50,9 @@ describe("basic usage", () => {
     check,
   }) => {
     const node = await bootstrap(
-      "small/node.html",
-      "small/style.css",
-      "small/image-jpeg-low",
+      "document/baseline/node.html",
+      "document/baseline/style.css",
+      "document/baseline/reference-jpeg-low",
     );
     const dataUrl = await htmlToImage.toJpeg(node, { quality: 0.5 });
     await check(dataUrl);
@@ -61,7 +61,10 @@ describe("basic usage", () => {
   test("should convert an element to an array of pixels", async ({
     bootstrap,
   }) => {
-    const node = await bootstrap("pixeldata/node.html", "pixeldata/style.css");
+    const node = await bootstrap(
+      "document/pixel-data/node.html",
+      "document/pixel-data/style.css",
+    );
     const pixels = await htmlToImage.toPixelData(node);
 
     for (let y = 0; y < node.scrollHeight; y += 1) {
@@ -94,18 +97,18 @@ describe("basic usage", () => {
 
   test("should handle border", async ({ bootstrap, renderAndCheck }) => {
     const node = await bootstrap(
-      "border/node.html",
-      "border/style.css",
-      "border/image",
+      "document/border/node.html",
+      "document/border/style.css",
+      "document/border/reference",
     );
     await renderAndCheck(node);
   });
 
   test("should render bigger node", async ({ bootstrap, renderAndCheck }) => {
     const parent = await bootstrap(
-      "bigger/node.html",
-      "bigger/style.css",
-      "bigger/image",
+      "document/bigger/node.html",
+      "document/bigger/style.css",
+      "document/bigger/reference",
     );
     const child = parent.querySelector(".dom-child-node") as HTMLDivElement;
 
@@ -121,9 +124,9 @@ describe("basic usage", () => {
     renderAndCheck,
   }) => {
     const node = await bootstrap(
-      "hash/node.html",
-      "hash/style.css",
-      "small/image",
+      "document/hash/node.html",
+      "document/hash/style.css",
+      "document/baseline/reference",
     );
     await renderAndCheck(node);
   });
@@ -133,9 +136,9 @@ describe("basic usage", () => {
     renderAndCheck,
   }) => {
     const node = await bootstrap(
-      "scroll/node.html",
-      "scroll/style.css",
-      "scroll/image",
+      "document/scroll/node.html",
+      "document/scroll/style.css",
+      "document/scroll/reference",
     );
     const scrolled = node.querySelector("#scrolled") as HTMLDivElement;
     await renderAndCheck(scrolled);
@@ -147,9 +150,9 @@ describe("basic usage", () => {
     renderAndCheck,
   }) => {
     const node = await bootstrap(
-      "sheet/node.html",
-      "sheet/style.css",
-      "sheet/image",
+      "document/stylesheet/node.html",
+      "document/stylesheet/style.css",
+      "document/stylesheet/reference",
     );
     await delay(1000);
     await renderAndCheck(node);
@@ -159,7 +162,10 @@ describe("basic usage", () => {
     assertTextRendered,
     bootstrap,
   }) => {
-    const node = await bootstrap("text/node.html", "text/style.css");
+    const node = await bootstrap(
+      "document/text/node.html",
+      "document/text/style.css",
+    );
     await assertTextRendered(["SOME TEXT", "SOME MORE TEXT"], node);
   });
 
@@ -167,7 +173,10 @@ describe("basic usage", () => {
     assertTextRendered,
     bootstrap,
   }) => {
-    const node = await bootstrap("pseudo/node.html", "pseudo/style.css");
+    const node = await bootstrap(
+      "document/pseudo/node.html",
+      "document/pseudo/style.css",
+    );
     await assertTextRendered(
       ["JUSTBEFORE", "BOTHBEFORE", "JUSTAFTER", "BOTHAFTER"],
       node,
@@ -179,7 +188,10 @@ describe("basic usage", () => {
     bootstrap,
     delay,
   }) => {
-    const node = await bootstrap("fonts/node.html", "fonts/style.css");
+    const node = await bootstrap(
+      "fonts/icon-font/node.html",
+      "fonts/icon-font/style.css",
+    );
     await delay(1000);
     await assertTextRendered(["apper"], node);
   });
@@ -189,7 +201,10 @@ describe("basic usage", () => {
     bootstrap,
     delay,
   }) => {
-    const node = await bootstrap("images/node.html", "images/style.css");
+    const node = await bootstrap(
+      "media/images/node.html",
+      "media/images/style.css",
+    );
     await delay(500);
     await assertTextRendered(["PNG", "JPG"], node);
   });
@@ -199,7 +214,10 @@ describe("basic usage", () => {
     bootstrap,
     delay,
   }) => {
-    const node = await bootstrap("webp/node.html", "webp/style.css");
+    const node = await bootstrap(
+      "media/webp/node.html",
+      "media/webp/style.css",
+    );
     await delay(500);
     await assertTextRendered(["PNG"], node);
   });
@@ -208,7 +226,10 @@ describe("basic usage", () => {
     assertTextRendered,
     bootstrap,
   }) => {
-    const node = await bootstrap("css-bg/node.html", "css-bg/style.css");
+    const node = await bootstrap(
+      "media/background-image/node.html",
+      "media/background-image/style.css",
+    );
     await assertTextRendered(["JPG"], node);
   });
 
@@ -217,7 +238,10 @@ describe("basic usage", () => {
     bootstrap,
   }) => {
     const text = "USER INPUT";
-    const node = await bootstrap("input/node.html", "input/style.css");
+    const node = await bootstrap(
+      "forms/input/node.html",
+      "forms/input/style.css",
+    );
     const input = document.getElementById("input") as HTMLInputElement;
     input.value = text;
 
@@ -229,7 +253,10 @@ describe("basic usage", () => {
     bootstrap,
   }) => {
     const text = `USER\nINPUT`;
-    const node = await bootstrap("textarea/node.html", "textarea/style.css");
+    const node = await bootstrap(
+      "forms/textarea/node.html",
+      "forms/textarea/style.css",
+    );
     const input = document.getElementById("input") as HTMLInputElement;
     input.value = text;
 
@@ -241,7 +268,10 @@ describe("basic usage", () => {
     bootstrap,
   }) => {
     const text = "AB2哈";
-    const node = await bootstrap("canvas/node.html", "canvas/style.css");
+    const node = await bootstrap(
+      "media/canvas/node.html",
+      "media/canvas/style.css",
+    );
     const canvas = node.querySelector("#content") as HTMLCanvasElement;
     const context = canvas.getContext("2d")!;
 

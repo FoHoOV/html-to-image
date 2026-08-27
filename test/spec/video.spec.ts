@@ -10,9 +10,9 @@ describe("work with video element", () => {
     renderAndCheck,
   }) => {
     const node = await bootstrap(
-      "video/node.html",
-      "video/style.css",
-      "video/image",
+      "media/video/node.html",
+      "media/video/style.css",
+      "media/video/reference",
     );
     await delay(1000);
 
@@ -31,9 +31,9 @@ describe("work with video element", () => {
     renderAndCheck,
   }) => {
     const node = await bootstrap(
-      "video/poster.html",
-      "video/style.css",
-      "video/image-poster",
+      "media/video/poster.html",
+      "media/video/style.css",
+      "media/video/reference-poster",
     );
     await delay(1000);
     await renderAndCheck(node);
@@ -42,7 +42,10 @@ describe("work with video element", () => {
   test("should copy computed video styles to the replacement image", async ({
     bootstrap,
   }) => {
-    const root = await bootstrap("video/poster.html", "video/style.css");
+    const root = await bootstrap(
+      "media/video/poster.html",
+      "media/video/style.css",
+    );
     const video = root.querySelector("video")!;
     video.style.objectFit = "cover";
     video.style.objectPosition = "25% 75%";

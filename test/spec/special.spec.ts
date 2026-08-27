@@ -6,7 +6,10 @@ describe("special cases", () => {
     bootstrap,
     delay,
   }) => {
-    const node = await bootstrap("ext-css/node.html", "ext-css/style.css");
+    const node = await bootstrap(
+      "document/external-stylesheet/node.html",
+      "document/external-stylesheet/style.css",
+    );
     await delay(1000);
     await toPng(node);
   });
@@ -15,7 +18,10 @@ describe("special cases", () => {
     assertTextRendered,
     bootstrap,
   }) => {
-    const node = await bootstrap("images/loading.html", "images/style.css");
+    const node = await bootstrap(
+      "media/images/loading.html",
+      "media/images/style.css",
+    );
     await assertTextRendered(["PNG", "JPG"], node);
   });
 });

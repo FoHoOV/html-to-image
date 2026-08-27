@@ -7,9 +7,9 @@ describe("svg clip-path references", () => {
     renderAndCheck,
   }) => {
     const node = await bootstrap(
-      "svg-clip-path-root/node.html",
-      "svg-clip-path-root/style.css",
-      "svg-clip-path-root/image",
+      "svg/clip-path/root/node.html",
+      "svg/clip-path/root/style.css",
+      "svg/clip-path/root/reference",
     );
     await renderAndCheck(node);
   });
@@ -19,9 +19,9 @@ describe("svg clip-path references", () => {
     renderAndCheck,
   }) => {
     const node = await bootstrap(
-      "svg-clip-path-html/node.html",
-      "svg-clip-path-html/style.css",
-      "svg-clip-path-html/image",
+      "svg/clip-path/html/node.html",
+      "svg/clip-path/html/style.css",
+      "svg/clip-path/html/reference",
     );
     await renderAndCheck(node);
   });
@@ -31,9 +31,9 @@ describe("svg clip-path references", () => {
     renderAndCheck,
   }) => {
     const node = await bootstrap(
-      "svg-clip-path-html/node.html",
-      "svg-clip-path-html/host-style.css",
-      "svg-clip-path-html/image",
+      "svg/clip-path/html/node.html",
+      "svg/clip-path/html/host-style.css",
+      "svg/clip-path/html/reference",
     );
     await renderAndCheck(node, {
       style: { clipPath: `url("/context.html#clip-html")` },
@@ -45,15 +45,15 @@ describe("svg clip-path references", () => {
     renderAndCheck,
   }) => {
     const node = await bootstrap(
-      "svg-clip-path-external/node.html",
-      "svg-clip-path-external/style.css",
-      "svg-clip-path-external/image",
+      "svg/clip-path/external/node.html",
+      "svg/clip-path/external/style.css",
+      "svg/clip-path/external/reference",
     );
     await renderAndCheck(node);
   });
 
   test("should not mutate the source document", async ({ bootstrap }) => {
-    const node = await bootstrap("svg-clip-path-root/node.html");
+    const node = await bootstrap("svg/clip-path/root/node.html");
 
     await toDataUrl(node);
 

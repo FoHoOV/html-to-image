@@ -7,9 +7,9 @@ describe("work with svg element as dataurl", () => {
     renderAndCheck,
   }) => {
     const node = await bootstrap(
-      "svg-ns/node.html",
-      "svg-ns/style.css",
-      "svg-ns/image",
+      "svg/namespace/node.html",
+      "svg/namespace/style.css",
+      "svg/namespace/reference",
     );
     await renderAndCheck(node);
   });
@@ -19,9 +19,9 @@ describe("work with svg element as dataurl", () => {
     renderAndCheck,
   }) => {
     const node = await bootstrap(
-      "svg-rect/node.html",
-      "svg-rect/style.css",
-      "svg-rect/image",
+      "svg/rect/node.html",
+      "svg/rect/style.css",
+      "svg/rect/reference",
     );
     await renderAndCheck(node);
   });
@@ -31,9 +31,9 @@ describe("work with svg element as dataurl", () => {
     renderAndCheck,
   }) => {
     const node = await bootstrap(
-      "svg-color/node.html",
-      "svg-color/style.css",
-      "svg-color/image",
+      "svg/color/node.html",
+      "svg/color/style.css",
+      "svg/color/reference",
     );
     await renderAndCheck(node);
   });
@@ -43,9 +43,9 @@ describe("work with svg element as dataurl", () => {
     getSvgDocument,
   }) => {
     const node = await bootstrap(
-      "small/node.html",
-      "small/style.css",
-      "small/image",
+      "document/baseline/node.html",
+      "document/baseline/style.css",
+      "document/baseline/reference",
     );
     const dataUrl = await toDataUrl(node);
     const svgDocument = await getSvgDocument(dataUrl);
@@ -61,18 +61,18 @@ describe("work with svg element as dataurl", () => {
     renderAndCheck,
   }) => {
     const node = await bootstrap(
-      "svg-image/node.html",
-      "svg-image/style.css",
-      "svg-image/image",
+      "svg/image/node.html",
+      "svg/image/style.css",
+      "svg/image/reference",
     );
     await renderAndCheck(node);
   });
 
   test("should render SVG use tags", async ({ bootstrap, renderAndCheck }) => {
     const node = await bootstrap(
-      "svg-use-tag/node.html",
-      "svg-use-tag/style.css",
-      "svg-use-tag/image",
+      "svg/use/tag/node.html",
+      "svg/use/tag/style.css",
+      "svg/use/tag/reference",
     );
     await renderAndCheck(node);
   });
@@ -81,7 +81,7 @@ describe("work with svg element as dataurl", () => {
     bootstrap,
     getSvgDocument,
   }) => {
-    const node = await bootstrap("svg-use-external/node.html");
+    const node = await bootstrap("svg/use/external/node.html");
     const sourceUse = node.querySelector("use");
     const sourceHref = sourceUse?.getAttribute("href");
 
@@ -101,9 +101,9 @@ describe("work with svg element as dataurl", () => {
     renderAndCheck,
   }) => {
     const node = await bootstrap(
-      "svg-use-external-parts/node.html",
+      "svg/use/external-parts/node.html",
       undefined,
-      "svg-use-external-parts/image",
+      "svg/use/external-parts/reference",
     );
     node.style.cssText = "width: 40px; height: 20px; overflow: hidden;";
 
@@ -135,9 +135,9 @@ describe("work with svg element as dataurl", () => {
     renderAndCheck,
   }) => {
     const node = await bootstrap(
-      "svg-same-doc-ref/node.html",
+      "svg/same-doc-ref/node.html",
       undefined,
-      "svg-same-doc-ref/image",
+      "svg/same-doc-ref/reference",
     );
     node.style.cssText = "width: 680px; height: 180px; overflow: hidden;";
     await renderAndCheck(node);

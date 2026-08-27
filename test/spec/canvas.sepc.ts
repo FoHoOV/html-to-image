@@ -5,7 +5,10 @@ describe("work with canvas element", () => {
     bootstrap,
     renderAndCompareCanvas,
   }) => {
-    const node = await bootstrap("canvas/node.html", "canvas/style.css");
+    const node = await bootstrap(
+      "media/canvas/node.html",
+      "media/canvas/style.css",
+    );
     const canvas = node.querySelector("#content") as HTMLCanvasElement;
     const context = canvas.getContext("2d")!;
 

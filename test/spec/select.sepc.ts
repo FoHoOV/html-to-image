@@ -9,9 +9,9 @@ describe("work with select element", () => {
       renderAndCheck,
     }) => {
       const node = await bootstrap(
-        `select/${text}-option.html`,
-        "select/style.css",
-        `select/${text}`,
+        `forms/select/${text}-option.html`,
+        "forms/select/style.css",
+        `forms/select/reference-${text}`,
       );
       await renderAndCheck(node);
     });

@@ -10,9 +10,9 @@ describe("work with options", () => {
     drawDataUrl,
   }) => {
     const node = await bootstrap(
-      "dimensions/node.html",
-      "dimensions/style.css",
-      "dimensions/image",
+      "options/dimensions/node.html",
+      "options/dimensions/style.css",
+      "options/dimensions/reference",
     );
     const dataUrl = await toPng(node, {
       width: 200,
@@ -28,9 +28,9 @@ describe("work with options", () => {
 
   test("should render backgroundColor", async ({ bootstrap, check }) => {
     const node = await bootstrap(
-      "bgcolor/node.html",
-      "bgcolor/style.css",
-      "bgcolor/image",
+      "options/background-color/node.html",
+      "options/background-color/style.css",
+      "options/background-color/reference",
     );
     const dataUrl = await toPng(node, {
       style: {
@@ -46,9 +46,9 @@ describe("work with options", () => {
     check,
   }) => {
     const node = await bootstrap(
-      "bgcolor/node.html",
-      "bgcolor/style.css",
-      "bgcolor/image",
+      "options/background-color/node.html",
+      "options/background-color/style.css",
+      "options/background-color/reference",
     );
     const dataUrl = await toDataUrl(node, {
       style: {
@@ -64,9 +64,9 @@ describe("work with options", () => {
     check,
   }) => {
     const node = await bootstrap(
-      "style/node.html",
-      "style/style.css",
-      "style/image",
+      "options/style/node.html",
+      "options/style/style.css",
+      "options/style/reference",
     );
     const dataUrl = await toPng(node, {
       style: { background: "red", transform: "scale(0.5)" },
@@ -80,9 +80,9 @@ describe("work with options", () => {
     check,
   }) => {
     const node = await bootstrap(
-      "style/node.html",
-      "style/style.css",
-      "style/image-include-style",
+      "options/style/node.html",
+      "options/style/style.css",
+      "options/style/reference-include-style",
     );
     const dataUrl = await toPng(node, {
       includeStyleProperties: ["width", "height"],
@@ -97,9 +97,9 @@ describe("work with options", () => {
     drawDataUrl,
   }) => {
     const node = await bootstrap(
-      "scale/node.html",
-      "scale/style.css",
-      "scale/image",
+      "options/scale/node.html",
+      "options/scale/style.css",
+      "options/scale/reference",
     );
     const dataUrl = await toPng(node, {
       width: 200,
@@ -237,9 +237,9 @@ describe("work with options", () => {
 
   test("should use node filter", async ({ bootstrap, check }) => {
     const node = await bootstrap(
-      "filter/node.html",
-      "filter/style.css",
-      "filter/image",
+      "options/filter/node.html",
+      "options/filter/style.css",
+      "options/filter/reference",
     );
     const dataUrl = await toPng(node, {
       filter(node) {
@@ -291,9 +291,9 @@ describe("work with options", () => {
     renderAndCheck,
   }) => {
     const root = await bootstrap(
-      "filter/node.html",
-      "filter/style.css",
-      "filter/image",
+      "options/filter/node.html",
+      "options/filter/style.css",
+      "options/filter/reference",
     );
 
     await renderAndCheck(root, {
@@ -316,9 +316,9 @@ describe("work with options", () => {
     renderAndCheck,
   }) => {
     const root = await bootstrap(
-      "filter/root-unwrap/node.html",
-      "filter/root-unwrap/style.css",
-      "filter/root-unwrap/image",
+      "options/filter/root-unwrap/node.html",
+      "options/filter/root-unwrap/style.css",
+      "options/filter/root-unwrap/reference",
     );
 
     await renderAndCheck(root, {
@@ -418,9 +418,9 @@ describe("work with options", () => {
     const imagePlaceholder =
       "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='50' viewBox='0 0 100 50'%3E%3Crect width='100' height='50' fill='%23f2f2f2'/%3E%3Crect x='1' y='1' width='98' height='48' fill='none' stroke='%23999'/%3E%3Cpath d='M0 0 100 50M100 0 0 50' fill='none' stroke='%23999'/%3E%3C/svg%3E";
     const node = await bootstrap(
-      "placeholder/node.html",
-      "placeholder/style.css",
-      "placeholder/image",
+      "options/image-placeholder/node.html",
+      "options/image-placeholder/style.css",
+      "options/image-placeholder/reference",
     );
     await renderAndCheck(node, { imagePlaceholder });
   });
@@ -429,7 +429,10 @@ describe("work with options", () => {
     assertTextRendered,
     bootstrap,
   }) => {
-    const node = await bootstrap("images/node.html", "images/style.css");
+    const node = await bootstrap(
+      "media/images/node.html",
+      "media/images/style.css",
+    );
     await assertTextRendered(["PNG", "JPG"], node, { cacheBust: true });
   });
 });
