@@ -10,6 +10,22 @@ function pngResponse(body = "resource") {
   return new Response(body, { headers: { "Content-Type": "image/png" } });
 }
 
+function decodablePngResponse() {
+  const base64Png =
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==";
+
+  const bytes = Uint8Array.from(atob(base64Png), (char) => char.charCodeAt(0));
+  return new Response(bytes, { headers: { "Content-Type": "image/png" } });
+}
+
+function createImageNode(url: string) {
+  const node = document.createElement("div");
+  const img = document.createElement("img");
+  img.src = url;
+  node.appendChild(img);
+  return node;
+}
+
 describe("resource cache", () => {
   test("keeps cache operations on the component caches", () => {
     const fetchCache = new FetchCache();
@@ -96,18 +112,16 @@ describe("resource cache", () => {
       requestCount += 1;
       return requestCount === 1
         ? new Response("", { status: 500, statusText: "Failed" })
-        : pngResponse("retry response");
+        : decodablePngResponse();
     });
     const cache = new Cache();
     const url = "/retry.png";
 
-    await Promise.all([
-      toDataUrl(createBackgroundNode(url), { cache }),
-      toDataUrl(createBackgroundNode(url), { cache }),
-    ]);
+    await expect(toDataUrl(createImageNode(url), { cache })).rejects.toThrow();
     expect(fetchSpy).toHaveBeenCalledTimes(1);
 
-    await toDataUrl(createBackgroundNode(url), { cache });
+    // The failed request was not cached, so retrying re-fetches and succeeds.
+    await toDataUrl(createImageNode(url), { cache });
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 

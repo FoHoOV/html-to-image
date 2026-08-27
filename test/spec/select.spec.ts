@@ -16,6 +16,25 @@ describe("work with select element", () => {
     });
   });
 
+  test("should render the live selection over a stale selected attribute", async ({
+    bootstrap,
+    renderAndCheck,
+  }) => {
+    const node = await bootstrap(
+      "forms/select/first-option.html",
+      "forms/select/style.css",
+      "forms/select/reference-second",
+    );
+    const select = node.querySelector("select") as HTMLSelectElement;
+
+    // The markup's `selected` attribute is still on "first"; only the live
+    // `.selected` property below reflects "second". The rendered output must
+    // match second-option.html's reference, not the stale-attribute markup.
+    select.options[1].selected = true;
+
+    await renderAndCheck(node);
+  });
+
   test("should not mutate the source options' selected state", async () => {
     const select = document.createElement("select");
     const first = document.createElement("option");
@@ -28,9 +47,6 @@ describe("work with select element", () => {
     select.append(first, second);
     second.selected = true;
 
-    // The rendered output reflecting the live selection (rather than the
-    // stale `selected` attribute) is already covered visually above; this
-    // asserts the source DOM survives untouched.
     await toDataUrl(select);
 
     expect(first.hasAttribute("selected")).toBe(true);
