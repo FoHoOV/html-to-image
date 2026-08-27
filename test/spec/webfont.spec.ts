@@ -439,4 +439,51 @@ describe("font embedding", () => {
       link.remove();
     }
   });
+
+  test("resolves a relative font src url against the declaring stylesheet's own url", async ({
+    getSvgDocument,
+  }) => {
+    const nativeFetch = window.fetch.bind(window);
+    const fetchSpy = vi.spyOn(window, "fetch").mockImplementation((input) => {
+      const url = input.toString();
+      if (
+        url.endsWith("/fonts/font1.woff") ||
+        url.endsWith("/fonts/web-fonts/font2.woff2")
+      ) {
+        return Promise.resolve(
+          new Response("FAKEFONTDATA", {
+            headers: { "Content-Type": "font/woff2" },
+          }),
+        );
+      }
+      return nativeFetch(input);
+    });
+
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "/fonts/web-fonts/rules-relative.css";
+    const loaded = new Promise<void>((resolve, reject) => {
+      link.onload = () => resolve();
+      link.onerror = () => reject(new Error("Could not load font fixture"));
+    });
+    document.head.appendChild(link);
+    await loaded;
+
+    // Font1's src is `../font1.woff`, relative to rules-relative.css's own
+    // directory (fonts/web-fonts/) rather than to the page.
+    const root = addRoot("Font1");
+
+    try {
+      await getEmbeddedFontCSS(root, getSvgDocument);
+
+      expect(
+        fetchSpy.mock.calls.some(([requested]) =>
+          requested.toString().endsWith("/fonts/font1.woff"),
+        ),
+      ).toBe(true);
+    } finally {
+      root.remove();
+      link.remove();
+    }
+  });
 });

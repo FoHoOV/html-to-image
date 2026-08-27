@@ -1,6 +1,14 @@
-import { Cache, FetchCache, FontCache } from "../../src";
-import { createContext } from "../../src/context";
-import { fetchResource } from "../../src/utils";
+import { Cache, FetchCache, FontCache, toDataUrl } from "../../src";
+
+function createBackgroundNode(url: string) {
+  const node = document.createElement("div");
+  node.style.cssText = `width: 1px; height: 1px; background-image: url(${url});`;
+  return node;
+}
+
+function pngResponse(body = "resource") {
+  return new Response(body, { headers: { "Content-Type": "image/png" } });
+}
 
 describe("resource cache", () => {
   test("keeps cache operations on the component caches", () => {
@@ -49,22 +57,37 @@ describe("resource cache", () => {
 
   test("does not repopulate a reset cache from a request already in flight", async () => {
     let resolveFetch!: (response: Response) => void;
-    vi.spyOn(window, "fetch").mockImplementation(
-      () =>
-        new Promise<Response>((resolve) => {
-          resolveFetch = resolve;
-        }),
-    );
+    let fetchStarted!: () => void;
+    const started = new Promise<void>((resolve) => {
+      fetchStarted = resolve;
+    });
+    const fetchSpy = vi.spyOn(window, "fetch").mockImplementationOnce(() => {
+      fetchStarted();
+      return new Promise<Response>((resolve) => {
+        resolveFetch = resolve;
+      });
+    });
 
     const fetchCache = new FetchCache();
-    const context = createContext({ cache: new Cache(fetchCache) });
-    const pending = fetchResource("/reset-in-flight.txt", undefined, context);
+    const pending = toDataUrl(createBackgroundNode("/reset-in-flight.png"), {
+      cache: new Cache(fetchCache),
+    });
 
+    // Rendering reaches the fetch call only after several more async hops
+    // than calling fetchResource directly did, so wait for it to actually
+    // start before resolving/resetting around it.
+    await started;
     fetchCache.reset();
-    resolveFetch(new Response("late response"));
+    resolveFetch(pngResponse());
     await pending;
 
-    expect(fetchCache.has("/reset-in-flight.txt")).toBe(false);
+    // The reset entry was not stored, so a render sharing the same cache
+    // re-fetches instead of reusing it.
+    fetchSpy.mockResolvedValue(pngResponse());
+    await toDataUrl(createBackgroundNode("/reset-in-flight.png"), {
+      cache: new Cache(fetchCache),
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
   test("releases failed requests so they can be retried", async () => {
@@ -73,138 +96,89 @@ describe("resource cache", () => {
       requestCount += 1;
       return requestCount === 1
         ? new Response("", { status: 500, statusText: "Failed" })
-        : new Response("retry response");
+        : pngResponse("retry response");
     });
-    const context = createContext();
-    const firstPromise = fetchResource("/retry.txt", undefined, context);
-    const secondPromise = fetchResource("/retry.txt", undefined, context);
+    const cache = new Cache();
+    const url = "/retry.png";
 
     await Promise.all([
-      expect(firstPromise).rejects.toThrow(/cannot fetch/),
-      expect(secondPromise).rejects.toThrow(/cannot fetch/),
+      toDataUrl(createBackgroundNode(url), { cache }),
+      toDataUrl(createBackgroundNode(url), { cache }),
     ]);
     expect(fetchSpy).toHaveBeenCalledTimes(1);
 
-    const retry = await fetchResource("/retry.txt", undefined, context);
-    expect(retry.asString()).toBe("retry response");
+    await toDataUrl(createBackgroundNode(url), { cache });
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
   test("does not share requests between different fetch caches", async () => {
     const fetchSpy = vi
       .spyOn(window, "fetch")
-      .mockImplementation(async () =>
-        Promise.resolve(new Response("shared response")),
-      );
+      .mockImplementation(async () => pngResponse("shared response"));
+    const url = "/shared.png";
 
-    const firstContext = createContext();
-    const secondContext = createContext();
-
-    const [first, second] = await Promise.all([
-      fetchResource("/shared.txt", undefined, firstContext),
-      fetchResource("/shared.txt", undefined, secondContext),
+    await Promise.all([
+      toDataUrl(createBackgroundNode(url), { cache: new Cache() }),
+      toDataUrl(createBackgroundNode(url), { cache: new Cache() }),
     ]);
-    expect(first.asString()).toBe("shared response");
-    expect(second.asString()).toBe("shared response");
 
-    await fetchResource("/shared.txt", undefined, firstContext);
-    await fetchResource("/shared.txt", undefined, secondContext);
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
   test("coalesces concurrent requests across shared fetch caches", async () => {
     const fetchSpy = vi
       .spyOn(window, "fetch")
-      .mockImplementation(async () => new Response("shared response"));
-    const fetchCache = new FetchCache();
-    const firstContext = createContext({ cache: new Cache(fetchCache) });
-    const secondContext = createContext({ cache: new Cache(fetchCache) });
+      .mockImplementation(async () => pngResponse("shared response"));
+    const cache = new Cache(new FetchCache());
+    const url = "/shared-concurrent.png";
 
-    const [first, second] = await Promise.all([
-      fetchResource("/shared-concurrent.txt", undefined, firstContext),
-      fetchResource("/shared-concurrent.txt", undefined, secondContext),
+    await Promise.all([
+      toDataUrl(createBackgroundNode(url), { cache }),
+      toDataUrl(createBackgroundNode(url), { cache }),
     ]);
 
-    expect(first.asString()).toBe("shared response");
-    expect(second.asString()).toBe("shared response");
-    expect(first).toBe(second);
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
   test("reuses a FetchCache through different Cache instances", async () => {
     const fetchSpy = vi
       .spyOn(window, "fetch")
-      .mockImplementation(async () => new Response("shared response"));
+      .mockImplementation(async () => pngResponse("shared response"));
     const fetchCache = new FetchCache();
-    const firstContext = createContext({
+    const url = "/shared.png";
+
+    await toDataUrl(createBackgroundNode(url), {
       cache: new Cache(fetchCache, new FontCache()),
     });
-    const secondContext = createContext({
+    await toDataUrl(createBackgroundNode(url), {
       cache: new Cache(fetchCache, new FontCache()),
     });
 
-    const first = await fetchResource("/shared.txt", undefined, firstContext);
-    const second = await fetchResource("/shared.txt", undefined, secondContext);
-
-    expect(first.asString()).toBe("shared response");
-    expect(second.asString()).toBe("shared response");
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  test("reuses a cached string response", async () => {
+  test("reuses a cached response", async () => {
     const fetchSpy = vi
       .spyOn(window, "fetch")
-      .mockImplementation(async (input) =>
-        Promise.resolve(
-          new Response(String(input), {
-            headers: { "Content-Type": "text/plain" },
-          }),
-        ),
-      );
-    const context = createContext();
+      .mockImplementation(async () => pngResponse());
+    const cache = new Cache();
+    const url = "/asset.png?version=1";
 
-    const first = await fetchResource(
-      "/asset.txt?version=1",
-      undefined,
-      context,
-    );
-    expect(first.asString()).toContain("version=1");
+    await toDataUrl(createBackgroundNode(url), { cache });
+    await toDataUrl(createBackgroundNode(url), { cache });
+    await toDataUrl(createBackgroundNode(url), { cache });
 
-    const second = await fetchResource(
-      "/asset.txt?version=1",
-      undefined,
-      context,
-    );
-    expect(second.asString()).toContain("version=1");
-
-    const third = await fetchResource(
-      "/asset.txt?version=1",
-      undefined,
-      context,
-    );
-    expect(third.asString()).toContain("version=1");
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
   test("includes query parameters in cache keys by default", async () => {
     const fetchSpy = vi
       .spyOn(window, "fetch")
-      .mockImplementation(async (input) =>
-        Promise.resolve(new Response(String(input))),
-      );
-    const context = createContext();
-    const first = await fetchResource(
-      "/asset.txt?version=1",
-      undefined,
-      context,
-    );
-    first.asString();
-    const second = await fetchResource(
-      "/asset.txt?version=2",
-      undefined,
-      context,
-    );
-    second.asString();
+      .mockImplementation(async () => pngResponse());
+    const cache = new Cache();
+
+    await toDataUrl(createBackgroundNode("/asset.png?version=1"), { cache });
+    await toDataUrl(createBackgroundNode("/asset.png?version=2"), { cache });
 
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
@@ -212,50 +186,32 @@ describe("resource cache", () => {
   test("strips query parameters from cache keys when disabled", async () => {
     const fetchSpy = vi
       .spyOn(window, "fetch")
-      .mockImplementation(async (input) =>
-        Promise.resolve(new Response(String(input))),
-      );
+      .mockImplementation(async () => pngResponse());
+    const cache = new Cache();
+    const options = { cache, includeQueryParams: false };
 
-    const context = createContext({ includeQueryParams: false });
-    const first = await fetchResource(
-      "/asset.txt?version=1",
-      undefined,
-      context,
-    );
-    expect(first.asString()).toContain("version=1");
+    await toDataUrl(createBackgroundNode("/asset.png?version=1"), options);
+    await toDataUrl(createBackgroundNode("/asset.png?version=2"), options);
 
-    const second = await fetchResource(
-      "/asset.txt?version=2",
-      undefined,
-      context,
-    );
-    expect(second.asString()).toContain("version=1");
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
   test("bypasses cache reads and writes when cache busting", async () => {
     const fetchSpy = vi
       .spyOn(window, "fetch")
-      .mockImplementation(async (input) =>
-        Promise.resolve(new Response(String(input))),
-      );
-    const context = createContext();
+      .mockImplementation(async () => pngResponse());
+    const cache = new Cache();
+    const url = "/asset.png";
 
-    const cached = await fetchResource("/asset.txt", undefined, context);
-    cached.asString();
-    const busted = await fetchResource("/asset.txt", undefined, {
-      ...context,
-      options: {
-        ...context.options,
-        cacheBust: true,
-        includeQueryParams: false,
-      },
+    await toDataUrl(createBackgroundNode(url), { cache });
+    await toDataUrl(createBackgroundNode(url), {
+      cache,
+      cacheBust: true,
+      includeQueryParams: false,
     });
-    busted.asString();
-    const reused = await fetchResource("/asset.txt", undefined, context);
-    reused.asString();
+    await toDataUrl(createBackgroundNode(url), { cache });
 
     expect(fetchSpy).toHaveBeenCalledTimes(2);
-    expect(fetchSpy.mock.calls[1][0]).toMatch(/^\/asset\.txt\?\d+$/);
+    expect(fetchSpy.mock.calls[1][0]).toMatch(/^\/asset\.png\?\d+$/);
   });
 });

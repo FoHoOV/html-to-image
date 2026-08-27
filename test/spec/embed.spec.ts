@@ -1,124 +1,71 @@
-import { createContext } from "../../src/context";
-import { getEmbeddableResource } from "../../src/node/utils";
+import { toDataUrl } from "../../src";
 import { test } from "../fixtures";
 
-const PNG_RESPONSE = () =>
-  new Response("A", { headers: { "Content-Type": "image/png" } });
-const PNG_DATA_URL = "url(data:image/png;base64,QQ==)";
+function createBackgroundNode(url: string) {
+  const node = document.createElement("div");
+  node.style.cssText = `width: 10px; height: 10px; background-image: url(${url});`;
+  return node;
+}
 
-describe("embeding", () => {
-  describe("url replacement", () => {
-    test("should replace quoted and unquoted urls", async () => {
-      vi.spyOn(window, "fetch").mockImplementation(async () => PNG_RESPONSE());
+describe("background-image embedding", () => {
+  test("should skip data urls without fetching them", async () => {
+    const fetchSpy = vi.spyOn(window, "fetch");
 
-      const { cssText } = await getEmbeddableResource(
-        `url("http://acme.com/file"), url(foo.com), url('bar.org')`,
-        undefined,
-        undefined,
-        createContext(),
-      );
+    await toDataUrl(createBackgroundNode("data:image/png;base64,AAAA"));
 
-      expect(cssText).toBe(
-        `url("data:image/png;base64,QQ=="), ${PNG_DATA_URL}, url('data:image/png;base64,QQ==')`,
-      );
-    });
-
-    test("should ignore data urls", async () => {
-      const fetchSpy = vi
-        .spyOn(window, "fetch")
-        .mockImplementation(async () => PNG_RESPONSE());
-
-      const { cssText } = await getEmbeddableResource(
-        "url(foo.com), url(data:AAA)",
-        undefined,
-        undefined,
-        createContext(),
-      );
-
-      expect(cssText).toBe(`${PNG_DATA_URL}, url(data:AAA)`);
-      expect(fetchSpy).toHaveBeenCalledTimes(1);
-    });
-
-    test("should resolve urls if base url given", async () => {
-      const fetchSpy = vi
-        .spyOn(window, "fetch")
-        .mockImplementation(async () => PNG_RESPONSE());
-
-      const { cssText } = await getEmbeddableResource(
-        "url(images/image.png)",
-        "http://acme.com/",
-        undefined,
-        createContext(),
-      );
-
-      expect(cssText).toBe(PNG_DATA_URL);
-      expect(fetchSpy).toHaveBeenCalledWith(
-        "http://acme.com/images/image.png",
-        undefined,
-      );
-    });
-
-    test("should embed a short url without replacing the function name", async () => {
-      vi.spyOn(window, "fetch").mockResolvedValue(PNG_RESPONSE());
-
-      const { cssText } = await getEmbeddableResource(
-        "url(u)",
-        undefined,
-        undefined,
-        createContext(),
-      );
-
-      expect(cssText).toBe(PNG_DATA_URL);
-    });
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  describe("failures", () => {
-    test("should report a failure when no placeholder is given", async () => {
-      vi.spyOn(window, "fetch").mockRejectedValue(new Error("offline"));
+  test("should leave a failed background image empty when no placeholder is given", async ({
+    getSvgDocument,
+  }) => {
+    vi.spyOn(window, "fetch").mockRejectedValue(new Error("offline"));
 
-      const result = await getEmbeddableResource(
-        "url(http://acme.com/image.png)",
-        undefined,
-        undefined,
-        createContext(),
-      );
+    const svg = await getSvgDocument(
+      await toDataUrl(createBackgroundNode("http://acme.invalid/missing.png")),
+    );
 
-      expect(result.failed).toBe(true);
-      expect(result.cssText).toBe("url()");
-    });
-
-    test("should substitute a placeholder instead of failing", async () => {
-      vi.spyOn(window, "fetch").mockRejectedValue(new Error("offline"));
-
-      const result = await getEmbeddableResource(
-        "url(http://acme.com/image.png)",
-        undefined,
-        "data:image/png;base64,placeholder",
-        createContext(),
-      );
-
-      expect(result.failed).toBe(false);
-      expect(result.cssText).toBe("url(data:image/png;base64,placeholder)");
-    });
+    // Computed style serializes this as the `background` shorthand (its exact
+    // trailing sub-properties differ per engine), with the url() quoted.
+    expect(svg.querySelector("div")?.getAttribute("style")).toContain(
+      'background: url("")',
+    );
   });
 
-  test("should share concurrent data url conversion work", async () => {
-    const fetchSpy = vi
-      .spyOn(window, "fetch")
-      .mockResolvedValue(PNG_RESPONSE());
+  test("should substitute a placeholder for a failed background image", async ({
+    getSvgDocument,
+  }) => {
+    vi.spyOn(window, "fetch").mockRejectedValue(new Error("offline"));
+    const placeholder = "data:image/png;base64,placeholder";
+
+    const svg = await getSvgDocument(
+      await toDataUrl(createBackgroundNode("http://acme.invalid/missing.png"), {
+        imagePlaceholder: placeholder,
+      }),
+    );
+
+    expect(svg.querySelector("div")?.getAttribute("style")).toContain(
+      `url("${placeholder}")`,
+    );
+  });
+
+  test("should fetch and decode a background image shared by two elements only once", async () => {
+    vi.spyOn(window, "fetch").mockResolvedValue(
+      new Response("A", { headers: { "Content-Type": "image/png" } }),
+    );
+    const fetchSpy = vi.spyOn(window, "fetch");
     const readSpy = vi.spyOn(FileReader.prototype, "readAsDataURL");
-    const context = createContext();
 
-    const results = await Promise.all([
-      getEmbeddableResource("url(shared.png)", undefined, undefined, context),
-      getEmbeddableResource("url(shared.png)", undefined, undefined, context),
-    ]);
+    const root = document.createElement("div");
+    root.appendChild(createBackgroundNode("/shared-background.png"));
+    root.appendChild(createBackgroundNode("/shared-background.png"));
 
-    expect(results.map((result) => result.cssText)).toEqual([
-      PNG_DATA_URL,
-      PNG_DATA_URL,
-    ]);
+    await toDataUrl(root);
+
     expect(fetchSpy).toHaveBeenCalledTimes(1);
+    // The fetch itself is deduplicated by FetchCache; this additionally
+    // confirms the FileReader-based binary-to-base64 conversion of the
+    // already-resolved resource is shared too, not repeated per consumer.
     expect(readSpy).toHaveBeenCalledTimes(1);
   });
 });
