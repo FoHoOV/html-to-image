@@ -1,5 +1,7 @@
 import type { FontCache, WebFontEntry, WebFontSource } from "@/cache";
 import type { Context } from "@/context";
+import type { FontFaceCollection } from "./collector";
+import { collectDocumentFontFaces } from "./collector";
 import { embedFontSources } from "./serialize";
 
 /**
@@ -8,9 +10,9 @@ import { embedFontSources } from "./serialize";
  * `FontCache`: which families this output already covers, and which cache
  * entries turned out to be unembeddable this time.
  *
- * A family is resolved in two steps: `includeCached`, so a document whose
- * families are already embedded is never scanned, then `includeDiscovered`
- * with the faces a scan just found.
+ * A family is resolved in two steps: from the cache first, so a document whose
+ * families are all already embedded is never scanned, then from the faces the
+ * one stylesheet scan found.
  */
 export class FontResolver {
   private readonly included = new Map<string, string>();
@@ -28,50 +30,78 @@ export class FontResolver {
     return this.included.values();
   }
 
-  isResolved(family: string) {
-    return this.included.has(family);
-  }
-
   /**
-   * Reuses a cached embedding for each family that has one, so a document whose
-   * families are all cached is never scanned.
+   * Resolves every family the captured tree used against one source document:
+   * cached embeddings first, so a document whose families are all already
+   * covered is never scanned at all, then one stylesheet scan for the rest.
    */
-  includeCached(families: Iterable<string>) {
-    return this.include(families, (family) => this.resolveCached(family));
-  }
+  async resolveAll(sourceDocument: Document, families: ReadonlySet<string>) {
+    // The cache holds one document's fonts. Rendering a node from another
+    // document starts fresh rather than answering with the first one's faces.
+    if (!this.cache.holds(sourceDocument)) {
+      this.cache.reset();
+      this.cache.bind(sourceDocument);
+    }
 
-  includeDiscovered(sourcesByFamily: ReadonlyMap<string, WebFontSource[]>) {
-    return this.include(sourcesByFamily.keys(), (family) =>
+    await this.include(families, (family) => this.resolveCached(family));
+
+    const wanted = new Set<string>();
+    for (const family of families) {
+      if (!this.included.has(family) && !this.cache.isMissing(family)) {
+        wanted.add(family);
+      }
+    }
+    if (wanted.size === 0) {
+      return;
+    }
+
+    let collection: FontFaceCollection;
+    try {
+      collection = await collectDocumentFontFaces(
+        sourceDocument,
+        wanted,
+        this.context,
+      );
+    } catch (error) {
+      console.error("Error while collecting web fonts", error);
+      return;
+    }
+
+    const { complete, sourcesByFamily } = collection;
+
+    // Only a fully readable document proves a family is absent, so a failed
+    // stylesheet read leaves the family retryable on the next render.
+    if (complete) {
+      for (const family of wanted) {
+        if (!sourcesByFamily.has(family)) {
+          this.cache.rememberMissing(family);
+        }
+      }
+    }
+
+    await this.include(sourcesByFamily.keys(), (family) =>
       this.resolveDiscovered(family, sourcesByFamily.get(family) ?? []),
     );
-  }
-
-  private async include(
-    families: Iterable<string>,
-    resolve: (family: string) => Promise<string>,
-  ) {
-    const ordered: string[] = [];
-    const pending: Array<Promise<string>> = [];
-    for (const family of families) {
-      ordered.push(family);
-      pending.push(resolve(family));
-    }
-    this.record(ordered, await Promise.all(pending));
   }
 
   /**
    * Families resolve concurrently but are recorded in iteration order, so the
    * generated `@font-face` blocks come out the same on every render.
    */
-  private record(
-    families: ReadonlyArray<string>,
-    cssTexts: ReadonlyArray<string>,
+  private async include(
+    families: Iterable<string>,
+    resolve: (family: string) => Promise<string>,
   ) {
-    cssTexts.forEach((cssText, index) => {
-      if (cssText) {
-        this.included.set(families[index], cssText);
+    const pending: Array<[family: string, cssText: Promise<string>]> = [];
+    for (const family of families) {
+      pending.push([family, resolve(family)]);
+    }
+    for (const [family, cssText] of pending) {
+      const resolved = await cssText;
+      if (resolved) {
+        this.included.set(family, resolved);
       }
-    });
+    }
   }
 
   private async resolveDiscovered(
@@ -82,7 +112,7 @@ export class FontResolver {
       return "";
     }
 
-    const entry = this.cache.findOrCreateEntry(family, sources);
+    const entry = this.cache.setEntry(family, sources);
     return this.rejected.has(entry) ? "" : this.embed(family, entry);
   }
 
@@ -91,21 +121,11 @@ export class FontResolver {
       return "";
     }
 
-    // Under `cacheBust` nothing processed is reused, so leave candidates in
-    // discovery order rather than promoting already embedded ones.
-    const preferProcessed = this.context.options.cacheBust ? null : this.format;
-
-    for (const entry of this.cache.candidates(family, preferProcessed)) {
-      if (this.rejected.has(entry)) {
-        continue;
-      }
-
-      const cssText = await this.embed(family, entry);
-      if (cssText) {
-        return cssText;
-      }
+    const entry = this.cache.getEntry(family);
+    if (!entry || this.rejected.has(entry)) {
+      return "";
     }
-    return "";
+    return this.embed(family, entry);
   }
 
   private async embed(family: string, entry: WebFontEntry) {

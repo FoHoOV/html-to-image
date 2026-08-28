@@ -32,9 +32,9 @@ describe("resource cache", () => {
   test("keeps font discovery state behind the FontCache api", () => {
     const fontCache = new FontCache();
 
-    expect(fontCache.isMissing(document, "inter")).toBe(false);
-    fontCache.rememberMissing(document, "inter");
-    expect(fontCache.isMissing(document, "inter")).toBe(true);
+    expect(fontCache.isMissing("inter")).toBe(false);
+    fontCache.rememberMissing("inter");
+    expect(fontCache.isMissing("inter")).toBe(true);
   });
 
   test("resets component caches in place", () => {
@@ -47,7 +47,7 @@ describe("resource cache", () => {
       asString: () => "cache",
       contentType: "text/plain",
     });
-    fontCache.rememberMissing(document, "inter");
+    fontCache.rememberMissing("inter");
 
     cache.reset();
 
@@ -55,7 +55,7 @@ describe("resource cache", () => {
     expect(cache.fetchCache).toBe(fetchCache);
     expect(cache.fontCache).toBe(fontCache);
     expect(fetchCache.has("resource")).toBe(false);
-    expect(fontCache.isMissing(document, "inter")).toBe(false);
+    expect(fontCache.isMissing("inter")).toBe(false);
   });
 
   test("does not repopulate a reset cache from a request already in flight", async ({

@@ -1,4 +1,4 @@
-import type { WebFontSource, WebFontWrapper } from "@/cache";
+import type { WebFontSource } from "@/cache";
 import type { Context } from "@/context";
 import { getEmbeddableResource, shouldEmbed } from "@/node/utils";
 
@@ -6,8 +6,11 @@ const URL_WITH_FORMAT_PATTERN = /url\([^)]+\)\s*format\((["']?)([^"']+)\1\)/;
 const FONT_SRC_REGEX = /src:\s*(?:url\([^)]+\)\s*format\([^)]+\)[,;]\s*)+/g;
 
 /**
- * Inlines every source's resources concurrently, then serializes them back in
- * discovery order so enclosing blocks nest the way they did at the source.
+ * Inlines every source's resources concurrently, then joins the results back
+ * in discovery order. Each face is embedded bare: the block it was found in
+ * was already evaluated as active against the live page in this same engine,
+ * so replaying that condition around the output would only ask a question
+ * already answered.
  */
 export async function embedFontSources(
   sources: ReadonlyArray<WebFontSource>,
@@ -17,7 +20,8 @@ export async function embedFontSources(
   for (const source of sources) {
     pending.push(embedFontSource(source, context));
   }
-  return serializeFontSources(sources, await Promise.all(pending));
+  const cssTexts = await Promise.all(pending);
+  return cssTexts.filter((cssText): cssText is string => !!cssText).join("\n");
 }
 
 /** Prepends the one generated font style element for an output tree. */
@@ -83,72 +87,4 @@ function filterPreferredFontFormat(
       }
     }
   });
-}
-
-/**
- * Emits the faces in order, opening each enclosing block once and closing it
- * only when the next face no longer shares it.
- *
- * Contextual blocks are left out. Their condition was already evaluated
- * against the live page when the face was collected, and the exported SVG
- * renders in a different context, so re-emitting them could suppress a face
- * the page is actually using.
- */
-function serializeFontSources(
-  sources: ReadonlyArray<WebFontSource>,
-  cssTexts: ReadonlyArray<string | null>,
-) {
-  const openWrappers: WebFontWrapper[] = [];
-  const parts: string[] = [];
-  const nextLine = () => {
-    if (parts.length > 0) {
-      parts.push("\n");
-    }
-  };
-
-  for (let index = 0; index < sources.length; index += 1) {
-    const cssText = cssTexts[index];
-    if (!cssText) {
-      continue;
-    }
-
-    const wrappers = (sources[index].wrappers ?? []).filter(
-      (wrapper) => !wrapper.contextual,
-    );
-    let sharedWrappers = 0;
-    while (
-      sharedWrappers < openWrappers.length &&
-      sharedWrappers < wrappers.length &&
-      openWrappers[sharedWrappers].id === wrappers[sharedWrappers].id
-    ) {
-      sharedWrappers += 1;
-    }
-
-    while (openWrappers.length > sharedWrappers) {
-      nextLine();
-      parts.push("}");
-      openWrappers.pop();
-    }
-    for (
-      let wrapperIndex = sharedWrappers;
-      wrapperIndex < wrappers.length;
-      wrapperIndex += 1
-    ) {
-      const wrapper = wrappers[wrapperIndex];
-      nextLine();
-      parts.push(wrapper.prelude, " {");
-      openWrappers.push(wrapper);
-    }
-
-    nextLine();
-    parts.push(cssText);
-  }
-
-  while (openWrappers.length > 0) {
-    nextLine();
-    parts.push("}");
-    openWrappers.pop();
-  }
-
-  return parts.join("");
 }

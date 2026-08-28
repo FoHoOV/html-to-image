@@ -316,11 +316,13 @@ cache.fontCache.reset(); // only the discovered fonts
 cache.fetchCache.reset(); // only the fetched resources
 ```
 
-Requests already in flight when `FetchCache.reset()` is called still settle for whoever is awaiting them, but their results are not stored.
-
 Automatic font discovery normalizes family names before accessing `FontCache`; the cache itself does not parse or normalize CSS.
 
-`FontCache` is keyed by family name alone. If separate documents, such as a page and an iframe, define the same family name with different `@font-face` rules, the first document that successfully supplies the family wins, and the other document's nodes are rendered with those faces rather than their own. Use distinct family names across documents, or a separate `FontCache` per render, if that matters to you.
+`@font-face` rules are discovered in the rendered node's own document. Font families used anywhere in the captured tree are collected — including by elements inside an iframe — and every one of them is resolved against that single document's stylesheets.
+
+An iframe's *own* `@font-face` rules are therefore not discovered. If an iframe defines a face that the surrounding page does not, supply it through [`fontEmbedCSS`](#fontembedcss), or define the same family in the page's own stylesheets.
+
+A `FontCache` holds one document's fonts. If a later render targets a node from a different document — a node living inside an iframe, say — the cache clears itself and rediscovers, so one document's faces are never reused for another's.
 
 Cached font definitions are snapshots. Reset the `FontCache` after adding, removing, or changing `@font-face` rules, or after enabling or disabling their stylesheets. If a changed font stylesheet was fetched externally, also reset the `FetchCache` so its previous response is not reused.
 
@@ -336,7 +338,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
 
 Without this, a render after the change reuses the faces discovered before it. A single render is always correct; only a cache that outlives a condition change is affected. `@font-face` rules that are not inside a conditional block are unaffected.
 
-`@font-face` rules nested in `@media` are evaluated against the page when the render starts, and the matching faces are embedded without their `@media` wrapper. The exported SVG renders in its own context, where a media query would be resolved against the output size rather than the page, so replaying it could drop a font the page is really using. `@supports` and `@layer` are kept: the same engine resolves `@supports` identically, and `@layer` only affects cascade order.
+`@font-face` rules nested in `@media`, `@supports`, or `@layer` are evaluated against the live page, in the same engine that renders the output, when the render starts. Only faces behind a currently-active condition are embedded, and they are embedded bare — the enclosing block is not reproduced in the output. Replaying it would ask a question already answered: for `@media`, against the wrong viewport (the exported SVG's own output size, not the page's); for `@supports` and `@layer`, redundantly, since the engine evaluating it is the same one that just did.
 
 Fonts registered only through the `FontFace` constructor cannot be recovered from browser CSSOM because their original source is not exposed. Supply those fonts through `fontEmbedCSS`. Providing `fontEmbedCSS` bypasses automatic font discovery and does not populate `FontCache`.
 

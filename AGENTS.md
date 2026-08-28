@@ -134,9 +134,8 @@ render. All per-node behavior must be registered from that traversal.
 - Collect operation-wide facts, such as used font families, incrementally as
   nodes are visited. Perform only the non-DOM processing that depends on those
   collected facts after cloning.
-- Preserve preorder registration. In particular, the parent document must be
-  registered before iframe documents so same-name font collision behavior is
-  deterministic.
+- Preserve preorder registration, so per-node work is registered in the order
+  the output will present it.
 - Prefer generators and loops over materializing traversal results. Avoid
   `Array.from` and intermediate arrays in hot paths unless the array is needed
   for stable concurrent result ordering.
@@ -167,10 +166,10 @@ another, and it is discarded when the call finishes.
 - `embedding.css` / `embedding.image` / `embedding.font` — `WorkStatus` queues.
   Traversal adds jobs, `cloneNodeTree` seals each once registration is
   finished, then awaits `ready`.
-- `embedding.font.usedFamiliesByDocument` — the one piece of feature data on
-  the context, because the single-traversal invariant leaves nowhere else to
-  accumulate it. Keep additions like this rare, documented, and shaped by the
-  feature that owns them.
+- `embedding.font.usedFamilies` / `embedding.font.parsedFontValues` — the one
+  piece of feature data on the context, because the single-traversal invariant
+  leaves nowhere else to accumulate it. Keep additions like this rare,
+  documented, and shaped by the feature that owns them.
 - `cloning` / `addedToDom` — `PendingWork` gates. A job queued during traversal
   awaits `cloning.ready` so it runs once the whole tree is captured; anything
   needing clone layout awaits `addedToDom.ready`.
@@ -273,15 +272,15 @@ applied before descendant layout is processed.
 
 Web-font code lives in `src/node/embed/web-font/`:
 
-- `index.ts`: the `embedWebFonts` embedder and render orchestration;
+- `index.ts`: the `embedWebFonts` embedder and per-node family tracking;
 - `font-family.ts`: quote-aware parsing and normalization;
 - `collector.ts`: read-only stylesheet and import discovery;
-- `blocks.ts`: which `@media`/`@supports`/`@layer` blocks apply right now, and
-  the wrappers the output must reproduce;
+- `blocks.ts`: whether the `@media`/`@supports`/`@layer` block enclosing a
+  `@font-face` or `@import` rule applies right now;
 - `cssom.ts`: CSSOM type guards and text parsing;
-- `resolver.ts`: per-render family resolution against `FontCache`;
-- `serialize.ts`: preferred-format filtering, resource inlining, and ordered
-  wrapper serialization.
+- `resolver.ts`: per-render family resolution against `FontCache`, including
+  the cache-first/concurrent-scan orchestration across source documents.
+- `serialize.ts`: preferred-format filtering and resource inlining.
 
 Rules:
 
@@ -291,21 +290,25 @@ Rules:
   `context.cloning.ready`. Do not export a second traversal-time hook, and do
   not call font code directly from `cloneNodeTree`.
 - Per-render state belongs to `FontResolver`, never to `FontCache`.
-- Track families from the original node and associate them with its original
-  `ownerDocument`. Iframe clones are adopted into another document, so the
-  cloned node's document is not the source of truth.
+- Track families from the original node, reading its computed `font-family`
+  before any style inlining happens. Collect from every visited node, including
+  nodes inside an iframe — the traversal crosses that boundary with the
+  realm-safe `isInstanceOfElement`, not a global `instanceof`, which is what
+  makes those nodes visible at all.
 - Skip unquoted CSS generic families, but preserve quoted custom names such as
   `"serif"`.
-- Scan each required source document once per operation. Reuse definitive
-  per-document misses through the caller-owned `FontCache` without strongly
-  retaining documents.
-- Consult the cache for every document before scanning any of them, so a
-  document whose families are already embedded is never scanned. Each
-  document's remaining set is then independent of the others, which is what
-  lets the scans run concurrently.
-- Await the scans together, but apply their results in document order. The
-  first document that supplies a family must win regardless of which scan
-  finished first.
+- Resolve every collected family against the rendered root's own document. An
+  iframe's own `@font-face` rules are not discovered; callers supply those
+  through `fontEmbedCSS`, which is documented in the README.
+- Scan that document once per operation, and reuse definitive misses through
+  the caller-owned `FontCache`.
+- A `FontCache` holds one document's fonts. `FontResolver` compares the render's
+  document against the one the cache is bound to and resets it when they
+  differ, so one document's faces are never served to another's render. Track
+  that binding weakly — a cache must never keep a `Document` alive, and
+  `WeakRef` is above the supported browser floor.
+- Consult the cache before scanning, so a document whose families are already
+  embedded is never scanned at all.
 - Do not cache a missing family when stylesheet reading/import fetching failed.
   A failure that leaves the family unresolved caches nothing, so the next render
   retries it.
@@ -314,20 +317,19 @@ Rules:
   the current render is required; remembering that it might flip later is not.
   Discovery is a snapshot, and callers reset the `FontCache` when a condition
   changes, which is documented in the README.
-- Scan documents concurrently but absorb each scan's failure separately, so one
-  unreadable document does not discard the fonts the others found.
-  `Promise.allSettled` is newer than the browser floor; use a per-promise
-  `catch`.
+- Absorb a failed scan rather than letting it reject the render: log it and
+  continue with whatever was already resolved from the cache.
 - Preserve every applicable `@font-face` variant for a used family; do not
   reduce matching to weight/style equality.
-- Preserve source order, enclosing `@supports`/`@layer` wrappers, import
-  cycles, declaring stylesheet base URLs, and relative font URL resolution.
-- Do not re-emit `@media` wrappers. The query was already evaluated against the
-  live page when the face was collected, and the exported SVG resolves media
-  queries against the output size, not the page viewport — verified identical
-  in Chromium, WebKit, and Firefox. Replaying one can suppress a face the page
-  is using. `@supports` is engine-level and resolves the same in both contexts,
-  so it is kept.
+- Preserve source order, import cycles, declaring stylesheet base URLs, and
+  relative font URL resolution.
+- Do not re-emit `@media`, `@supports`, or `@layer` wrappers around an
+  embedded face. Every condition was already evaluated as active, against the
+  live page, in the same engine that renders the output — replaying it only
+  asks a question already answered, and for `@media` specifically the exported
+  SVG resolves the query against the output size rather than the page
+  viewport, so replaying it can suppress a face the page is using. Verified
+  identical in Chromium, WebKit, and Firefox.
 - Resolve every URL through the shared `resolveUrl` in `src/utils/url.ts`, so
   stylesheet and resource references resolve identically.
 - Never use `document.fonts` as a source collector; it does not expose original
@@ -352,12 +354,13 @@ caller-owned public API rather than a utility, so it may model what it stores.
 `Cache` only composes:
 
 - `FetchCache`: completed resources and shared in-flight requests;
-- `FontCache`: discovered font candidates, processed format results, and weak
-  per-document misses.
+- `FontCache`: one discovered entry per family, its processed format results,
+  the families the bound document definitively lacks, and a weak marker for
+  which document all of that belongs to.
 
 Both own their storage policy as methods and keep their collections private.
 Callers must not reach into cache internals, and the shapes the caches store
-(`WebFontSource`, `WebFontWrapper`, `WebFontEntry`) are not public API.
+(`WebFontSource`, `WebFontEntry`) are not public API.
 
 Every public call creates temporary component caches when the caller does not
 provide a cache. Never add a module-global cache retained for the application
@@ -367,8 +370,8 @@ lifetime.
   contexts.
 - Delete failed in-flight requests so a later call can retry.
 - `cacheBust` bypasses fetched-resource and processed-font-CSS cache reads and
-  writes. Raw discovered font-rule snapshots may remain candidates, but their
-  resources must be fetched and processed again.
+  writes. A raw discovered font-rule snapshot may remain, but its resources
+  must be fetched and processed again.
 - `includeQueryParams: true` (default) includes the query string in the cache
   key; `false` strips it from the key without changing the requested URL.
 - Keep preferred-font-format processed results separate.

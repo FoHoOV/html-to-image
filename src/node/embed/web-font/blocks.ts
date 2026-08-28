@@ -1,15 +1,8 @@
-import type { WebFontWrapper } from "@/cache";
-import {
-  getConditionText,
-  getMediaText,
-  getRulePrelude,
-  isRuleType,
-} from "./cssom";
+import { getConditionText, getMediaText, isRuleType } from "./cssom";
 
 /**
- * Reads the `@media`, `@supports`, and `@layer` blocks enclosing a
- * `@font-face` rule, and answers whether each one applies *right now*, in this
- * source document.
+ * Answers whether the `@media`, `@supports`, or `@layer` block enclosing a
+ * `@font-face` rule applies *right now*, in this source document.
  *
  * This is evaluation for the current render, not tracking across renders. A
  * block that does not apply is never walked, so its faces are not fetched or
@@ -17,100 +10,50 @@ import {
  * Discovery is a snapshot, and callers reset the `FontCache` when a condition
  * changes.
  *
- * Every block that does apply becomes a wrapper the output must reproduce.
- * Wrapper ids are unique per collection so serialization can tell sibling
- * blocks apart.
+ * A face collected from an active block is embedded without it: the block was
+ * evaluated against the live page in the same engine that renders the output,
+ * so replaying its condition would only ask a question already answered
+ * against this render.
  */
-export class BlockReader {
-  private nextWrapperId = 0;
-
-  constructor(private readonly document: Document) {}
-
-  matchesMedia(mediaText: string) {
-    return this.document.defaultView?.matchMedia(mediaText).matches ?? true;
+export function isActiveGroup(rule: CSSGroupingRule, document: Document) {
+  const mediaText = getMediaText("media" in rule ? rule.media : null);
+  if (mediaText != null) {
+    return matchesMedia(mediaText, document);
   }
 
-  createMediaWrapper(mediaText: string) {
-    return this.createWrapper(`@media ${mediaText}`, true);
+  // Rule types added since the numeric `type` code was deprecated — `@layer`,
+  // `@container`, `@scope` — aren't `CSSSupportsRule`, so they fall through to
+  // being walked rather than evaluated, which is what they should do: a
+  // container query cannot be answered against the page the way `@supports`
+  // can.
+  if (isRuleType(rule, globalThis.CSSSupportsRule, CSSRule.SUPPORTS_RULE)) {
+    const condition = getConditionText(rule);
+    return !condition || supports(condition, document);
   }
 
-  /** The wrapper for a `@media`, `@supports`, or `@layer` block. */
-  getGroupingWrapper(rule: CSSGroupingRule) {
-    const mediaText = getMediaText("media" in rule ? rule.media : null);
-    if (mediaText != null) {
-      return {
-        active: this.matchesMedia(mediaText),
-        wrapper: this.createMediaWrapper(mediaText),
-      };
-    }
+  // `@layer` and any other grouping rule apply unconditionally; only their
+  // contents are still subject to their own nested conditions.
+  return true;
+}
 
-    if (isRuleType(rule, "SUPPORTS_RULE", this.document)) {
-      const condition = getConditionText(rule);
-      return condition
-        ? {
-            active: this.supports(condition),
-            wrapper: this.createSupportsWrapper(condition),
-          }
-        : null;
-    }
-
-    if (isRuleType(rule, "LAYER_BLOCK_RULE", this.document)) {
-      const name =
-        "name" in rule && typeof rule.name === "string" ? rule.name : "";
-      return { active: true, wrapper: this.createLayerWrapper(name) };
-    }
-
-    const prelude = getRulePrelude(rule.cssText);
-    if (!prelude) {
-      return null;
-    }
-    return { active: true, wrapper: this.createWrapper(prelude) };
+/** Whether an `@import` rule's own `media`/`supports` conditions apply. */
+export function isActiveImport(rule: CSSImportRule, document: Document) {
+  const mediaText = rule.media?.mediaText ?? "";
+  if (mediaText && !matchesMedia(mediaText, document)) {
+    return false;
   }
 
-  /** The wrappers an `@import` rule contributes to the sheet it pulls in. */
-  getImportWrappers(rule: CSSImportRule) {
-    const wrappers: WebFontWrapper[] = [];
-    let active = true;
+  const supportsText =
+    "supportsText" in rule && typeof rule.supportsText === "string"
+      ? rule.supportsText
+      : "";
+  return !supportsText || supports(supportsText, document);
+}
 
-    const mediaText = rule.media?.mediaText ?? "";
-    if (mediaText) {
-      active = this.matchesMedia(mediaText);
-      wrappers.push(this.createMediaWrapper(mediaText));
-    }
+export function matchesMedia(mediaText: string, document: Document) {
+  return document.defaultView?.matchMedia(mediaText).matches ?? true;
+}
 
-    const supportsText =
-      "supportsText" in rule && typeof rule.supportsText === "string"
-        ? rule.supportsText
-        : "";
-    if (supportsText) {
-      active = active && this.supports(supportsText);
-      wrappers.push(this.createSupportsWrapper(supportsText));
-    }
-
-    if ("layerName" in rule && typeof rule.layerName === "string") {
-      wrappers.push(this.createLayerWrapper(rule.layerName));
-    }
-
-    return { active, wrappers };
-  }
-
-  private supports(condition: string) {
-    return this.document.defaultView?.CSS?.supports(condition) ?? true;
-  }
-
-  private createSupportsWrapper(condition: string) {
-    // A bare `prop: value` condition has to be reparenthesized to serialize.
-    const trimmed = condition.trim();
-    const prelude = /^[\w-]+\s*:/.test(trimmed) ? `(${trimmed})` : trimmed;
-    return this.createWrapper(`@supports ${prelude}`);
-  }
-
-  private createLayerWrapper(name: string) {
-    return this.createWrapper(name ? `@layer ${name}` : "@layer");
-  }
-
-  private createWrapper(prelude: string, contextual = false): WebFontWrapper {
-    this.nextWrapperId += 1;
-    return { contextual, id: this.nextWrapperId, prelude };
-  }
+function supports(condition: string, document: Document) {
+  return document.defaultView?.CSS?.supports(condition) ?? true;
 }

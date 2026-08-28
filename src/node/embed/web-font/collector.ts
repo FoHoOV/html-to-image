@@ -1,10 +1,9 @@
-import type { WebFontSource, WebFontWrapper } from "@/cache";
+import type { WebFontSource } from "@/cache";
 import type { Context } from "@/context";
 import { shouldEmbed } from "@/node/utils";
 import { fetchResource, resolveUrl } from "@/utils";
-import { BlockReader } from "./blocks";
+import { isActiveGroup, isActiveImport, matchesMedia } from "./blocks";
 import {
-  getInlineStyleText,
   getStyleSheetMedia,
   isCSSStyleSheet,
   isFontFaceRule,
@@ -13,23 +12,6 @@ import {
   parseCSS,
 } from "./cssom";
 import { normalizeFontFamily } from "./font-family";
-
-/**
- * Where a stylesheet sits: its base URL and the blocks enclosing it. Only
- * currently-applying sheets are ever walked, so a frame is always active.
- */
-type SheetFrame = {
-  baseUrl: string;
-  wrappers: WebFontWrapper[];
-};
-
-type RuleFrame = SheetFrame & {
-  /**
-   * Rules parsed from text rather than read from live CSSOM. Their `@import`
-   * rules have no `styleSheet`, so the imported sheet must be fetched.
-   */
-  fetchImports: boolean;
-};
 
 export type FontFaceCollection = {
   /**
@@ -58,11 +40,10 @@ export function collectDocumentFontFaces(
 }
 
 class FontFaceCollector {
-  private readonly blocks: BlockReader;
   private readonly sourcesByFamily = new Map<string, WebFontSource[]>();
-  /** Stylesheet URLs on the current path, so `@import` cycles terminate. */
-  private readonly activeUrls = new Set<string>();
-  private readonly seenUrls = new Set<string>();
+  /** Stylesheet URLs already walked or currently being walked, so `@import`
+   * cycles terminate and no sheet is walked twice. */
+  private readonly visitedUrls = new Set<string>();
   private readonly seenSheets = new Set<StyleSheet>();
   private complete = true;
 
@@ -70,9 +51,7 @@ class FontFaceCollector {
     private readonly document: Document,
     private readonly wantedFamilies: Set<string>,
     private readonly context: Context,
-  ) {
-    this.blocks = new BlockReader(document);
-  }
+  ) {}
 
   async collect(): Promise<FontFaceCollection> {
     const styleSheets = this.document.styleSheets;
@@ -91,23 +70,20 @@ class FontFaceCollector {
   /** A sheet owned by the document, whose own media attribute still applies. */
   private async collectDocumentSheet(sheet: StyleSheet) {
     // Checked here as well as in `collectSheet`, so a disabled sheet does not
-    // consume a wrapper id on its way to being skipped.
+    // get marked visited on its way to being skipped.
     if (sheet.disabled) {
       return;
     }
 
     const mediaText = getStyleSheetMedia(sheet);
-    if (mediaText && !this.blocks.matchesMedia(mediaText)) {
+    if (mediaText && !matchesMedia(mediaText, this.document)) {
       return;
     }
 
-    await this.collectSheet(sheet, {
-      baseUrl: this.document.baseURI,
-      wrappers: mediaText ? [this.blocks.createMediaWrapper(mediaText)] : [],
-    });
+    await this.collectSheet(sheet, this.document.baseURI);
   }
 
-  private async collectSheet(sheet: StyleSheet, frame: SheetFrame) {
+  private async collectSheet(sheet: StyleSheet, parentBaseUrl: string) {
     if (sheet.disabled) {
       return;
     }
@@ -118,21 +94,18 @@ class FontFaceCollector {
     this.seenSheets.add(sheet);
 
     const sheetUrl = sheet.href
-      ? resolveUrl(sheet.href, frame.baseUrl)
+      ? resolveUrl(sheet.href, parentBaseUrl)
       : undefined;
-    const baseUrl = sheetUrl ?? frame.baseUrl;
+    const baseUrl = sheetUrl ?? parentBaseUrl;
 
-    if (
-      sheetUrl &&
-      (this.activeUrls.has(sheetUrl) || this.seenUrls.has(sheetUrl))
-    ) {
+    if (sheetUrl && this.visitedUrls.has(sheetUrl)) {
       return;
     }
 
     // Cross-origin: the rules are unreadable, so the text is refetched instead.
     if (!isCSSStyleSheet(sheet)) {
       if (sheetUrl) {
-        await this.collectSheetByUrl(sheetUrl, frame.wrappers);
+        await this.collectSheetByUrl(sheetUrl);
       } else {
         this.complete = false;
       }
@@ -142,84 +115,49 @@ class FontFaceCollector {
     let rules: CSSRuleList;
     try {
       rules = sheet.cssRules;
-    } catch (error) {
+    } catch {
+      // Only a linked stylesheet with a distinct origin can throw here; an
+      // inline sheet has no origin of its own to fail that check.
       if (sheetUrl) {
-        await this.collectSheetByUrl(sheetUrl, frame.wrappers);
-      } else {
-        await this.collectUnreadableInlineSheet(sheet, frame, error);
+        await this.collectSheetByUrl(sheetUrl);
       }
       return;
     }
 
-    // Only URL-addressed sheets take part in cycle detection. An inline sheet
-    // would otherwise register the document's own base URI as in flight.
     if (sheetUrl) {
-      this.activeUrls.add(sheetUrl);
+      this.visitedUrls.add(sheetUrl);
     }
-    try {
-      await this.collectRules(rules, {
-        ...frame,
-        baseUrl,
-        fetchImports: false,
-      });
-      if (sheetUrl) {
-        this.seenUrls.add(sheetUrl);
-      }
-    } finally {
-      if (sheetUrl) {
-        this.activeUrls.delete(sheetUrl);
-      }
-    }
+    await this.collectRules(rules, baseUrl, false);
   }
 
-  /** A same-origin `<style>` whose rules cannot be read, but whose text can. */
-  private async collectUnreadableInlineSheet(
-    sheet: StyleSheet,
-    frame: SheetFrame,
-    error: unknown,
+  /**
+   * `fetchImports` marks rules parsed from text rather than read from live
+   * CSSOM. Their `@import` rules have no `styleSheet`, so the imported sheet
+   * has to be fetched.
+   */
+  private async collectRules(
+    rules: CSSRuleList,
+    baseUrl: string,
+    fetchImports: boolean,
   ) {
-    const inlineCSS = getInlineStyleText(sheet);
-    if (!inlineCSS) {
-      this.complete = false;
-      console.error("Error while reading inline stylesheet", error);
-      return;
-    }
-
-    try {
-      if (!(await this.collectParsedSheet(inlineCSS, frame))) {
-        this.complete = false;
-      }
-    } catch (parseError) {
-      this.complete = false;
-      console.error("Error while parsing inline stylesheet", parseError);
-    }
-  }
-
-  private async collectRules(rules: CSSRuleList, frame: RuleFrame) {
     for (let index = 0; index < rules.length; index += 1) {
       const rule = rules[index];
 
       if (isFontFaceRule(rule)) {
-        this.collectFontFace(rule, frame);
+        this.collectFontFace(rule, baseUrl);
         continue;
       }
       if (isImportRule(rule)) {
-        await this.collectImport(rule, frame);
+        await this.collectImport(rule, baseUrl, fetchImports);
         continue;
       }
-      if (isGroupingRule(rule)) {
-        const group = this.blocks.getGroupingWrapper(rule);
-        if (group?.active) {
-          await this.collectRules(rule.cssRules, {
-            ...frame,
-            wrappers: [...frame.wrappers, group.wrapper],
-          });
-        }
+      if (isGroupingRule(rule) && isActiveGroup(rule, this.document)) {
+        await this.collectRules(rule.cssRules, baseUrl, fetchImports);
       }
     }
   }
 
-  private collectFontFace(rule: CSSFontFaceRule, frame: RuleFrame) {
+  private collectFontFace(rule: CSSFontFaceRule, baseUrl: string) {
     const family = this.getWantedFamily(rule);
     if (!family) {
       return;
@@ -232,67 +170,51 @@ class FontFaceCollector {
     }
     sources.push({
       // The declaring sheet resolves the face's relative font URLs.
-      baseUrl: rule.parentStyleSheet?.href ?? frame.baseUrl,
+      baseUrl: rule.parentStyleSheet?.href ?? baseUrl,
       cssText: rule.cssText,
-      wrappers: frame.wrappers,
     });
   }
 
-  private async collectImport(rule: CSSImportRule, frame: RuleFrame) {
-    const imported = this.blocks.getImportWrappers(rule);
-    if (!imported.active) {
+  private async collectImport(
+    rule: CSSImportRule,
+    baseUrl: string,
+    fetchImports: boolean,
+  ) {
+    if (!isActiveImport(rule, this.document)) {
       return;
     }
 
-    const importUrl = resolveUrl(rule.href, frame.baseUrl);
-    const wrappers = [...frame.wrappers, ...imported.wrappers];
+    const importUrl = resolveUrl(rule.href, baseUrl);
 
     // A live imported sheet is walked directly; only one reached from parsed
-    // text has no `styleSheet` and has to be refetched.
-    if (!frame.fetchImports && rule.styleSheet) {
-      await this.collectSheet(rule.styleSheet, {
-        baseUrl: importUrl,
-        wrappers,
-      });
+    // text has no `styleSheet` and has to be refetched. On WebKit, a sheet
+    // parsed into a throwaway document never gets a `styleSheet` either way.
+    if (!fetchImports && rule.styleSheet) {
+      await this.collectSheet(rule.styleSheet, importUrl);
       return;
     }
 
-    await this.collectSheetByUrl(importUrl, wrappers);
+    await this.collectSheetByUrl(importUrl);
   }
 
   /** Fetches a stylesheet's text and walks it. Deduplicated and cycle-safe. */
-  private async collectSheetByUrl(url: string, wrappers: WebFontWrapper[]) {
-    if (this.seenUrls.has(url) || this.activeUrls.has(url)) {
+  private async collectSheetByUrl(url: string) {
+    if (this.visitedUrls.has(url)) {
       return;
     }
+    this.visitedUrls.add(url);
 
-    this.seenUrls.add(url);
-    this.activeUrls.add(url);
     try {
       const response = await fetchResource(url, undefined, this.context);
-      const parsed = await this.collectParsedSheet(response.asString(), {
-        baseUrl: url,
-        wrappers,
-      });
-      if (!parsed) {
+      const rules = parseCSS(response.asString(), url, this.document);
+      if (!rules) {
         throw new Error("Could not parse stylesheet");
       }
+      await this.collectRules(rules, url, true);
     } catch (error) {
       this.complete = false;
       console.error(`Error loading remote stylesheet ${url}`, error);
-    } finally {
-      this.activeUrls.delete(url);
     }
-  }
-
-  private async collectParsedSheet(cssText: string, frame: SheetFrame) {
-    const rules = parseCSS(cssText, frame.baseUrl, this.document);
-    if (!rules) {
-      return false;
-    }
-
-    await this.collectRules(rules, { ...frame, fetchImports: true });
-    return true;
   }
 
   private getWantedFamily(rule: CSSFontFaceRule) {

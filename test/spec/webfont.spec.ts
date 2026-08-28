@@ -215,7 +215,7 @@ describe("font embedding", () => {
     }
   });
 
-  test("keeps engine-level conditions while dropping media wrappers", async ({
+  test("embeds a face behind an active condition without its wrapper", async ({
     getSvgDocument,
   }) => {
     const style = addStyle(`
@@ -243,16 +243,15 @@ describe("font embedding", () => {
       embeddedStyle.textContent = cssText;
       parsed.head.appendChild(embeddedStyle);
       const rules = embeddedStyle.sheet!.cssRules;
-      const supportsRule = rules[0] as CSSSupportsRule;
 
-      // `@supports` is resolved by the engine, which is the same engine that
-      // renders the SVG, so it survives. The enclosing `@media` does not.
+      // The `@media`/`@supports` condition was evaluated as active when the
+      // face was collected, in the same engine that renders the output, so
+      // neither wrapper is reproduced around it.
       expect(rules).toHaveLength(2);
-      expect(supportsRule.type).toBe(CSSRule.SUPPORTS_RULE);
-      expect(supportsRule.cssRules).toHaveLength(1);
-      expect(supportsRule.cssRules[0].type).toBe(CSSRule.FONT_FACE_RULE);
+      expect(rules[0].type).toBe(CSSRule.FONT_FACE_RULE);
       expect(rules[1].type).toBe(CSSRule.FONT_FACE_RULE);
       expect(cssText).not.toContain("@media");
+      expect(cssText).not.toContain("@supports");
       expect(cssText).toContain("TkVTVEVE");
       expect(cssText).toContain("VU5XUkFQUEVE");
     } finally {
@@ -261,7 +260,7 @@ describe("font embedding", () => {
     }
   });
 
-  test("preserves declaration-form supports conditions on imports", async ({
+  test("embeds a face behind an active declaration-form supports import without its wrapper", async ({
     getSvgDocument,
   }) => {
     const link = document.createElement("link");
@@ -284,12 +283,38 @@ describe("font embedding", () => {
       const embeddedStyle = parsed.createElement("style");
       embeddedStyle.textContent = cssText;
       parsed.head.appendChild(embeddedStyle);
-      const supportsRule = embeddedStyle.sheet!.cssRules[0] as CSSSupportsRule;
+      const rules = embeddedStyle.sheet!.cssRules;
 
-      expect(supportsRule.type).toBe(CSSRule.SUPPORTS_RULE);
-      expect(supportsRule.cssRules).toHaveLength(1);
-      expect(supportsRule.cssRules[0].type).toBe(CSSRule.FONT_FACE_RULE);
+      expect(rules).toHaveLength(1);
+      expect(rules[0].type).toBe(CSSRule.FONT_FACE_RULE);
+      expect(cssText).not.toContain("@supports");
       expect(cssText).toContain("U1VQUE9SVFM=");
+    } finally {
+      root.remove();
+      link.remove();
+    }
+  });
+
+  test("does not embed a face behind an inactive supports import", async ({
+    getSvgDocument,
+  }) => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = new URL(
+      "/fonts/web-fonts/imports/supports-inactive.css",
+      window.location.href,
+    ).href;
+    const loaded = new Promise<void>((resolve, reject) => {
+      link.onload = () => resolve();
+      link.onerror = () => reject(new Error("Could not load font fixture"));
+    });
+    document.head.appendChild(link);
+    await loaded;
+    const root = addRoot("Inactive Supports Import Font");
+
+    try {
+      const { cssText } = await getEmbeddedFontCSS(root, getSvgDocument);
+      expect(cssText).toBe("");
     } finally {
       root.remove();
       link.remove();
@@ -483,6 +508,160 @@ describe("font embedding", () => {
       ).toBe(true);
     } finally {
       root.remove();
+      link.remove();
+    }
+  });
+
+  test("embeds a root-document family used only inside an iframe", async ({
+    getSvgDocument,
+  }) => {
+    // The face is defined in the root document; only an element inside the
+    // iframe uses it. Families are collected from every visited node,
+    // including across the iframe boundary, and resolved against the root's
+    // own document.
+    const style = addStyle(`
+      @font-face {
+        font-family: "Iframe Used Font";
+        src: url("data:font/woff2;base64,SUZSQU1FVVNFRA==") format("woff2");
+      }
+    `);
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+    const iframe = document.createElement("iframe");
+    root.appendChild(iframe);
+    const iframeDocument = iframe.contentDocument!;
+    const inner = iframeDocument.createElement("div");
+    inner.style.fontFamily = '"Iframe Used Font"';
+    inner.textContent = "inner text";
+    iframeDocument.body.appendChild(inner);
+
+    try {
+      const { cssText } = await getEmbeddedFontCSS(root, getSvgDocument);
+      expect(cssText).toContain("SUZSQU1FVVNFRA==");
+    } finally {
+      root.remove();
+      style.remove();
+    }
+  });
+
+  test("retries a failed import when nothing was cached for the family", async ({
+    getSvgDocument,
+  }) => {
+    const stylesheetUrl = new URL(
+      "/fonts/web-fonts/failure.css",
+      window.location.href,
+    );
+    const parentStyle = document.createElement("style");
+    parentStyle.textContent = `@import url("${stylesheetUrl.href}");`;
+    const loaded = new Promise<void>((resolve, reject) => {
+      parentStyle.onload = () => resolve();
+      parentStyle.onerror = () =>
+        reject(new Error("Could not load font fixture"));
+    });
+    document.head.appendChild(parentStyle);
+    await loaded;
+
+    const importRule = parentStyle.sheet!.cssRules[0] as CSSImportRule;
+    const styleSheetSpy = vi
+      .spyOn(importRule, "styleSheet", "get")
+      .mockReturnValue(null);
+    const root = addRoot("Retryable Import");
+
+    let importFetches = 0;
+    const nativeFetch = window.fetch.bind(window);
+    vi.spyOn(window, "fetch").mockImplementation((input) => {
+      if (input.toString() !== stylesheetUrl.href) {
+        return nativeFetch(input);
+      }
+
+      importFetches += 1;
+      return importFetches === 1
+        ? Promise.reject(new Error("Import failed"))
+        : Promise.resolve(
+            new Response(`@font-face {
+                font-family: "Retryable Import";
+                src: url("data:font/woff2;base64,UkVUUlk=") format("woff2");
+              }`),
+          );
+    });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const cache = new htmlToImage.Cache();
+
+    try {
+      // The failure leaves the family unresolved, so nothing is cached for it.
+      const first = await getEmbeddedFontCSS(root, getSvgDocument, { cache });
+      expect(first.cssText).toBe("");
+
+      const second = await getEmbeddedFontCSS(root, getSvgDocument, { cache });
+      expect(second.cssText).toContain("UkVUUlk=");
+      expect(importFetches).toBe(2);
+    } finally {
+      styleSheetSpy.mockRestore();
+      root.remove();
+      parentStyle.remove();
+    }
+  });
+
+  test("reuses a cached family without refetching an unrelated stylesheet", async ({
+    getSvgDocument,
+  }) => {
+    const stylesheetUrl = new URL(
+      "/fonts/web-fonts/failure.css",
+      window.location.href,
+    );
+    stylesheetUrl.hostname =
+      stylesheetUrl.hostname === "localhost" ? "127.0.0.1" : "localhost";
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.media = "screen";
+    link.href = stylesheetUrl.href;
+    const loaded = new Promise<void>((resolve, reject) => {
+      link.onload = () => resolve();
+      link.onerror = () => reject(new Error("Could not load font fixture"));
+    });
+    document.head.appendChild(link);
+    await loaded;
+
+    const localStyle = addStyle(`
+        @font-face {
+          font-family: "Unrelated Local Font";
+          src: url("data:font/woff2;base64,TE9DQUw=") format("woff2");
+        }
+      `);
+    const root = addRoot("Unrelated Local Font");
+    const nativeFetch = window.fetch.bind(window);
+    const fetchSpy = vi.spyOn(window, "fetch").mockImplementation((input) =>
+      input.toString().startsWith(stylesheetUrl.href)
+        ? Promise.resolve(
+            new Response(`@font-face {
+                font-family: "Different External Font";
+                src: url("data:font/woff2;base64,RVhURVJOQUw=") format("woff2");
+              }`),
+          )
+        : nativeFetch(input),
+    );
+    const cache = new htmlToImage.Cache();
+
+    try {
+      const first = await getEmbeddedFontCSS(root, getSvgDocument, {
+        cache,
+        cacheBust: true,
+      });
+      const second = await getEmbeddedFontCSS(root, getSvgDocument, {
+        cache,
+        cacheBust: true,
+      });
+
+      expect(first.cssText).toContain("TE9DQUw=");
+      expect(second.cssText).toContain("TE9DQUw=");
+      expect(
+        fetchSpy.mock.calls.filter(([input]) =>
+          input.toString().startsWith(stylesheetUrl.href),
+        ),
+      ).toHaveLength(1);
+    } finally {
+      root.remove();
+      localStyle.remove();
       link.remove();
     }
   });

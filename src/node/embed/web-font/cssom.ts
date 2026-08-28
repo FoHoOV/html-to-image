@@ -23,45 +23,55 @@ export function parseCSS(
 }
 
 export function isFontFaceRule(rule: CSSRule): rule is CSSFontFaceRule {
-  return rule.type === CSSRule.FONT_FACE_RULE;
+  return isRuleType(rule, globalThis.CSSFontFaceRule, CSSRule.FONT_FACE_RULE);
 }
 
 export function isImportRule(rule: CSSRule): rule is CSSImportRule {
-  return rule.type === CSSRule.IMPORT_RULE;
+  return isRuleType(rule, globalThis.CSSImportRule, CSSRule.IMPORT_RULE);
 }
 
 export function isGroupingRule(rule: CSSRule): rule is CSSGroupingRule {
   return "cssRules" in rule;
 }
 
-export function isCSSStyleSheet(sheet: StyleSheet): sheet is CSSStyleSheet {
-  return "cssRules" in sheet;
+/**
+ * Identifies a rule's type without leaning on the deprecated numeric `type`
+ * code as the primary check: `instanceof` against the given constructor, then
+ * a same-name walk up the prototype chain for a rule from another realm — an
+ * iframe's own `CSSSupportsRule`, say, is not this realm's constructor, so a
+ * plain `instanceof` never matches it. The numeric code is only the last
+ * resort, for an engine where the constructor itself isn't exposed globally.
+ */
+export function isRuleType<T extends CSSRule>(
+  rule: CSSRule,
+  ctor: (new () => T) | undefined,
+  legacyType: number,
+): rule is T {
+  if (ctor) {
+    if (rule instanceof ctor) {
+      return true;
+    }
+    for (
+      let prototype = Object.getPrototypeOf(rule) as object | null;
+      prototype;
+      prototype = Object.getPrototypeOf(prototype) as object | null
+    ) {
+      if (prototype.constructor.name === ctor.name) {
+        return true;
+      }
+    }
+  }
+  return rule.type === legacyType;
 }
 
-/**
- * Compares against the rule-type constants of the rule's own realm, since a
- * rule from an iframe does not share this realm's `CSSRule`.
- */
-export function isRuleType(
-  rule: CSSRule,
-  type: string,
-  sourceDocument: Document,
-) {
-  const ruleTypes = sourceDocument.defaultView?.CSSRule as unknown as
-    Record<string, number> | undefined;
-  return ruleTypes?.[type] === rule.type;
+export function isCSSStyleSheet(sheet: StyleSheet): sheet is CSSStyleSheet {
+  return "cssRules" in sheet;
 }
 
 export function getConditionText(rule: CSSRule) {
   return "conditionText" in rule && typeof rule.conditionText === "string"
     ? rule.conditionText
     : "";
-}
-
-/** The text before a rule's block, for example `@layer base`. */
-export function getRulePrelude(cssText: string) {
-  const blockStart = cssText.indexOf("{");
-  return blockStart === -1 ? "" : cssText.slice(0, blockStart).trim();
 }
 
 export function getStyleSheetMedia(sheet: StyleSheet) {
@@ -74,12 +84,5 @@ export function getMediaText(media: unknown) {
     "mediaText" in media &&
     typeof media.mediaText === "string"
     ? media.mediaText
-    : null;
-}
-
-export function getInlineStyleText(sheet: StyleSheet) {
-  const ownerNode = sheet.ownerNode;
-  return ownerNode?.nodeName.toLowerCase() === "style"
-    ? ownerNode.textContent
     : null;
 }

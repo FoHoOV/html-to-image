@@ -44,9 +44,9 @@ describe("web font cache", () => {
     try {
       const first = await getEmbeddedFontCSS(root, getSvgDocument, { cache });
       expect(first.cssText).toBe("");
-      expect(fontCache.isMissing(document, "missing web font")).toBe(true);
-      expect(fontCache.isMissing(document, "arial")).toBe(true);
-      expect(fontCache.isMissing(document, "sans-serif")).toBe(false);
+      expect(fontCache.isMissing("missing web font")).toBe(true);
+      expect(fontCache.isMissing("arial")).toBe(true);
+      expect(fontCache.isMissing("sans-serif")).toBe(false);
 
       Object.defineProperty(document, "styleSheets", {
         configurable: true,

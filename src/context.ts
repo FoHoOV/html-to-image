@@ -9,24 +9,18 @@ export type Context = {
     css: WorkStatus;
     image: WorkStatus;
     /**
-     * Font work, plus the families each source document is asked to supply.
-     * Families are keyed by the original `ownerDocument`: an iframe body is
-     * adopted into the output document when cloned, so the clone's document
-     * cannot say which stylesheets may define the family.
+     * Font work, plus the families the captured tree asks for. Families are
+     * collected from every visited node, including nodes inside an iframe,
+     * and are all resolved against the rendered root's own document.
      */
     font: WorkStatus & {
-      usedFamiliesByDocument: Map<
-        Document,
-        {
-          families: Set<string>;
-          /**
-           * The raw computed `font-family` values already parsed into
-           * `families`. Nodes inherit their font, so the same value arrives
-           * many times over and only has to be parsed once.
-           */
-          parsedValues: Set<string>;
-        }
-      >;
+      usedFamilies: Set<string>;
+      /**
+       * The raw computed `font-family` values already parsed into
+       * `usedFamilies`. Nodes inherit their font, so the same value arrives
+       * many times over and only has to be parsed once.
+       */
+      parsedFontValues: Set<string>;
     };
   };
   cloning: PendingWork;
@@ -40,7 +34,11 @@ export function createContext(options?: Options) {
     embedding: {
       css: createWorkStatus(),
       image: createWorkStatus(),
-      font: { ...createWorkStatus(), usedFamiliesByDocument: new Map() },
+      font: {
+        ...createWorkStatus(),
+        usedFamilies: new Set(),
+        parsedFontValues: new Set(),
+      },
     },
     cloning: createWorkPromise(),
     addedToDom: createWorkPromise(),

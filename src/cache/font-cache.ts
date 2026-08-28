@@ -1,25 +1,7 @@
-/**
- * An enclosing `@media`, `@supports`, or `@layer` block that a discovered
- * `@font-face` rule was nested in. `id` keeps sibling blocks distinct so
- * serialization can reopen and close them in source order.
- */
-export type WebFontWrapper = Readonly<{
-  /**
-   * Resolved against the rendering context rather than the engine. The
-   * exported SVG renders in its own context — its viewport is the output size,
-   * not the page's — so re-emitting such a block would ask a question we have
-   * already answered against the live page, and can answer differently.
-   */
-  contextual: boolean;
-  id: number;
-  prelude: string;
-}>;
-
 /** One discovered `@font-face` rule, captured as text rather than as CSSOM. */
 export type WebFontSource = Readonly<{
   baseUrl?: string;
   cssText: string;
-  wrappers?: ReadonlyArray<WebFontWrapper>;
 }>;
 
 /**
@@ -36,20 +18,7 @@ export class WebFontEntry {
   private readonly processedCSS = new Map<string, Promise<string>>();
 
   constructor(sources: ReadonlyArray<WebFontSource>) {
-    this.sources = sources.map(copySource);
-  }
-
-  matches(sources: ReadonlyArray<WebFontSource>) {
-    return (
-      this.sources.length === sources.length &&
-      this.sources.every((cached, index) =>
-        isSameSource(cached, sources[index]),
-      )
-    );
-  }
-
-  hasProcessed(format: string) {
-    return this.processedCSS.has(format);
+    this.sources = [...sources];
   }
 
   /**
@@ -90,10 +59,20 @@ export class WebFontEntry {
  * Caller-owned store for automatically discovered web fonts. It holds discovery
  * results only; it never parses or normalizes CSS, and it holds no per-render
  * state, so every output still builds its own font style element.
+ *
+ * A cache holds one document's fonts. Fonts are discovered in the rendered
+ * node's own document, so a render for a different document starts from an
+ * empty cache rather than answering with another document's faces.
  */
 export class FontCache {
-  private entriesByFamily = new Map<string, WebFontEntry[]>();
-  private missingFamiliesByDocument = new WeakMap<Document, Set<string>>();
+  private entries = new Map<string, WebFontEntry>();
+  private missingFamilies = new Set<string>();
+  /**
+   * Which document the current contents were discovered in. Weak, so binding a
+   * cache to a document never keeps that document alive; `WeakRef` is newer
+   * than the supported browser floor, and only identity is ever needed here.
+   */
+  private boundDocument = new WeakSet<Document>();
 
   /**
    * Drops every discovered font, so the next render rediscovers them. Use it
@@ -101,98 +80,37 @@ export class FontCache {
    * `@supports` condition that guards them flips.
    */
   reset() {
-    this.entriesByFamily = new Map();
-    this.missingFamiliesByDocument = new WeakMap();
+    this.entries = new Map();
+    this.missingFamilies = new Set();
+    this.boundDocument = new WeakSet();
   }
 
-  findOrCreateEntry(family: string, sources: ReadonlyArray<WebFontSource>) {
-    let entries = this.entriesByFamily.get(family);
-    if (!entries) {
-      entries = [];
-      this.entriesByFamily.set(family, entries);
-    }
+  /** Whether the current contents were discovered in `document`. */
+  holds(document: Document) {
+    return this.boundDocument.has(document);
+  }
 
-    const cached = entries.find((entry) => entry.matches(sources));
-    if (cached) {
-      return cached;
-    }
+  /** Records which document the contents belong to, after a `reset()`. */
+  bind(document: Document) {
+    this.boundDocument.add(document);
+  }
 
+  getEntry(family: string) {
+    return this.entries.get(family);
+  }
+
+  setEntry(family: string, sources: ReadonlyArray<WebFontSource>) {
     const entry = new WebFontEntry(sources);
-    entries.push(entry);
+    this.entries.set(family, entry);
     return entry;
   }
 
-  /**
-   * Every entry discovered for a family. When `preferProcessedFormat` is given,
-   * entries already embedded for that format come first so a usable result is
-   * found without re-fetching.
-   */
-  *candidates(family: string, preferProcessedFormat: string | null) {
-    const entries = this.entriesByFamily.get(family);
-    if (!entries) {
-      return;
-    }
-    if (preferProcessedFormat === null) {
-      yield* entries;
-      return;
-    }
-
-    for (const entry of entries) {
-      if (entry.hasProcessed(preferProcessedFormat)) {
-        yield entry;
-      }
-    }
-    for (const entry of entries) {
-      if (!entry.hasProcessed(preferProcessedFormat)) {
-        yield entry;
-      }
-    }
-  }
-
   /** A family a fully readable document definitively does not define. */
-  rememberMissing(document: Document, family: string) {
-    let families = this.missingFamiliesByDocument.get(document);
-    if (!families) {
-      families = new Set();
-      this.missingFamiliesByDocument.set(document, families);
-    }
-    families.add(family);
+  rememberMissing(family: string) {
+    this.missingFamilies.add(family);
   }
 
-  isMissing(document: Document, family: string) {
-    return this.missingFamiliesByDocument.get(document)?.has(family) ?? false;
+  isMissing(family: string) {
+    return this.missingFamilies.has(family);
   }
-}
-
-function copySource(source: WebFontSource): WebFontSource {
-  return {
-    ...source,
-    wrappers: source.wrappers?.map((wrapper) => ({ ...wrapper })),
-  };
-}
-
-function isSameSource(cached: WebFontSource, source: WebFontSource) {
-  return (
-    cached.baseUrl === source.baseUrl &&
-    cached.cssText === source.cssText &&
-    isSameWrappers(cached.wrappers, source.wrappers)
-  );
-}
-
-function isSameWrappers(
-  cached: ReadonlyArray<WebFontWrapper> | undefined,
-  source: ReadonlyArray<WebFontWrapper> | undefined,
-) {
-  if (cached === source) {
-    return true;
-  }
-  if (!cached || !source || cached.length !== source.length) {
-    return false;
-  }
-  return cached.every(
-    (wrapper, index) =>
-      wrapper.contextual === source[index].contextual &&
-      wrapper.id === source[index].id &&
-      wrapper.prelude === source[index].prelude,
-  );
 }

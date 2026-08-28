@@ -282,3 +282,51 @@ test("does not track fonts in a removed subtree", async ({
     style.remove();
   }
 });
+
+test("clears a reused cache when the render targets another document", async ({
+  getSvgDocument,
+}) => {
+  // Both documents define the same family name with different bytes. A cache
+  // holds one document's fonts, so the second render must rediscover rather
+  // than answer with the first document's faces.
+  const pageStyle = addStyle(`
+      @font-face {
+        font-family: "Shared Name";
+        src: url("data:font/woff2;base64,UEFHRQ==") format("woff2");
+      }
+    `);
+  const pageRoot = addRoot("Shared Name");
+
+  const host = document.createElement("div");
+  document.body.appendChild(host);
+  const iframe = document.createElement("iframe");
+  host.appendChild(iframe);
+  const iframeDocument = iframe.contentDocument!;
+  addStyle(
+    `@font-face {
+        font-family: "Shared Name";
+        src: url("data:font/woff2;base64,SUZSQU1F") format("woff2");
+      }`,
+    iframeDocument,
+  );
+  const iframeRoot = addRoot("Shared Name", iframeDocument);
+
+  const cache = new htmlToImage.Cache();
+
+  try {
+    const page = await getEmbeddedFontCSS(pageRoot, getSvgDocument, { cache });
+    expect(page.cssText).toContain("UEFHRQ==");
+
+    // Rendering a node that lives in the iframe resolves against the iframe's
+    // own document, so the page's cached face must not be reused for it.
+    const framed = await getEmbeddedFontCSS(iframeRoot, getSvgDocument, {
+      cache,
+    });
+    expect(framed.cssText).toContain("SUZSQU1F");
+    expect(framed.cssText).not.toContain("UEFHRQ==");
+  } finally {
+    pageRoot.remove();
+    pageStyle.remove();
+    host.remove();
+  }
+});
