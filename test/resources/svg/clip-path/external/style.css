@@ -5,5 +5,5 @@
 }
 
 #probe {
-  clip-path: url("https://example.com/defs.svg#clip-html");
+  clip-path: url("/svg/clip-path/external/missing.svg#clip-html");
 }

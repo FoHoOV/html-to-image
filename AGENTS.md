@@ -467,6 +467,23 @@ Browser tests use Vitest Browser Mode with Playwright. Tests live in
 `test/spec/`, shared fixtures in `test/fixtures.ts`, and static resources under
 `test/resources/`. Generated artifacts belong under `.vitest/`.
 
+- Prefer resource-driven tests. Add a fixture under `test/resources/`, load it
+  with the `bootstrap` fixture, and assert on what a public API renders.
+  `bootstrap` replaces the whole `#test-root`, so a fixture-driven test needs
+  no cleanup block. Anything a test appends itself must go inside that root,
+  not on `document.head`, or it outlives the test.
+- Assemble DOM or CSS in the test body only when the case cannot be a static
+  file: a live iframe `contentDocument`, `sheet.disabled`, a URL that depends
+  on the runtime origin, or a CSSOM object that has to be spied on. Keep such
+  a helper private to the spec that needs it.
+- Fixtures never reference a third-party host, so no test's result depends on
+  someone else's server. Inline resource bytes as `data:` URLs, and express a
+  "resource fails to load" case as a same-origin path that does not exist.
+- Assert the behavior a feature promises, not every line that implements it.
+  One test per guarantee — do not add a second test that reaches the same
+  assertion through a differently shaped fixture.
+- One top-level `describe` per spec file, and no nested `describe`s. Split by
+  responsibility into another file instead.
 - Do not change what an existing test asserts merely to make a refactor pass.
 - Discuss intentional behavior changes and update reference output only when
   the old reference is demonstrably wrong.

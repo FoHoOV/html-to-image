@@ -1,0 +1,10 @@
+@font-face {
+  font-family: "Format Font";
+  font-weight: 400;
+  src: url("data:font/woff2;base64,VzJPTkU=") format("woff2"), url("data:font/woff;base64,V09ORQ==") format("woff");
+}
+@font-face {
+  font-family: "Format Font";
+  font-weight: 700;
+  src: url("data:font/woff2;base64,VzJUV08=") format("woff2"), url("data:font/woff;base64,V1RXTw==") format("woff");
+}

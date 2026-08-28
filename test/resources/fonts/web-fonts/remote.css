@@ -1,8 +1,8 @@
 @font-face {
   font-family: 'Font1';
-  src: url('https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu72xKKTU1Kvnz.woff2')
+  src: url('data:font/woff2;base64,UFJFRldPRkYy')
       format('woff2'),
-    url('https://fonts.gstatic.com/s/raleway/v28/1Ptxg8zYS_SKggPN4iEgvnHyvveLxVvaorCFPrcVIT9d0c-dYA.woff')
+    url('data:font/woff;base64,UFJFRldPRkY=')
       format('woff'),
     local(Arial);
   font-weight: normal;

@@ -1,332 +1,278 @@
 import * as htmlToImage from "../../src";
 import { test } from "../fixtures";
-import { addRoot, addStyle, getEmbeddedFontCSS } from "../webfont-helpers";
 
 describe("web font persistence", () => {
   test("reuses cached families without leaking them into another render", async ({
-    getSvgDocument,
+    bootstrap,
   }) => {
-    const style = addStyle(`
-      @font-face {
-        font-family: "Cached A";
-        src: url("data:font/woff2;base64,Q0FDSEVEQQ==") format("woff2");
-      }
-      @font-face {
-        font-family: "Cached B";
-        src: url("data:font/woff2;base64,Q0FDSEVEQg==") format("woff2");
-      }
-    `);
-    const rootA = addRoot("Cached A");
-    const rootB = addRoot("Cached B");
+    const node = await bootstrap(
+      "fonts/persistence/leaking/node.html",
+      "fonts/persistence/leaking/style.css",
+    );
+    const rootA = node.querySelector("#root-a") as HTMLElement;
+    const rootB = node.querySelector("#root-b") as HTMLElement;
     const cache = new htmlToImage.Cache();
 
-    try {
-      const first = await getEmbeddedFontCSS(rootA, getSvgDocument, { cache });
-      expect(first.cssText).toContain("Q0FDSEVEQQ==");
-      expect(first.cssText).not.toContain("Q0FDSEVEQg==");
+    const first = await htmlToImage.toSvg(rootA, { cache });
+    const firstCSS = first.querySelector("style")?.textContent ?? "";
+    expect(firstCSS).toContain("Q0FDSEVEQQ==");
+    expect(firstCSS).not.toContain("Q0FDSEVEQg==");
 
-      const second = await getEmbeddedFontCSS(rootB, getSvgDocument, { cache });
-      expect(second.cssText).toContain("Q0FDSEVEQg==");
-      expect(second.cssText).not.toContain("Q0FDSEVEQQ==");
+    const second = await htmlToImage.toSvg(rootB, { cache });
+    const secondCSS = second.querySelector("style")?.textContent ?? "";
+    expect(secondCSS).toContain("Q0FDSEVEQg==");
+    expect(secondCSS).not.toContain("Q0FDSEVEQQ==");
 
-      style.remove();
-      const reused = await getEmbeddedFontCSS(rootA, getSvgDocument, { cache });
-      expect(reused.cssText).toContain("Q0FDSEVEQQ==");
-      expect(reused.cssText).not.toContain("Q0FDSEVEQg==");
-    } finally {
-      rootA.remove();
-      rootB.remove();
-      style.remove();
-    }
+    document.getElementById("style")!.remove();
+    const reused = await htmlToImage.toSvg(rootA, { cache });
+    const reusedCSS = reused.querySelector("style")?.textContent ?? "";
+    expect(reusedCSS).toContain("Q0FDSEVEQQ==");
+    expect(reusedCSS).not.toContain("Q0FDSEVEQg==");
   });
-});
 
-test("reuses a FontCache through different Cache instances", async ({
-  getSvgDocument,
-}) => {
-  const style = addStyle(`
-      @font-face {
-        font-family: "Reusable Font";
-        font-weight: 400;
-        src: url("data:font/woff2;base64,UkVTVVNFMQ==") format("woff2");
-      }
-      @font-face {
-        font-family: "Reusable Font";
-        font-weight: 700;
-        src: url("data:font/woff2;base64,UkVTVVNFMg==") format("woff2");
-      }
-    `);
-  const root = addRoot("Reusable Font");
-  const fontCache = new htmlToImage.FontCache();
-
-  try {
-    const first = await getEmbeddedFontCSS(root, getSvgDocument, {
-      cache: new htmlToImage.Cache(new htmlToImage.FetchCache(), fontCache),
-    });
-    expect(first.cssText.match(/@font-face/g)).toHaveLength(2);
-
-    style.remove();
-    const reused = await getEmbeddedFontCSS(root, getSvgDocument, {
-      cache: new htmlToImage.Cache(new htmlToImage.FetchCache(), fontCache),
-    });
-    expect(reused.cssText.match(/@font-face/g)).toHaveLength(2);
-    expect(reused.cssText.indexOf("UkVTVVNFMQ==")).toBeLessThan(
-      reused.cssText.indexOf("UkVTVVNFMg=="),
+  test("reuses a FontCache through different Cache instances", async ({
+    bootstrap,
+  }) => {
+    const node = await bootstrap(
+      "fonts/persistence/reused-formats/node.html",
+      "fonts/persistence/reused-formats/style.css",
     );
-  } finally {
-    root.remove();
-    style.remove();
-  }
-});
+    const fontCache = new htmlToImage.FontCache();
 
-test("does not store fonts in a shared FetchCache", async ({
-  getSvgDocument,
-}) => {
-  const style = addStyle(`
-      @font-face {
-        font-family: "Font Cache Isolation";
-        src: url("/font-cache-isolation.woff2") format("woff2");
-      }
-    `);
-  const root = addRoot("Font Cache Isolation");
-  const fetchCache = new htmlToImage.FetchCache();
-  const fetchSpy = vi
-    .spyOn(window, "fetch")
-    .mockImplementation(async () => new Response("isolated font"));
+    const first = await htmlToImage.toSvg(node, {
+      cache: new htmlToImage.Cache(new htmlToImage.FetchCache(), fontCache),
+    });
+    const firstCSS = first.querySelector("style")?.textContent ?? "";
+    expect(firstCSS.match(/@font-face/g)).toHaveLength(2);
 
-  try {
-    const first = await getEmbeddedFontCSS(root, getSvgDocument, {
+    document.getElementById("style")!.remove();
+    const reused = await htmlToImage.toSvg(node, {
+      cache: new htmlToImage.Cache(new htmlToImage.FetchCache(), fontCache),
+    });
+    const reusedCSS = reused.querySelector("style")?.textContent ?? "";
+    expect(reusedCSS.match(/@font-face/g)).toHaveLength(2);
+    expect(reusedCSS.indexOf("UkVTVVNFMQ==")).toBeLessThan(
+      reusedCSS.indexOf("UkVTVVNFMg=="),
+    );
+  });
+
+  test("does not store fonts in a shared FetchCache", async ({ bootstrap }) => {
+    const node = await bootstrap(
+      "fonts/persistence/fetch-isolation/node.html",
+      "fonts/persistence/fetch-isolation/style.css",
+    );
+    const fetchCache = new htmlToImage.FetchCache();
+    const fetchSpy = vi
+      .spyOn(window, "fetch")
+      .mockImplementation(async () => new Response("isolated font"));
+
+    const first = await htmlToImage.toSvg(node, {
       cache: new htmlToImage.Cache(fetchCache),
     });
-    expect(first.cssText).toContain("data:");
+    expect(first.querySelector("style")?.textContent ?? "").toContain("data:");
 
-    style.remove();
-    const isolated = await getEmbeddedFontCSS(root, getSvgDocument, {
+    document.getElementById("style")!.remove();
+    const isolated = await htmlToImage.toSvg(node, {
       cache: new htmlToImage.Cache(fetchCache),
     });
-    expect(isolated.cssText).toBe("");
+    expect(isolated.querySelector("style")?.textContent ?? "").toBe("");
     expect(fetchSpy).toHaveBeenCalledTimes(1);
-  } finally {
-    root.remove();
-    style.remove();
-  }
-});
+  });
 
-test("keeps preferred font formats separate in a shared cache", async ({
-  getSvgDocument,
-}) => {
-  const style = addStyle(`
-      @font-face {
-        font-family: "Format Font";
-        font-weight: 400;
-        src: url("data:font/woff2;base64,VzJPTkU=") format("woff2"), url("data:font/woff;base64,V09ORQ==") format("woff");
-      }
-      @font-face {
-        font-family: "Format Font";
-        font-weight: 700;
-        src: url("data:font/woff2;base64,VzJUV08=") format("woff2"), url("data:font/woff;base64,V1RXTw==") format("woff");
-      }
-    `);
-  const root = addRoot("Format Font");
-  const cache = new htmlToImage.Cache();
+  test("keeps preferred font formats separate in a shared cache", async ({
+    bootstrap,
+  }) => {
+    const node = await bootstrap(
+      "fonts/persistence/preferred-formats/node.html",
+      "fonts/persistence/preferred-formats/style.css",
+    );
+    const cache = new htmlToImage.Cache();
 
-  try {
-    const woff2 = await getEmbeddedFontCSS(root, getSvgDocument, {
+    const woff2 = await htmlToImage.toSvg(node, {
       cache,
       preferredFontFormat: "woff2",
     });
-    expect(woff2.cssText).toContain("VzJPTkU=");
-    expect(woff2.cssText).toContain("VzJUV08=");
-    expect(woff2.cssText).not.toContain("V09ORQ==");
-    expect(woff2.cssText).not.toContain("V1RXTw==");
+    const woff2CSS = woff2.querySelector("style")?.textContent ?? "";
+    expect(woff2CSS).toContain("VzJPTkU=");
+    expect(woff2CSS).toContain("VzJUV08=");
+    expect(woff2CSS).not.toContain("V09ORQ==");
+    expect(woff2CSS).not.toContain("V1RXTw==");
 
-    const woff = await getEmbeddedFontCSS(root, getSvgDocument, {
+    const woff = await htmlToImage.toSvg(node, {
       cache,
       preferredFontFormat: "woff",
     });
-    expect(woff.cssText).toContain("V09ORQ==");
-    expect(woff.cssText).toContain("V1RXTw==");
-    expect(woff.cssText).not.toContain("VzJPTkU=");
-    expect(woff.cssText).not.toContain("VzJUV08=");
-  } finally {
-    root.remove();
-    style.remove();
-  }
-});
+    const woffCSS = woff.querySelector("style")?.textContent ?? "";
+    expect(woffCSS).toContain("V09ORQ==");
+    expect(woffCSS).toContain("V1RXTw==");
+    expect(woffCSS).not.toContain("VzJPTkU=");
+    expect(woffCSS).not.toContain("VzJUV08=");
+  });
 
-test("bypasses processed font css when cache busting", async ({
-  getSvgDocument,
-}) => {
-  const style = addStyle(`
-      @font-face {
-        font-family: "Cache Bust Font";
-        src: url("/cache-bust-font.woff2") format("woff2");
-      }
-    `);
-  const root = addRoot("Cache Bust Font");
-  const cache = new htmlToImage.Cache();
-  let responseIndex = 0;
-  const fetchSpy = vi
-    .spyOn(window, "fetch")
-    .mockImplementation(() =>
-      Promise.resolve(new Response(responseIndex++ === 0 ? "A" : "B")),
+  test("bypasses processed font css when cache busting", async ({
+    bootstrap,
+  }) => {
+    const node = await bootstrap(
+      "fonts/persistence/cache-bust/node.html",
+      "fonts/persistence/cache-bust/style.css",
     );
+    const cache = new htmlToImage.Cache();
+    let responseIndex = 0;
+    const fetchSpy = vi
+      .spyOn(window, "fetch")
+      .mockImplementation(() =>
+        Promise.resolve(new Response(responseIndex++ === 0 ? "A" : "B")),
+      );
 
-  try {
-    const first = await getEmbeddedFontCSS(root, getSvgDocument, { cache });
-    const busted = await getEmbeddedFontCSS(root, getSvgDocument, {
-      cache,
-      cacheBust: true,
-    });
-    const reused = await getEmbeddedFontCSS(root, getSvgDocument, { cache });
+    const first = await htmlToImage.toSvg(node, { cache });
+    const busted = await htmlToImage.toSvg(node, { cache, cacheBust: true });
+    const reused = await htmlToImage.toSvg(node, { cache });
 
-    expect(first.cssText).toMatch(/data:[^;]+;base64,QQ==/);
-    expect(busted.cssText).toMatch(/data:[^;]+;base64,Qg==/);
-    expect(reused.cssText).toMatch(/data:[^;]+;base64,QQ==/);
+    expect(first.querySelector("style")?.textContent ?? "").toMatch(
+      /data:[^;]+;base64,QQ==/,
+    );
+    expect(busted.querySelector("style")?.textContent ?? "").toMatch(
+      /data:[^;]+;base64,Qg==/,
+    );
+    expect(reused.querySelector("style")?.textContent ?? "").toMatch(
+      /data:[^;]+;base64,QQ==/,
+    );
 
     const fontRequests = fetchSpy.mock.calls.map(([input]) => input.toString());
     expect(fontRequests).toHaveLength(2);
     expect(fontRequests[0]).not.toContain("?");
     expect(fontRequests[1]).toMatch(/cache-bust-font\.woff2\?\d+$/);
-  } finally {
-    root.remove();
-    style.remove();
-  }
-});
+  });
 
-test("keeps successful cached formats when another format is unavailable", async ({
-  getSvgDocument,
-}) => {
-  const style = addStyle(`
-      @font-face {
-        font-family: "Single Format Font";
-        src: url("data:font/woff;base64,V09GRk9OTFk=") format("woff");
-      }
-    `);
-  const root = addRoot("Single Format Font");
-  const fontCache = new htmlToImage.FontCache();
+  test("keeps successful cached formats when another format is unavailable", async ({
+    bootstrap,
+  }) => {
+    const node = await bootstrap(
+      "fonts/persistence/single-format/node.html",
+      "fonts/persistence/single-format/style.css",
+    );
+    const fontCache = new htmlToImage.FontCache();
 
-  try {
-    const first = await getEmbeddedFontCSS(root, getSvgDocument, {
+    const first = await htmlToImage.toSvg(node, {
       cache: new htmlToImage.Cache(new htmlToImage.FetchCache(), fontCache),
       preferredFontFormat: "woff",
     });
-    expect(first.cssText).toContain("V09GRk9OTFk=");
+    expect(first.querySelector("style")?.textContent ?? "").toContain(
+      "V09GRk9OTFk=",
+    );
 
-    style.remove();
-    const unavailable = await getEmbeddedFontCSS(root, getSvgDocument, {
+    document.getElementById("style")!.remove();
+    const unavailable = await htmlToImage.toSvg(node, {
       cache: new htmlToImage.Cache(new htmlToImage.FetchCache(), fontCache),
       preferredFontFormat: "woff2",
     });
-    expect(unavailable.cssText).toBe("");
+    expect(unavailable.querySelector("style")?.textContent ?? "").toBe("");
 
-    const reused = await getEmbeddedFontCSS(root, getSvgDocument, {
+    const reused = await htmlToImage.toSvg(node, {
       cache: new htmlToImage.Cache(new htmlToImage.FetchCache(), fontCache),
       preferredFontFormat: "woff",
     });
-    expect(reused.cssText).toContain("V09GRk9OTFk=");
-  } finally {
-    root.remove();
-    style.remove();
-  }
-});
+    expect(reused.querySelector("style")?.textContent ?? "").toContain(
+      "V09GRk9OTFk=",
+    );
+  });
 
-test("treats empty fontEmbedCSS as an automatic embedding override", async ({
-  getSvgDocument,
-}) => {
-  const style = addStyle(`
-      @font-face {
-        font-family: "Automatic Font";
-        src: url("data:font/woff2;base64,QVVUTw==") format("woff2");
-      }
-    `);
-  const root = addRoot("Automatic Font");
+  test("treats empty fontEmbedCSS as an automatic embedding override", async ({
+    bootstrap,
+  }) => {
+    const node = await bootstrap(
+      "fonts/persistence/auto-embed-override/node.html",
+      "fonts/persistence/auto-embed-override/style.css",
+    );
 
-  try {
-    const empty = await getEmbeddedFontCSS(root, getSvgDocument, {
-      fontEmbedCSS: "",
-    });
-    expect(empty.output.querySelectorAll("style")).toHaveLength(0);
+    const empty = await htmlToImage.toSvg(node, { fontEmbedCSS: "" });
+    expect(empty.querySelectorAll("style")).toHaveLength(0);
 
-    const skipped = await getEmbeddedFontCSS(root, getSvgDocument, {
+    const skipped = await htmlToImage.toSvg(node, {
       fontEmbedCSS: "@font-face { font-family: Supplied; }",
       skipFonts: true,
     });
-    expect(skipped.output.querySelectorAll("style")).toHaveLength(0);
-  } finally {
-    root.remove();
-    style.remove();
-  }
-});
+    expect(skipped.querySelectorAll("style")).toHaveLength(0);
+  });
 
-test("does not track fonts in a removed subtree", async ({
-  getSvgDocument,
-}) => {
-  const style = addStyle(`
-      @font-face { font-family: "Kept Font"; src: url("data:font/woff2;base64,S0VQVA=="); }
-      @font-face { font-family: "Removed Font"; src: url("data:font/woff2;base64,UkVNT1ZFRA=="); }
-    `);
-  const root = addRoot("Kept Font");
-  const removed = document.createElement("span");
-  removed.style.fontFamily = "Removed Font";
-  root.appendChild(removed);
+  test("does not track fonts in a removed subtree", async ({ bootstrap }) => {
+    const node = await bootstrap(
+      "fonts/persistence/removed-subtree/node.html",
+      "fonts/persistence/removed-subtree/style.css",
+    );
+    const removed = node.querySelector("#removed") as HTMLElement;
 
-  try {
-    const { cssText } = await getEmbeddedFontCSS(root, getSvgDocument, {
-      filter: (node) => (node === removed ? "remove" : "keep"),
+    const svg = await htmlToImage.toSvg(node, {
+      filter: (candidate) => (candidate === removed ? "remove" : "keep"),
     });
+    const cssText = svg.querySelector("style")?.textContent ?? "";
+
     expect(cssText).toContain("S0VQVA==");
     expect(cssText).not.toContain("UkVNT1ZFRA==");
-  } finally {
-    root.remove();
-    style.remove();
-  }
-});
+  });
 
-test("clears a reused cache when the render targets another document", async ({
-  getSvgDocument,
-}) => {
-  // Both documents define the same family name with different bytes. A cache
-  // holds one document's fonts, so the second render must rediscover rather
-  // than answer with the first document's faces.
-  const pageStyle = addStyle(`
+  test("clears a reused cache when the render targets another document", async ({
+    bootstrap,
+  }) => {
+    // Both documents define the same family name with different bytes. A
+    // cache holds one document's fonts, so the second render must
+    // rediscover rather than answer with the first document's faces.
+    const node = await bootstrap(
+      "fonts/persistence/cross-document/node.html",
+      "fonts/persistence/cross-document/style.css",
+    );
+    const pageRoot = node.querySelector("div") as HTMLElement;
+    const iframe = node.querySelector("iframe")!;
+    const iframeDocument = iframe.contentDocument!;
+    const iframeStyle = iframeDocument.createElement("style");
+    iframeStyle.textContent = `
       @font-face {
         font-family: "Shared Name";
-        src: url("data:font/woff2;base64,UEFHRQ==") format("woff2");
-      }
-    `);
-  const pageRoot = addRoot("Shared Name");
-
-  const host = document.createElement("div");
-  document.body.appendChild(host);
-  const iframe = document.createElement("iframe");
-  host.appendChild(iframe);
-  const iframeDocument = iframe.contentDocument!;
-  addStyle(
-    `@font-face {
-        font-family: "Shared Name";
         src: url("data:font/woff2;base64,SUZSQU1F") format("woff2");
-      }`,
-    iframeDocument,
-  );
-  const iframeRoot = addRoot("Shared Name", iframeDocument);
+      }
+    `;
+    iframeDocument.head.appendChild(iframeStyle);
+    const iframeRoot = iframeDocument.createElement("div");
+    iframeRoot.style.fontFamily = "Shared Name";
+    iframeRoot.textContent = "Font test";
+    iframeDocument.body.appendChild(iframeRoot);
 
-  const cache = new htmlToImage.Cache();
+    const cache = new htmlToImage.Cache();
 
-  try {
-    const page = await getEmbeddedFontCSS(pageRoot, getSvgDocument, { cache });
-    expect(page.cssText).toContain("UEFHRQ==");
+    const page = await htmlToImage.toSvg(pageRoot, { cache });
+    expect(page.querySelector("style")?.textContent ?? "").toContain(
+      "UEFHRQ==",
+    );
 
-    // Rendering a node that lives in the iframe resolves against the iframe's
-    // own document, so the page's cached face must not be reused for it.
-    const framed = await getEmbeddedFontCSS(iframeRoot, getSvgDocument, {
-      cache,
+    // Rendering a node that lives in the iframe resolves against the
+    // iframe's own document, so the page's cached face must not be reused.
+    const framed = await htmlToImage.toSvg(iframeRoot, { cache });
+    const framedCSS = framed.querySelector("style")?.textContent ?? "";
+    expect(framedCSS).toContain("SUZSQU1F");
+    expect(framedCSS).not.toContain("UEFHRQ==");
+  });
+
+  test("does not rescan a document for definitive missing families", async ({
+    bootstrap,
+  }) => {
+    const node = await bootstrap("fonts/cache/missing/node.html");
+    const cache = new htmlToImage.Cache();
+
+    const first = await htmlToImage.toSvg(node, { cache });
+    expect(first.querySelector("style")?.textContent ?? "").toBe("");
+
+    Object.defineProperty(document, "styleSheets", {
+      configurable: true,
+      get() {
+        throw new Error("The source document was scanned again");
+      },
     });
-    expect(framed.cssText).toContain("SUZSQU1F");
-    expect(framed.cssText).not.toContain("UEFHRQ==");
-  } finally {
-    pageRoot.remove();
-    pageStyle.remove();
-    host.remove();
-  }
+
+    try {
+      const second = await htmlToImage.toSvg(node, { cache });
+      expect(second.querySelector("style")?.textContent ?? "").toBe("");
+    } finally {
+      Reflect.deleteProperty(document, "styleSheets");
+    }
+  });
 });
