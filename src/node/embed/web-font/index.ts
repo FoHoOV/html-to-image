@@ -21,13 +21,10 @@ export const embedWebFonts: Embedder<HTMLElement | SVGElement, void> = (
   }
 
   const suppliedCSS = context.options.fontEmbedCSS;
-  if (suppliedCSS != null) {
-    if (config.isRoot) {
-      context.embedding.font.add(() =>
-        addFontStyleNode(config.clonedNode, [suppliedCSS]),
-      );
-    }
-    return;
+  if (suppliedCSS != null && config.isRoot) {
+    context.embedding.font.add(() =>
+      addFontStyleNode(config.clonedNode, [suppliedCSS]),
+    );
   }
 
   trackUsedFamilies(config);

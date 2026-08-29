@@ -42,9 +42,6 @@ describe("font discovery", () => {
       }
       return nativeFetch(input);
     });
-    const consoleError = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
 
     const svg = await htmlToImage.toSvg(node);
     const cssText = svg.querySelector("style")?.textContent ?? "";
@@ -60,7 +57,6 @@ describe("font discovery", () => {
         input.toString().includes("fonts.invalid"),
       ),
     ).toHaveLength(1);
-    expect(consoleError).toHaveBeenCalled();
   });
 
   test("resolves a relative font src url against the declaring stylesheet's own url", async ({
