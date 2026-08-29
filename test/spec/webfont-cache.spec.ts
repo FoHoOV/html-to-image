@@ -1,7 +1,7 @@
 import * as htmlToImage from "../../src";
 import { test } from "../fixtures";
 
-describe("web font persistence", () => {
+describe("web font cache", () => {
   test("reuses cached families without leaking them into another render", async ({
     bootstrap,
   }) => {

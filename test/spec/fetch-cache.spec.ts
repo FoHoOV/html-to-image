@@ -13,7 +13,7 @@ function decodablePngResponse() {
   return new Response(bytes, { headers: { "Content-Type": "image/png" } });
 }
 
-describe("resource cache", () => {
+describe("fetch cache", () => {
   test("keeps cache operations on the component caches", () => {
     const fetchCache = new FetchCache();
     const resource = {
