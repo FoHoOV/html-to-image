@@ -103,5 +103,4 @@ export async function toBlob<T extends HTMLElement>(
 }
 
 export { Cache, FetchCache, FontCache } from "./cache";
-export type { Resource } from "./cache";
 export type { Options } from "./types";

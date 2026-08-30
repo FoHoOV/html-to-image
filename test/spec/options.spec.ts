@@ -123,7 +123,7 @@ describe("work with options", () => {
     try {
       const canvas = await toCanvas(node, {
         pixelRatio: 1,
-        skipFonts: true,
+        fonts: { strategy: "none" },
         style: {
           width: "160px",
           height: "90px",
@@ -150,7 +150,7 @@ describe("work with options", () => {
       const canvas = await toCanvas(node, {
         width: 160,
         pixelRatio: 1,
-        skipFonts: true,
+        fonts: { strategy: "none" },
       });
 
       expect(canvas.width).toBe(160);
@@ -184,7 +184,7 @@ describe("work with options", () => {
     try {
       const canvas = await toCanvas(node, {
         pixelRatio: 2,
-        skipFonts: true,
+        fonts: { strategy: "none" },
       });
       const context = canvas.getContext("2d")!;
       const pixelAt = (x: number, y: number) =>
@@ -223,7 +223,7 @@ describe("work with options", () => {
     document.body.appendChild(node);
 
     try {
-      await toCanvas(node, { pixelRatio: 1, skipFonts: true });
+      await toCanvas(node, { pixelRatio: 1, fonts: { strategy: "none" } });
 
       expect(drawImage).toHaveBeenCalledTimes(2);
       expect(clearRect).toHaveBeenCalledTimes(1);
@@ -300,7 +300,7 @@ describe("work with options", () => {
     await renderAndCheck(root, {
       width: 100,
       height: 50,
-      skipFonts: true,
+      fonts: { strategy: "none" },
       filter(node) {
         if (node === root) {
           return "unwrap";
@@ -324,7 +324,7 @@ describe("work with options", () => {
 
     await renderAndCheck(root, {
       filter: (node) => (node === root ? "unwrap" : "keep"),
-      skipFonts: true,
+      fonts: { strategy: "none" },
       style: {
         background: "#ff0000",
         padding: "10px",
@@ -374,7 +374,7 @@ describe("work with options", () => {
     expect(svg.querySelector(".preserved")).not.toBeNull();
   });
 
-  test("should only use fontEmbedCss if it is supplied", async ({
+  test("should only use the provided css if it is supplied", async ({
     bootstrap,
     getSvgDocument,
   }) => {
@@ -388,7 +388,9 @@ describe("work with options", () => {
       "fonts/web-fonts/empty.html",
       "fonts/web-fonts/remote.css",
     );
-    const dataUrl = await toDataUrl(node, { fontEmbedCSS: testCss });
+    const dataUrl = await toDataUrl(node, {
+      fonts: { strategy: "provided", fontFaces: testCss },
+    });
     const document = await getSvgDocument(dataUrl);
     const styles = Array.from(document.getElementsByTagName("style"));
 

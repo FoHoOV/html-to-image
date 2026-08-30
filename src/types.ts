@@ -60,10 +60,6 @@ export type Options = {
    */
   pixelRatio?: number;
   /**
-   * Option to skip the fonts download and embed.
-   */
-  skipFonts?: boolean;
-  /**
    * The preferred font format. If specified all other font formats are ignored.
    */
   preferredFontFormat?:
@@ -75,10 +71,27 @@ export type Options = {
     | "svg"
     | string;
   /**
-   * A CSS string to specify for font embeds. If specified, automatic font
-   * discovery is skipped and only this CSS is added to the resulting image.
+   * Controls font embedding. Omitted defaults to `{ strategy: "discover" }`:
+   * automatically find and embed the `@font-face` rules used by the captured
+   * tree.
+   *
+   * `fontFaces`, alongside `"discover"`, maps a family name to complete,
+   * ready-to-use `@font-face` CSS text (e.g. with `url()`s already as `data:`
+   * URLs) for that family. A family listed here is not searched for in any
+   * stylesheet at all; the caller's text is used instead. Supply every variant
+   * (weight, style) wanted for that family in the one string — other variants
+   * for a family listed here are not additionally discovered.
+   *
+   * `{ strategy: "provided", fontFaces }` uses `fontFaces` verbatim for the whole output
+   * and skips automatic discovery entirely; an empty string intentionally
+   * emits no font style.
+   *
+   * `{ strategy: "none" }` emits no font style and performs no discovery.
    */
-  fontEmbedCSS?: string;
+  fonts?:
+    | { strategy: "discover"; fontFaces?: Record<string, string> }
+    | { strategy: "provided"; fontFaces: string }
+    | { strategy: "none" };
   /**
    * A boolean to turn off auto scaling for truly massive images..
    */

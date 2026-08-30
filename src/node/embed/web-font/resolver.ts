@@ -1,7 +1,7 @@
 import type { FontCache, WebFontEntry, WebFontSource } from "@/cache";
 import type { Context } from "@/context";
 import type { FontFaceCollection } from "./collector";
-import { collectDocumentFontFaces } from "./collector";
+import { FontFaceCollector } from "./collector";
 import { embedFontSources } from "./serialize";
 
 /**
@@ -57,11 +57,11 @@ export class FontResolver {
 
     let collection: FontFaceCollection;
     try {
-      collection = await collectDocumentFontFaces(
+      collection = await new FontFaceCollector(
         sourceDocument,
         wanted,
         this.context,
-      );
+      ).collect();
     } catch (error) {
       console.error("Error while collecting web fonts", error);
       return;

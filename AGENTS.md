@@ -299,7 +299,8 @@ Rules:
   `"serif"`.
 - Resolve every collected family against the rendered root's own document. An
   iframe's own `@font-face` rules are not discovered; callers supply those
-  through `fontEmbedCSS`, which is documented in the README.
+  through `fonts.fontFaces` (or `{ strategy: "provided" }` for the whole
+  output), which is documented in the README.
 - Scan that document once per operation, and reuse definitive misses through
   the caller-owned `FontCache`.
 - A `FontCache` holds one document's fonts. `FontResolver` compares the render's
@@ -339,9 +340,19 @@ Rules:
   writes.
 - Automatic discovery normalizes family names before cache access. Cache
   classes do not parse or normalize CSS.
-- `fontEmbedCSS != null` bypasses automatic discovery and caching. An empty
-  string intentionally disables automatic font output. `skipFonts` takes
-  precedence over supplied CSS.
+- `fonts` is a discriminated union (`"discover"` | `"provided"` | `"none"`),
+  so the old precedence question between a skip flag and supplied CSS is
+  inexpressible rather than documented. `{ strategy: "provided", css }`
+  bypasses automatic discovery and caching entirely; an empty `css`
+  intentionally disables automatic font output. `{ strategy: "none" }` emits
+  nothing and performs no discovery.
+- `fontFaces`, under `{ strategy: "discover" }`, maps a family name to
+  ready-to-use `@font-face` CSS text. A family listed there is removed from
+  the wanted set before the document is scanned, so it is never discovered
+  and its `FontCache`/`FetchCache` are never touched for that family; the
+  caller's text is used verbatim in its place. The caller is responsible for
+  every variant (weight, style) they want for that family — a family in
+  `fontFaces` does not additionally discover other variants for itself.
 - Insert one generated font `<style>` per output tree, containing only the
   families used by that output.
 
@@ -379,8 +390,12 @@ lifetime.
   own font style.
 - Do not strongly retain `Document`, stylesheet, CSS rule, or context objects
   in persistent cache entries.
-- Consumers supply manual reusable font CSS with `fontEmbedCSS`; do not add a
-  second font-seeding API.
+- Consumers supply manual reusable font CSS with `fonts: { strategy:
+  "provided" }` for a whole output, or `fontFaces` for individual families
+  alongside automatic discovery. `fontFaces` skips discovery for the families
+  it lists rather than merging with it — it is not a second, independent
+  seeding mechanism layered on top of discovery; it narrows what discovery is
+  asked to do.
 - Every cache class exposes `reset()`, which empties it in place so a caller
   holding a reference keeps it. A reset must not be repopulated by work that
   started before it.

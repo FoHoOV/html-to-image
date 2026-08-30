@@ -17,6 +17,57 @@ describe("font embedding", () => {
     expect(cssText).not.toContain("Font 0");
   });
 
+  test("skips discovery entirely for a family listed in fontFaces", async ({
+    bootstrap,
+  }) => {
+    const node = await bootstrap(
+      "fonts/font-faces/node.html",
+      "fonts/font-faces/style.css",
+    );
+    const svg = await htmlToImage.toSvg(node, {
+      fonts: {
+        strategy: "discover",
+        fontFaces: {
+          "Face Overridden": `@font-face {
+              font-family: "Face Overridden";
+              src: url("data:font/woff2;base64,T1ZFUlJJRERFTg==") format("woff2");
+            }`,
+        },
+      },
+    });
+    const cssText = svg.querySelector("style")?.textContent ?? "";
+
+    expect(cssText).toContain("RElTQ09WRVJFRA==");
+    expect(cssText).toContain("T1ZFUlJJRERFTg==");
+    expect(cssText).not.toContain("V1JPTkdMWVNUWUxFRA==");
+  });
+
+  test("does not discover other variants for a family listed in fontFaces", async ({
+    bootstrap,
+  }) => {
+    const node = await bootstrap(
+      "fonts/font-faces/node.html",
+      "fonts/font-faces/style.css",
+    );
+    const svg = await htmlToImage.toSvg(node, {
+      fonts: {
+        strategy: "discover",
+        fontFaces: {
+          "Face Variants": `@font-face {
+              font-family: "Face Variants";
+              font-weight: 400;
+              src: url("data:font/woff2;base64,T05MWVdFSUdIVDQwMA==") format("woff2");
+            }`,
+        },
+      },
+    });
+    const cssText = svg.querySelector("style")?.textContent ?? "";
+
+    expect(cssText).toContain("T05MWVdFSUdIVDQwMA==");
+    expect(cssText).not.toContain("V0VJR0hUNDAw");
+    expect(cssText).not.toContain("V0VJR0hUNzAw");
+  });
+
   test("embeds every face of a repeatedly used family once", async ({
     bootstrap,
   }) => {

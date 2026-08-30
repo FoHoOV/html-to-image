@@ -22,11 +22,6 @@ export type FontFaceCollection = {
   sourcesByFamily: Map<string, WebFontSource[]>;
 };
 
-/**
- * Finds the `@font-face` rules a document declares for the wanted families,
- * walking stylesheets, imports, and grouping rules read-only and following
- * cross-origin sheets by refetching their text.
- */
 export function collectDocumentFontFaces(
   sourceDocument: Document,
   wantedFamilies: Set<string>,
@@ -39,7 +34,7 @@ export function collectDocumentFontFaces(
   ).collect();
 }
 
-class FontFaceCollector {
+export class FontFaceCollector {
   private readonly sourcesByFamily = new Map<string, WebFontSource[]>();
   /** Stylesheet URLs already walked or currently being walked, so `@import`
    * cycles terminate and no sheet is walked twice. */
@@ -53,6 +48,11 @@ class FontFaceCollector {
     private readonly context: Context,
   ) {}
 
+  /**
+   * Finds the `@font-face` rules a document declares for the wanted families,
+   * walking stylesheets, imports, and grouping rules read-only and following
+   * cross-origin sheets by refetching their text.
+   */
   async collect(): Promise<FontFaceCollection> {
     const styleSheets = this.document.styleSheets;
     const styleSheetCount = styleSheets.length;

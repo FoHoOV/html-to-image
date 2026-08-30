@@ -320,7 +320,7 @@ Automatic font discovery normalizes family names before accessing `FontCache`; t
 
 `@font-face` rules are discovered in the rendered node's own document. Font families used anywhere in the captured tree are collected — including by elements inside an iframe — and every one of them is resolved against that single document's stylesheets.
 
-An iframe's *own* `@font-face` rules are therefore not discovered. If an iframe defines a face that the surrounding page does not, supply it through [`fontEmbedCSS`](#fontembedcss), or define the same family in the page's own stylesheets.
+An iframe's *own* `@font-face` rules are therefore not discovered. If an iframe defines a face that the surrounding page does not, supply it through [`fontFaces`](#fonts), or define the same family in the page's own stylesheets.
 
 A `FontCache` holds one document's fonts. If a later render targets a node from a different document — a node living inside an iframe, say — the cache clears itself and rediscovers, so one document's faces are never reused for another's.
 
@@ -340,7 +340,7 @@ Without this, a render after the change reuses the faces discovered before it. A
 
 `@font-face` rules nested in `@media`, `@supports`, or `@layer` are evaluated against the live page, in the same engine that renders the output, when the render starts. Only faces behind a currently-active condition are embedded, and they are embedded bare — the enclosing block is not reproduced in the output. Replaying it would ask a question already answered: for `@media`, against the wrong viewport (the exported SVG's own output size, not the page's); for `@supports` and `@layer`, redundantly, since the engine evaluating it is the same one that just did.
 
-Fonts registered only through the `FontFace` constructor cannot be recovered from browser CSSOM because their original source is not exposed. Supply those fonts through `fontEmbedCSS`. Providing `fontEmbedCSS` bypasses automatic font discovery and does not populate `FontCache`.
+Fonts registered only through the `FontFace` constructor cannot be recovered from browser CSSOM because their original source is not exposed. Supply those fonts through [`fontFaces`](#fonts) alongside `"discover"`, so the rest of the tree's fonts are still found automatically. `fontFaces` does not populate `FontCache`.
 
 ### includeQueryParams
 
@@ -378,15 +378,46 @@ specifies several different formats for fonts in the CSS, for example:
 Instead of embedding each format, all formats other than the one specified will be discarded. If
 this option is not specified then all formats will be downloaded and embedded.
 
-### fontEmbedCSS
+### fonts
 
-When supplied, the library skips automatic web-font discovery and uses this CSS verbatim. An empty string disables automatic font embedding without adding a style element. `skipFonts` takes precedence and suppresses supplied CSS as well.
+Controls font embedding. Omitted defaults to `{ strategy: 'discover' }`: automatically find and embed the `@font-face` rules used by the captured tree, as described above.
 
 ```javascript
 htmlToImage.toSvg(element, {
-  fontEmbedCSS: '@font-face { font-family: "Inter"; src: url("data:..."); }',
+  fonts: { strategy: 'discover' },
 });
 ```
+
+`fontFaces`, alongside `'discover'`, maps a family name to complete, ready-to-use `@font-face` CSS text — `url()`s already as `data:` URLs, since a `fontFaces` entry is used verbatim and is not run through resource fetching. A family listed here is not searched for in any stylesheet at all; discovery is narrowed to skip it, not merged with it. Supply every variant (weight, style) you want for that family in the one string — other variants for a family listed here are not additionally discovered.
+
+```javascript
+htmlToImage.toSvg(element, {
+  fonts: {
+    strategy: 'discover',
+    fontFaces: {
+      Inter: '@font-face { font-family: "Inter"; src: url("data:..."); }',
+    },
+  },
+});
+```
+
+`{ strategy: 'provided', fontFaces }` uses `fontFaces` verbatim for the *whole* output and skips automatic discovery entirely. An empty string intentionally disables font embedding without adding a style element.
+
+```javascript
+htmlToImage.toSvg(element, {
+  fonts: { strategy: 'provided', fontFaces: '@font-face { font-family: "Inter"; src: url("data:..."); }' },
+});
+```
+
+`{ strategy: 'none' }` emits no font style and performs no discovery.
+
+```javascript
+htmlToImage.toSvg(element, {
+  fonts: { strategy: 'none' },
+});
+```
+
+Migrating from the old options: `skipFonts: true` becomes `fonts: { strategy: 'none' }`; `fontEmbedCSS: css` becomes `fonts: { strategy: 'provided', css }`. Omitting `fonts` entirely keeps the previous default (automatic discovery).
 
 ### skipAutoScale
 

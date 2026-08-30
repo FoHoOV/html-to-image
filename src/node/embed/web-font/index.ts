@@ -1,6 +1,6 @@
 import type { Context } from "@/context";
 import { getComputedStyle, isInstanceOfElement } from "@/node/utils";
-import { addUsedFontFamilies } from "./font-family";
+import { addUsedFontFamilies, normalizeFontFamily } from "./font-family";
 import { FontResolver } from "./resolver";
 import { addFontStyleNode } from "./serialize";
 
@@ -16,15 +16,19 @@ export const embedWebFonts: Embedder<HTMLElement | SVGElement, void> = (
   config,
 ) => {
   const context = config.context;
-  if (context.options.skipFonts) {
+  const fonts = context.options.fonts;
+
+  if (fonts?.strategy === "none") {
     return;
   }
 
-  const suppliedCSS = context.options.fontEmbedCSS;
-  if (suppliedCSS != null && config.isRoot) {
-    context.embedding.font.add(() =>
-      addFontStyleNode(config.clonedNode, [suppliedCSS]),
-    );
+  if (fonts?.strategy === "provided") {
+    if (config.isRoot) {
+      context.embedding.font.add(() =>
+        addFontStyleNode(config.clonedNode, [fonts.fontFaces]),
+      );
+    }
+    return;
   }
 
   trackUsedFamilies(config);
@@ -35,12 +39,36 @@ export const embedWebFonts: Embedder<HTMLElement | SVGElement, void> = (
     const rootDocument = config.originalNode.ownerDocument ?? document;
     context.embedding.font.add(async () => {
       await context.cloning.ready;
+
+      const usedFamilies = context.embedding.font.usedFamilies;
+      let wanted: ReadonlySet<string> = usedFamilies;
+      const overrideCSS: string[] = [];
+
+      if (fonts?.fontFaces) {
+        // A family listed here is never discovered: this render's whole
+        // stylesheet scan is smaller by exactly the families overridden.
+        const overrides = new Map<string, string>();
+        for (const family of Object.keys(fonts.fontFaces)) {
+          overrides.set(normalizeFontFamily(family), fonts.fontFaces[family]);
+        }
+        const remaining = new Set<string>();
+        for (const family of usedFamilies) {
+          const css = overrides.get(family);
+          if (css) {
+            overrideCSS.push(css);
+          } else {
+            remaining.add(family);
+          }
+        }
+        wanted = remaining;
+      }
+
       const resolver = new FontResolver(context);
-      await resolver.resolveAll(
-        rootDocument,
-        context.embedding.font.usedFamilies,
-      );
-      addFontStyleNode(config.clonedNode, resolver.cssTexts);
+      await resolver.resolveAll(rootDocument, wanted);
+      addFontStyleNode(config.clonedNode, [
+        ...resolver.cssTexts,
+        ...overrideCSS,
+      ]);
     });
   }
 };

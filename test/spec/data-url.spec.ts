@@ -107,7 +107,7 @@ describe("work with svg element as dataurl", () => {
     );
     node.style.cssText = "width: 40px; height: 20px; overflow: hidden;";
 
-    const dataUrl = await toDataUrl(node, { skipFonts: true });
+    const dataUrl = await toDataUrl(node, { fonts: { strategy: "none" } });
     const svgDocument = await getSvgDocument(dataUrl);
     const uses = Array.from(svgDocument.querySelectorAll("use"));
     const targetIds = uses.map(
@@ -127,7 +127,7 @@ describe("work with svg element as dataurl", () => {
         ?.getAttribute("id"),
     ).toBe(targetIds[1]);
 
-    await renderAndCheck(node, { skipFonts: true });
+    await renderAndCheck(node, { fonts: { strategy: "none" } });
   });
 
   test("should render SVG with clip-path", async ({

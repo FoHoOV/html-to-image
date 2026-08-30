@@ -1,0 +1,18 @@
+@font-face {
+  font-family: 'Face Discovered';
+  src: url('data:font/woff2;base64,RElTQ09WRVJFRA==') format('woff2');
+}
+@font-face {
+  font-family: 'Face Overridden';
+  src: url('data:font/woff2;base64,V1JPTkdMWVNUWUxFRA==') format('woff2');
+}
+@font-face {
+  font-family: 'Face Variants';
+  font-weight: 400;
+  src: url('data:font/woff2;base64,V0VJR0hUNDAw') format('woff2');
+}
+@font-face {
+  font-family: 'Face Variants';
+  font-weight: 700;
+  src: url('data:font/woff2;base64,V0VJR0hUNzAw') format('woff2');
+}

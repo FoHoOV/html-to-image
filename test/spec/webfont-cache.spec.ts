@@ -177,7 +177,7 @@ describe("web font cache", () => {
     );
   });
 
-  test("treats empty fontEmbedCSS as an automatic embedding override", async ({
+  test("treats empty provided css as an automatic embedding override", async ({
     bootstrap,
   }) => {
     const node = await bootstrap(
@@ -185,12 +185,13 @@ describe("web font cache", () => {
       "fonts/persistence/auto-embed-override/style.css",
     );
 
-    const empty = await htmlToImage.toSvg(node, { fontEmbedCSS: "" });
+    const empty = await htmlToImage.toSvg(node, {
+      fonts: { strategy: "provided", fontFaces: "" },
+    });
     expect(empty.querySelectorAll("style")).toHaveLength(0);
 
     const skipped = await htmlToImage.toSvg(node, {
-      fontEmbedCSS: "@font-face { font-family: Supplied; }",
-      skipFonts: true,
+      fonts: { strategy: "none" },
     });
     expect(skipped.querySelectorAll("style")).toHaveLength(0);
   });
