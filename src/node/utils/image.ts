@@ -1,4 +1,5 @@
 import type { Options } from "@/types";
+import type { Context } from "@/context";
 import { getNodeHeight, getNodeWidth } from "./size";
 
 export function createImage(url: string): Promise<HTMLImageElement> {
@@ -33,4 +34,26 @@ export function getImageSize(targetNode: HTMLElement, options: Options) {
   const height = options.height ?? getNodeHeight(targetNode);
 
   return { width, height };
+}
+
+/**
+ * Loads an inlined source to prove it decodes, applying the caller's
+ * `onImageErrorHandler` policy when it does not.
+ */
+export async function loadInlinedImage(dataUrl: string, context: Context) {
+  try {
+    await createImage(dataUrl);
+  } catch (error) {
+    const { onImageErrorHandler } = context.options;
+
+    if (!onImageErrorHandler) {
+      const failure = new Error("image load failed") as Error & {
+        cause: unknown;
+      };
+      failure.cause = error;
+      throw failure;
+    }
+
+    await onImageErrorHandler(error as Event);
+  }
 }

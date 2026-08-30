@@ -2,6 +2,44 @@ import { toDataUrl } from "../../src";
 import { test } from "../fixtures";
 
 describe("background-image embedding", () => {
+  test("embeds a background image declared by a stylesheet", async ({
+    bootstrap,
+    getSvgDocument,
+  }) => {
+    const node = await bootstrap(
+      "media/background-image/node.html",
+      "media/background-image/style.css",
+    );
+    const svg = await getSvgDocument(await toDataUrl(node));
+    const style =
+      svg.querySelector(".with-background")?.getAttribute("style") ?? "";
+
+    expect(style).toContain("data:image/jpeg");
+    expect(style).not.toContain("/media/images/image.jpeg");
+  });
+
+  test("prefers an options.style background over the node's own", async ({
+    bootstrap,
+    getSvgDocument,
+  }) => {
+    const node = await bootstrap(
+      "media/background-override/node.html",
+      "media/background-override/style.css",
+    );
+    const svg = await getSvgDocument(
+      await toDataUrl(node, {
+        style: { backgroundImage: "url(/media/images/image.png)" },
+      }),
+    );
+    const style = svg.querySelector("#dom-node")?.getAttribute("style") ?? "";
+
+    // The override is a `background-image` longhand on the clone, while the
+    // stylesheet reaches the original as a `background` shorthand. The clone
+    // has to win regardless of which property name carries the value.
+    expect(style).toContain("data:image/png");
+    expect(style).not.toContain("data:image/jpeg");
+  });
+
   test("should skip data urls without fetching them", async ({
     createBackgroundNode,
   }) => {

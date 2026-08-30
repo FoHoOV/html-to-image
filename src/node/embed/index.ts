@@ -1,4 +1,4 @@
 export * from "./pseudo";
 export * from "./style";
-export * from "./image";
+export * from "./backgrounds";
 export * from "./web-font";

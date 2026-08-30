@@ -2,8 +2,10 @@ import type { Context } from "@/context";
 import { nextFrame } from "@/utils";
 import {
   cloneSvgElement,
+  cloneSvgImageElement,
   cloneUseElement,
   cloneIFrameElement,
+  cloneImageElement,
   cloneInputElement,
   cloneOptionElement,
   cloneSelectElement,
@@ -14,7 +16,7 @@ import {
 import {
   embedPseudoElements,
   embedStyles,
-  embedImages,
+  embedBackgrounds,
   embedWebFonts,
 } from "./embed";
 import type { EmbedContext } from "./embed/types";
@@ -159,6 +161,9 @@ async function cloneSingleNode(
   if (isInstanceOfElement(originalNode, HTMLVideoElement)) {
     return cloneVideoElement(createConfig(originalNode));
   }
+  if (isInstanceOfElement(originalNode, HTMLImageElement)) {
+    return cloneImageElement(createConfig(originalNode));
+  }
   if (isInstanceOfElement(originalNode, HTMLIFrameElement)) {
     return cloneIFrameElement(createConfig(originalNode));
   }
@@ -176,6 +181,9 @@ async function cloneSingleNode(
   }
   if (isInstanceOfElement(originalNode, SVGUseElement)) {
     return cloneUseElement(createConfig(originalNode));
+  }
+  if (isInstanceOfElement(originalNode, SVGImageElement)) {
+    return cloneSvgImageElement(createConfig(originalNode));
   }
   if (isInstanceOfElement(originalNode, SVGElement)) {
     return cloneSvgElement(createConfig(originalNode));
@@ -206,9 +214,7 @@ function registerEmbedding(config: EmbedContext<Node>) {
     await embedStyles(elementConfig);
     await embedPseudoElements(elementConfig);
   });
-  config.context.embedding.image.add(async () => {
-    await embedImages(elementConfig);
-  });
+  config.context.embedding.image.add(() => embedBackgrounds(elementConfig));
 }
 
 function isElementLike(node: Node): node is HTMLElement | SVGElement {
