@@ -1,0 +1,9 @@
+#dom-node {
+  width: 120px;
+  height: 120px;
+  overflow: hidden;
+}
+
+#probe {
+  clip-path: url("/svg/clip-path/external/missing.svg#clip-html");
+}

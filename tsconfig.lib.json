@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "isolatedModules": true,
+    "lib": ["DOM", "ES2015"],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "outDir": "./dist/types",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "rootDir": "./src",
+    "target": "es2015",
+    "tsBuildInfoFile": "./node_modules/.cache/typescript/tsconfig.lib.tsbuildinfo",
+    "types": [],
+    "useDefineForClassFields": false
+  },
+  "exclude": ["node_modules", "dist", "test"],
+  "include": ["src/**/*.ts"]
+}

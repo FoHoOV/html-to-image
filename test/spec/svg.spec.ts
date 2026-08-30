@@ -1,107 +1,64 @@
-import '../spec/setup'
-import { toSvg } from '../../src'
-import { bootstrap, renderAndCheck, getSvgDocument } from '../spec/helper'
+import { toDataUrl } from "../../src";
+import { test } from "../fixtures";
 
-describe('work with svg element', () => {
-  it('should render nested svg with broken namespace', (done) => {
-    bootstrap('svg-ns/node.html', 'svg-ns/style.css', 'svg-ns/image')
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
-  })
-
-  it('should render svg `<rect>` with width and heigth', (done) => {
-    bootstrap('svg-rect/node.html', 'svg-rect/style.css', 'svg-rect/image')
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
-  })
-
-  it('should render svg `<rect>` with applied css styles', (done) => {
-    bootstrap('svg-color/node.html', 'svg-color/style.css', 'svg-color/image')
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
-  })
-
-  it('should include a viewBox attribute', (done) => {
-    bootstrap('small/node.html', 'small/style.css', 'small/image')
-      .then(toSvg)
-      .then(getSvgDocument)
-      .then((doc) => {
-        const width = doc.documentElement.getAttribute('width')
-        const height = doc.documentElement.getAttribute('height')
-        const viewBox = doc.documentElement.getAttribute('viewBox')
-        expect(viewBox).toEqual(`0 0 ${width} ${height}`)
-      })
-      .then(done)
-      .catch(done)
-  })
-
-  it('should render svg `<image>` with href', (done) => {
-    bootstrap('svg-image/node.html', 'svg-image/style.css', 'svg-image/image')
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
-  })
-
-  it('should render SVG use tags', function (done) {
-    bootstrap(
-      'svg-use-tag/node.html',
-      'svg-use-tag/style.css',
-      'svg-use-tag/image',
-    )
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
-  })
-
-  it('should inline external SVG use definitions and dependencies', async () => {
-    const node = await bootstrap('svg-use-external/node.html')
-    const sourceUse = node.querySelector('use')
-    const sourceHref = sourceUse?.getAttribute('href')
-
-    const dataUrl = await toSvg(node)
-    const document = await getSvgDocument(dataUrl)
-    const clonedUse = document.querySelector('use')
-
-    expect(clonedUse?.getAttribute('href')).toBe('#icon')
-    expect(document.querySelector('defs #icon')).not.toBeNull()
-    expect(document.querySelector('defs #paint')).not.toBeNull()
-    expect(sourceUse?.getAttribute('href')).toBe(sourceHref)
-  })
-
-  it('should render multiple parts from an external SVG sprite', async () => {
+describe("svg clip-path references", () => {
+  test("should localize a reference on the root svg, id punctuation included", async ({
+    bootstrap,
+    renderAndCheck,
+  }) => {
     const node = await bootstrap(
-      'svg-use-external-parts/node.html',
-      undefined,
-      'svg-use-external-parts/image',
-    )
-    node.style.cssText = 'width: 40px; height: 20px; overflow: hidden;'
+      "svg/clip-path/root/node.html",
+      "svg/clip-path/root/style.css",
+      "svg/clip-path/root/reference",
+    );
+    await renderAndCheck(node);
+  });
 
-    const dataUrl = await toSvg(node, { skipFonts: true })
-    const document = await getSvgDocument(dataUrl)
-    const uses = Array.from(document.querySelectorAll('use'))
-    const targetIds = uses.map(
-      (use) => use.getAttribute('href')?.match(/^#(.+)$/)?.[1],
-    )
+  test("should localize a reference coming from a stylesheet", async ({
+    bootstrap,
+    renderAndCheck,
+  }) => {
+    const node = await bootstrap(
+      "svg/clip-path/html/node.html",
+      "svg/clip-path/html/style.css",
+      "svg/clip-path/html/reference",
+    );
+    await renderAndCheck(node);
+  });
 
-    expect(uses.length).toBe(2)
-    expect(new Set(targetIds).size).toBe(2)
-    expect(
-      document.querySelector('[data-sprite-part="part1"]')?.getAttribute('id'),
-    ).toBe(targetIds[0])
-    expect(
-      document.querySelector('[data-sprite-part="part2"]')?.getAttribute('id'),
-    ).toBe(targetIds[1])
+  test("should localize a reference given through `options.style`", async ({
+    bootstrap,
+    renderAndCheck,
+  }) => {
+    const node = await bootstrap(
+      "svg/clip-path/html/node.html",
+      "svg/clip-path/html/host-style.css",
+      "svg/clip-path/html/reference",
+    );
+    await renderAndCheck(node, {
+      style: { clipPath: `url("/context.html#clip-html")` },
+    });
+  });
 
-    await renderAndCheck(node, { skipFonts: true })
-  })
+  test("should preserve an external reference that collides with a local id", async ({
+    bootstrap,
+    renderAndCheck,
+  }) => {
+    const node = await bootstrap(
+      "svg/clip-path/external/node.html",
+      "svg/clip-path/external/style.css",
+      "svg/clip-path/external/reference",
+    );
+    await renderAndCheck(node);
+  });
 
-  it('should render SVG with clip-path', function (done) {
-    bootstrap('svg-same-doc-ref/node.html', undefined, 'svg-same-doc-ref/image')
-      .then(renderAndCheck)
-      .then(done)
-      .catch(done)
-  })
-})
+  test("should not mutate the source document", async ({ bootstrap }) => {
+    const node = await bootstrap("svg/clip-path/root/node.html");
+
+    await toDataUrl(node);
+
+    expect(node.querySelector("svg")!.getAttribute("clip-path")).toBe(
+      `url('/context.html#clip.root:1')`,
+    );
+  });
+});

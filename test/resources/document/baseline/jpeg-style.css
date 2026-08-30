@@ -1,0 +1,23 @@
+#dom-node {
+  display: flex;
+  width: 100px;
+  height: 50px;
+}
+
+.red,
+.green,
+.blue {
+  flex: 1;
+}
+
+.red {
+  background-color: #000000;
+}
+
+.green {
+  background-color: #808080;
+}
+
+.blue {
+  background-color: #ffffff;
+}

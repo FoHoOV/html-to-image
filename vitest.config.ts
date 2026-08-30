@@ -1,0 +1,46 @@
+import { fileURLToPath } from "node:url";
+import { playwright } from "@vitest/browser-playwright";
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  publicDir: "test/resources",
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
+  },
+  test: {
+    attachmentsDir: ".vitest/attachments",
+    browser: {
+      enabled: true,
+      headless: true,
+      provider: playwright({
+        launchOptions: {
+          env: {
+            ...process.env,
+            GSETTINGS_BACKEND: "memory",
+          },
+        },
+      }),
+      screenshotDirectory: ".vitest/screenshots",
+      instances: [
+        { browser: "chromium" },
+        { browser: "firefox" },
+        { browser: "webkit" },
+      ],
+    },
+    coverage: {
+      provider: "istanbul",
+      reportsDirectory: ".vitest/coverage",
+      reporter: ["html", "lcovonly", "cobertura", "text-summary"],
+      include: ["src/**/*.ts"],
+    },
+    fileParallelism: true,
+    globals: true,
+    hookTimeout: 20_000,
+    include: ["test/spec/**/*.spec.ts"],
+    restoreMocks: true,
+    setupFiles: ["./test/setup.ts"],
+    testTimeout: 20_000,
+  },
+});

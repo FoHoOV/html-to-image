@@ -9,6 +9,7 @@ CI uses Node.js 24 and the pnpm version pinned in `package.json`. Corepack can i
 ```shell
 corepack enable
 pnpm install
+pnpm dlx playwright install --with-deps
 ```
 
 Create a focused branch from `master`, make the change, and add or update tests for behavior changes. Before opening a pull request, run:
@@ -25,6 +26,17 @@ The build creates all publishable output under `dist/`:
 - `dist/cjs` contains the CommonJS bundle.
 - `dist/browser` contains the minified UMD bundle.
 - `dist/types` contains TypeScript declarations.
+
+The build logs the uncompressed and gzip-compressed size of each generated
+JavaScript bundle. Source maps are excluded from this output.
+
+To inspect what contributes to the minified browser bundle, run:
+
+```shell
+pnpm analyze
+```
+
+This writes an interactive treemap that attributes the final minified browser bundle to its source modules at `.rollup/stats.html`. The report is diagnostic, ignored by git, and kept outside `dist/` so it cannot be included in the published package.
 
 ## Add a Changeset
 
@@ -62,6 +74,9 @@ A pull request should explain:
 
 Keep pull requests focused. CI installs with the frozen lockfile, builds every package format, and runs the browser test suite. A pull request must pass those checks before merge.
 
+Use `pnpm test:debug` to run the browser suite in Vitest's interactive UI while
+debugging locally.
+
 ## Commit messages
 
 Husky and commitlint enforce [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/). Use a short imperative subject such as:
@@ -84,7 +99,7 @@ After the Version Packages pull request is reviewed and merged, the next verifie
 pnpm release
 ```
 
-That command rebuilds `dist/`, publishes the new version to npm, creates the git tag, and allows the Changesets action to create the corresponding GitHub release. Maintainers can apply and review the versioning changes locally with `pnpm version-packages`, but should normally let the action own that mutating step; use `pnpm changeset:status` for a read-only preview.
+That command rebuilds `dist/`, publishes the new version to npm, creates the git tag, and allows the Changesets action to create the corresponding GitHub release. Maintainers can apply and review the versioning changes locally with `pnpm changeset:version`, but should normally let the action own that mutating step; use `pnpm changeset:status` for a read-only preview.
 
 ### Repository release setup
 

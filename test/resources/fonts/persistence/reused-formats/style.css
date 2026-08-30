@@ -1,0 +1,10 @@
+@font-face {
+  font-family: "Reusable Font";
+  font-weight: 400;
+  src: url("data:font/woff2;base64,UkVTVVNFMQ==") format("woff2");
+}
+@font-face {
+  font-family: "Reusable Font";
+  font-weight: 700;
+  src: url("data:font/woff2;base64,UkVTVVNFMg==") format("woff2");
+}

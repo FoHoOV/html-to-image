@@ -27,25 +27,26 @@ npm install --save @fohoov/html-to-image
 ## Usage
 
 ```js
-/* ES6 */
+/* ES modules */
 import * as htmlToImage from '@fohoov/html-to-image';
 import {
   Cache,
-  getFontEmbedCSS,
   toBlob,
   toCanvas,
   toJpeg,
   toPixelData,
   toPng,
   toSvg,
+  toDataUrl
 } from '@fohoov/html-to-image';
 
-/* ES5 */
+/* CommonJS */
 var htmlToImage = require('@fohoov/html-to-image');
 ```
 
 The rendering functions below accept a DOM node and rendering options, and return a promise with the corresponding output:
 
+- [toDataUrl](#toDataUrl)
 - [toPng](#toPng)
 - [toSvg](#toSvg)
 - [toJpeg](#toJpeg)
@@ -82,7 +83,7 @@ htmlToImage
 ```
 
 #### toSvg
-Get an SVG data URL, but filter out all the `<i>` elements:
+Get an SVG element, but filter out all the `<i>` elements:
 
 ```js
 function filter(node) {
@@ -91,8 +92,19 @@ function filter(node) {
 
 htmlToImage
   .toSvg(document.getElementById('my-node'), { filter: filter })
-  .then(function (dataUrl) {
+  .then(function (svgElement) {
     /* do something */
+  });
+```
+
+#### toDataUrl
+Get an SVG element as dataUrl:
+
+```js
+htmlToImage
+  .toSvg(document.getElementById('my-node'))
+  .then(function (dataUrl) {
+    document.querySelector("#my-image-element").src = dataUrl
   });
 ```
 
@@ -196,7 +208,7 @@ const App: React.FC = () => {
 - `filter` now runs for the root and every descendant element and must return `keep`, `unwrap`, or `remove`. Boolean callbacks no longer exclude nodes.
 - The standalone `backgroundColor` option has been removed. Use `style: { backgroundColor: '...' }`.
 - Output bounds are measured from the styled and filtered clone. Consumer-provided dimensions and layout-changing styles can therefore change the output size, and filtering can reduce it.
-- Resource caching is now opt-in and caller-owned. The library no longer retains fetched resources in a module-global cache for the application lifecycle, and `includeQueryParams` now defaults to `true`.
+- Cross-call resource caching is now opt-in and caller-owned. Without a supplied `Cache`, resources are cached only for the duration of the current API call. The library no longer retains fetched resources in a module-global cache for the application lifecycle, and `includeQueryParams` now defaults to `true`.
 
 ## Options
 
@@ -206,7 +218,7 @@ const App: React.FC = () => {
 (domNode: HTMLElement) => 'keep' | 'unwrap' | 'remove'
 ```
 
-A function invoked for the root node and every descendant element. Return `keep` to preserve the node and process its descendants, `unwrap` to omit only the node while preserving its descendants, or `remove` to omit the node and its entire subtree.
+A function invoked for the root node and every descendant element. Return `keep` to preserve the node and process its descendants, `unwrap` to omit only the node while preserving its descendants, node with unwrap is replaced with a document fragment, or `remove` to omit the node and its entire subtree.
 
 You can add a filter to every image function. For example:
 
@@ -251,27 +263,88 @@ Defaults to `1.0` (`100%`)
 
 ### cacheBust
 
-Set to `true` to append the current time as a query string to resource requests. Cache-busted requests bypass reads and writes for a caller-provided `Cache`.
+Set to `true` to append the current time as a query string to resource requests. Cache-busted requests bypass cache reads and writes.
 
 Defaults to `false`
 
 ### cache
 
-A caller-owned resource cache. Resource caching is opt-in: when `cache` is omitted, fetched images, fonts, stylesheets, and external SVG definitions are not retained between render calls. The library does not create a module-global resource cache that remains alive for the application lifecycle.
+Every top-level API call uses a composite cache. When `cache` is omitted, the library creates a temporary `Cache`, `FetchCache`, and `FontCache` for that call. This deduplicates repeated requests and font processing within the operation, but none of those caches are retained for later API calls. The library does not create a module-global cache that remains alive for the application lifecycle.
+
+Pass caller-owned component caches to control fetched-resource and processed-font persistence independently. `Cache` accepts a `FetchCache` followed by a `FontCache`. Each rendered node still receives only the font families it uses:
 
 ```js
-import { Cache, toPng } from '@fohoov/html-to-image';
+import {
+  Cache,
+  FetchCache,
+  FontCache,
+  toPng,
+} from '@fohoov/html-to-image';
 
-const cache = new Cache();
+const fetchCache = new FetchCache();
+const fontCache = new FontCache();
+const cache = new Cache(fetchCache, fontCache);
 await toPng(firstNode, { cache });
 await toPng(secondNode, { cache });
 ```
 
-Reuse the same instance to reuse fetched resources. Create a new instance, or stop retaining the old one, to start with an empty cache and allow its entries to be released.
+You can also reuse only one kind of cached work by creating a new composite cache for each call while retaining only the desired component:
+
+```js
+await toPng(firstNode, { cache: new Cache(fetchCache) });
+await toPng(secondNode, { cache: new Cache(fetchCache) });
+
+await toPng(firstNode, {
+  cache: new Cache(new FetchCache(), fontCache),
+});
+await toPng(secondNode, {
+  cache: new Cache(new FetchCache(), fontCache),
+});
+```
+
+Stop retaining a component cache, or replace it with a new instance, to allow its entries to be released. Resource entry methods live on `FetchCache`; `Cache` only composes the two cache types. A shared `FetchCache` also coalesces simultaneous requests for the same resource across renders.
+
+### Emptying a cache
+
+`Cache`, `FetchCache`, and `FontCache` each expose `reset()`, which drops their contents while keeping the instance usable. Use it instead of constructing a replacement when the cache is held somewhere awkward to reassign, such as a module singleton or a React ref:
+
+```js
+const cache = new Cache();
+
+cache.reset(); // both component caches
+cache.fontCache.reset(); // only the discovered fonts
+cache.fetchCache.reset(); // only the fetched resources
+```
+
+Automatic font discovery normalizes family names before accessing `FontCache`; the cache itself does not parse or normalize CSS.
+
+`@font-face` rules are discovered in the rendered node's own document. Font families used anywhere in the captured tree are collected — including by elements inside an iframe — and every one of them is resolved against that single document's stylesheets.
+
+An iframe's *own* `@font-face` rules are therefore not discovered. If an iframe defines a face that the surrounding page does not, supply it through [`fontFaces`](#fonts), or define the same family in the page's own stylesheets.
+
+A `FontCache` holds one document's fonts. If a later render targets a node from a different document — a node living inside an iframe, say — the cache clears itself and rediscovers, so one document's faces are never reused for another's.
+
+Cached font definitions are snapshots. Reset the `FontCache` after adding, removing, or changing `@font-face` rules, or after enabling or disabling their stylesheets. If a changed font stylesheet was fetched externally, also reset the `FetchCache` so its previous response is not reused.
+
+A snapshot records the `@font-face` rules that were active when it was taken, and conditions are **not** reevaluated when it is reused. If you place `@font-face` rules inside `@media` or `@supports` blocks — a dark-mode or viewport-dependent font, for example — reset the `FontCache` when that condition changes:
+
+```js
+const cache = new Cache();
+
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  cache.fontCache.reset(); // conditions changed, so the font snapshot is stale
+});
+```
+
+Without this, a render after the change reuses the faces discovered before it. A single render is always correct; only a cache that outlives a condition change is affected. `@font-face` rules that are not inside a conditional block are unaffected.
+
+`@font-face` rules nested in `@media`, `@supports`, or `@layer` are evaluated against the live page, in the same engine that renders the output, when the render starts. Only faces behind a currently-active condition are embedded, and they are embedded bare — the enclosing block is not reproduced in the output. Replaying it would ask a question already answered: for `@media`, against the wrong viewport (the exported SVG's own output size, not the page's); for `@supports` and `@layer`, redundantly, since the engine evaluating it is the same one that just did.
+
+Fonts registered only through the `FontFace` constructor cannot be recovered from browser CSSOM because their original source is not exposed. Supply those fonts through [`fontFaces`](#fonts) alongside `"discover"`, so the rest of the tree's fonts are still found automatically. `fontFaces` does not populate `FontCache`.
 
 ### includeQueryParams
 
-Controls resource cache keys when `cache` is supplied. `true` keeps the query string, so `/image.png?v=1` and `/image.png?v=2` use different entries. `false` strips the query string before constructing the key, so those URLs share an entry. The requested URL is never changed by this option.
+Controls resource cache keys. `true` keeps the query string, so `/image.png?v=1` and `/image.png?v=2` use different entries. `false` strips the query string before constructing the key, so those URLs share an entry. The requested URL is never changed by this option.
 
 Defaults to `true`
 
@@ -305,17 +378,46 @@ specifies several different formats for fonts in the CSS, for example:
 Instead of embedding each format, all formats other than the one specified will be discarded. If
 this option is not specified then all formats will be downloaded and embedded.
 
-### fontEmbedCSS
+### fonts
 
-When supplied, the library will skip the process of parsing and embedding webfont URLs in CSS,
-instead using this value. This is useful when combined with `getFontEmbedCSS()` to only perform the
-embedding process a single time across multiple calls to library functions.
+Controls font embedding. Omitted defaults to `{ strategy: 'discover' }`: automatically find and embed the `@font-face` rules used by the captured tree, as described above.
 
 ```javascript
-const fontEmbedCSS = await htmlToImage.getFontEmbedCSS(element1);
-html2Image.toSVG(element1, { fontEmbedCSS });
-html2Image.toSVG(element2, { fontEmbedCSS });
+htmlToImage.toSvg(element, {
+  fonts: { strategy: 'discover' },
+});
 ```
+
+`fontFaces`, alongside `'discover'`, maps a family name to complete, ready-to-use `@font-face` CSS text — `url()`s already as `data:` URLs, since a `fontFaces` entry is used verbatim and is not run through resource fetching. A family listed here is not searched for in any stylesheet at all; discovery is narrowed to skip it, not merged with it. Supply every variant (weight, style) you want for that family in the one string — other variants for a family listed here are not additionally discovered.
+
+```javascript
+htmlToImage.toSvg(element, {
+  fonts: {
+    strategy: 'discover',
+    fontFaces: {
+      Inter: '@font-face { font-family: "Inter"; src: url("data:..."); }',
+    },
+  },
+});
+```
+
+`{ strategy: 'provided', fontFaces }` uses `fontFaces` verbatim for the *whole* output and skips automatic discovery entirely. An empty string intentionally disables font embedding without adding a style element.
+
+```javascript
+htmlToImage.toSvg(element, {
+  fonts: { strategy: 'provided', fontFaces: '@font-face { font-family: "Inter"; src: url("data:..."); }' },
+});
+```
+
+`{ strategy: 'none' }` emits no font style and performs no discovery.
+
+```javascript
+htmlToImage.toSvg(element, {
+  fonts: { strategy: 'none' },
+});
+```
+
+Migrating from the old options: `skipFonts: true` becomes `fonts: { strategy: 'none' }`; `fontEmbedCSS: css` becomes `fonts: { strategy: 'provided', fontFaces: css }`. Omitting `fonts` entirely keeps the previous default (automatic discovery).
 
 ### skipAutoScale
 
@@ -337,20 +439,29 @@ An array of style property names. Can be used to manually specify which style pr
 
 ## Browsers
 
-Only standard browser APIs are used, but make sure your browser supports:
+The published bundles use ES2015 syntax The supported browser floor is:
+
+- Chrome 64+
+- Edge 79+
+- Firefox 68+
+- Safari 12+
+- iOS Safari 12+
+
+These fixed minimums account for both the emitted syntax and the browser APIs
+used by the library. Only standard browser APIs are used, including:
 
 - [Promise](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Promise)
 - SVG `<foreignObject>` tag
+- `fetch()`
 - `HTMLImageElement.decode()`
 - `TextDecoder`
 - `CSS.escape()`
-- `String.prototype.matchAll()`
 
-The automated test suite runs in Chrome. The library targets modern Chrome, Firefox, and Safari, with Chrome generally performing better on large DOM trees.
+Chrome generally performs better on large DOM trees.
 
-### iOS/WebKit
+### WebKit
 
-For canvas-based outputs, iOS waits for rendering to settle and draws the generated SVG to the canvas a second time on a later frame. This is an automatic workaround for a WebKit issue where images or other elements can be missing from the first canvas draw. iPadOS devices using a desktop-style user agent are detected as well.
+For canvas-based outputs, WebKit browsers wait for rendering to settle and draw the generated SVG to the canvas a second time on a later frame. This is an automatic workaround for a WebKit issue where images or other elements can be missing from the first canvas draw.
 
 *Internet Explorer is not (and will not be) supported, as it does not support SVG `<foreignObject>` tag.*
 
@@ -361,21 +472,22 @@ There might some day exist (or maybe already exists?) a simple and standard way 
 This library uses a feature of SVG that allows having arbitrary HTML content inside of the `<foreignObject>` tag. So, in order to render that DOM node for you, following steps are taken:
 
 1. Clone the original DOM node recursively and apply the configured filter. External SVG `<use>` definitions and their referenced dependencies are copied into the clone. Video frames and posters are replaced with images while preserving the computed video styles.
-2. Apply consumer-provided dimensions and styles, attach the clone to an off-screen container, and wait for browser layout and paint work to settle.
-3. Read browser-computed styles, then apply them to the clone in a batched write pass. Measure the output from this styled and filtered clone.
+2. Canvas elements that cannot produce a data URL through `toDataURL()`, as well as video elements, are replaced with `<img>` elements. The replacement image inherits the original element’s inline styles and class name. However, CSS selectors that specifically target `canvas` or `video` elements will no longer apply because the resulting element is an `<img>`.
+3. Apply consumer-provided dimensions and styles, attach the clone to an off-screen container, and wait for browser layout and paint work to settle.
+4. Read browser-computed styles, then apply them to the clone in a batched write pass. Measure the output from this styled and filtered clone.
    - and don't forget to recreate pseudo-elements, as they are not cloned in any way, of course
-4. Embed images
+5. Embed images
    - embed image URLs in `<img>` elements
    - inline images used in `background` CSS property, in a fashion similar to fonts
-5. Embed web fonts
+6. Embed web fonts
    - find all the `@font-face` declarations that might represent web fonts
    - parse file URLs, download corresponding files
    - base64-encode and inline content as dataURLs
    - concatenate all the processed CSS rules and put them into one `<style>` element, then attach it to the clone
-6. Serialize the cloned node to XML
-7. Wrap XML into the `<foreignObject>` tag, then into the SVG, then make it a data URL
-8. Optionally, to get PNG content or raw pixel data as a Uint8Array, create an Image element with the SVG as a source, render it on an off-screen canvas, and read the content from the canvas. On iOS, clear and redraw the same canvas on a later frame to avoid incomplete first draws.
-9. Done!
+7. Serialize the cloned node to XML
+8. Wrap XML into the `<foreignObject>` tag, then into the SVG, then make it a data URL
+9. Optionally, to get PNG content or raw pixel data as a Uint8Array, create an Image element with the SVG as a source, render it on an off-screen canvas, and read the content from the canvas. On WebKit, clear and redraw the same canvas on a later frame to avoid incomplete first draws.
+10. Done!
 
 
 ## Things to watch out for

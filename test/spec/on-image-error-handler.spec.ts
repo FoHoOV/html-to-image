@@ -1,49 +1,39 @@
-import { embedImages } from '../../src/embed-images'
+import { toPng } from "../../src";
+import { test } from "../fixtures";
 
-describe('Error Handling in resourceToDataURL', () => {
-  it('should call the onImageErrorHandler when an error occurs', async () => {
+describe("onImageErrorHandler", () => {
+  test("should call the onImageErrorHandler when an error occurs", async ({
+    createImageNode,
+  }) => {
     const handlers = {
       onError: () => {},
-    }
-    spyOn(handlers, 'onError')
-    const options = { onImageErrorHandler: handlers.onError }
-    const node = document.createElement('img')
-    node.src = 'invalid_url'
+    };
+    vi.spyOn(handlers, "onError");
 
-    // Assuming resourceToDataURL is the function being tested
-    await embedImages(node, options).then(() => {
-      expect(handlers.onError).toHaveBeenCalled()
-    })
-  })
+    await toPng(createImageNode("invalid_url"), {
+      onImageErrorHandler: handlers.onError,
+    });
 
-  it('should reject with an error if no onImageErrorHandler is provided', async () => {
-    const node = document.createElement('img')
-    node.src = 'invalid_url'
-    let rejection: unknown
+    expect(handlers.onError).toHaveBeenCalled();
+  });
 
-    try {
-      await embedImages(node, {})
-    } catch (error) {
-      rejection = error
-    }
+  test("should reject with an error if no onImageErrorHandler is provided", async ({
+    createImageNode,
+  }) => {
+    await expect(toPng(createImageNode("invalid_url"))).rejects.toEqual(
+      expect.any(Error),
+    );
+  });
 
-    expect(rejection).toEqual(jasmine.any(Error))
-  })
+  test("should propagate errors from onImageErrorHandler", async ({
+    createImageNode,
+  }) => {
+    const handlerError = new Error("image error handler failed");
 
-  it('should propagate errors from onImageErrorHandler', async () => {
-    const handlerError = new Error('image error handler failed')
-    const node = document.createElement('img')
-    node.src = 'invalid_url'
-    let rejection: unknown
-
-    try {
-      await embedImages(node, {
+    await expect(
+      toPng(createImageNode("invalid_url"), {
         onImageErrorHandler: () => Promise.reject(handlerError),
-      })
-    } catch (error) {
-      rejection = error
-    }
-
-    expect(rejection).toBe(handlerError)
-  })
-})
+      }),
+    ).rejects.toBe(handlerError);
+  });
+});

@@ -1,0 +1,14 @@
+@font-face {
+  font-family: "Repeated Font";
+  font-style: normal;
+  font-weight: 400;
+  unicode-range: U+0000-00FF;
+  src: url("data:font/woff2;base64,Tk9STUFM") format("woff2");
+}
+@font-face {
+  font-family: "Repeated Font";
+  font-style: italic;
+  font-stretch: condensed;
+  font-weight: 700;
+  src: url("data:font/woff2;base64,SVRBTElD") format("woff2");
+}

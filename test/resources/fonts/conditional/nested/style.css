@@ -1,0 +1,14 @@
+@media all {
+  @supports (display: grid) {
+    @font-face {
+      font-family: "Nested Conditions Font";
+      font-weight: 400;
+      src: url("data:font/woff2;base64,TkVTVEVE") format("woff2");
+    }
+  }
+}
+@font-face {
+  font-family: "Nested Conditions Font";
+  font-weight: 700;
+  src: url("data:font/woff2;base64,VU5XUkFQUEVE") format("woff2");
+}

@@ -1,0 +1,8 @@
+/* True at the Playwright default 1280px viewport, false for the 40x40
+   output the test requests -- that mismatch is what the test proves. */
+@media (min-width: 300px) {
+  @font-face {
+    font-family: "Narrow Output Font";
+    src: url("data:font/woff2;base64,TkFSUk9X") format("woff2");
+  }
+}

@@ -1,0 +1,21 @@
+import { getComputedStyle, serializeComputedStyles } from "@/node/utils";
+import type { Embedder } from "../embed/types";
+
+export const embedStyles: Embedder<
+  HTMLElement | SVGElement,
+  Promise<void>
+> = async ({ clonedNode, context }) => {
+  const targetStyle = clonedNode.style;
+  if (!targetStyle) {
+    return;
+  }
+  await context.addedToDom.ready;
+  const sourceStyle = getComputedStyle(clonedNode);
+
+  const transformOrigin = sourceStyle.transformOrigin;
+  const cssText = serializeComputedStyles(sourceStyle, clonedNode, context);
+
+  targetStyle.cssText = cssText;
+  // Safari historically omitted transform-origin from computed cssText.
+  targetStyle.transformOrigin = transformOrigin;
+};
