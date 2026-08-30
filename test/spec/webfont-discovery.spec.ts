@@ -1,29 +1,29 @@
 import * as htmlToImage from "../../src";
 import { test } from "../fixtures";
 
+function addUnreadableStylesheet(href: string, media?: string) {
+  const style = document.createElement("style");
+  if (media) {
+    style.media = media;
+  }
+  document.getElementById("style")!.after(style);
+
+  const sheet = style.sheet!;
+  vi.spyOn(sheet, "href", "get").mockReturnValue(href);
+  vi.spyOn(sheet, "cssRules", "get").mockImplementation(() => {
+    throw new DOMException("Cannot access rules", "SecurityError");
+  });
+}
+
 describe("font discovery", () => {
   test("continues when an imported stylesheet cannot be fetched", async ({
     bootstrap,
   }) => {
     const node = await bootstrap("fonts/discovery/import-failure/node.html");
 
-    // A different host than the page's own, so the sheet is cross-origin and
-    // its rules must be refetched by text rather than read live.
-    const stylesheetUrl = new URL(
-      "/fonts/web-fonts/failure.css",
-      window.location.href,
-    );
-    stylesheetUrl.hostname =
-      stylesheetUrl.hostname === "localhost" ? "127.0.0.1" : "localhost";
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = stylesheetUrl.href;
-    const loaded = new Promise<void>((resolve, reject) => {
-      link.onload = () => resolve();
-      link.onerror = () => reject(new Error("Could not load font fixture"));
-    });
-    document.getElementById("style")!.after(link);
-    await loaded;
+    // Unreadable, so its rules must be refetched by text rather than read live.
+    const stylesheetHref = "https://styles.invalid/remote.css";
+    addUnreadableStylesheet(stylesheetHref);
 
     const stylesheetCSS = `
       @import url("https://fonts.invalid/missing.css");
@@ -37,7 +37,7 @@ describe("font discovery", () => {
       if (input.toString().includes("fonts.invalid")) {
         return Promise.reject(new Error("Remote stylesheet failed"));
       }
-      if (input.toString() === stylesheetUrl.href) {
+      if (input.toString() === stylesheetHref) {
         return Promise.resolve(new Response(stylesheetCSS));
       }
       return nativeFetch(input);
@@ -49,7 +49,7 @@ describe("font discovery", () => {
     expect(cssText).toContain("QVZBSUxBQkxF");
     expect(
       fetchSpy.mock.calls.filter(
-        ([input]) => input.toString() === stylesheetUrl.href,
+        ([input]) => input.toString() === stylesheetHref,
       ),
     ).toHaveLength(1);
     expect(
@@ -150,28 +150,13 @@ describe("font discovery", () => {
       "fonts/discovery/cache-first/style.css",
     );
 
-    // A different host than the page's own, so the sheet is cross-origin and
-    // unreadable; it declares no family this render uses.
-    const stylesheetUrl = new URL(
-      "/fonts/web-fonts/failure.css",
-      window.location.href,
-    );
-    stylesheetUrl.hostname =
-      stylesheetUrl.hostname === "localhost" ? "127.0.0.1" : "localhost";
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.media = "screen";
-    link.href = stylesheetUrl.href;
-    const loaded = new Promise<void>((resolve, reject) => {
-      link.onload = () => resolve();
-      link.onerror = () => reject(new Error("Could not load font fixture"));
-    });
-    document.getElementById("style")!.after(link);
-    await loaded;
+    // Unreadable, and it declares no family this render uses.
+    const stylesheetHref = "https://styles.invalid/remote.css";
+    addUnreadableStylesheet(stylesheetHref, "screen");
 
     const nativeFetch = window.fetch.bind(window);
     const fetchSpy = vi.spyOn(window, "fetch").mockImplementation((input) =>
-      input.toString().startsWith(stylesheetUrl.href)
+      input.toString().startsWith(stylesheetHref)
         ? Promise.resolve(
             new Response(`@font-face {
                 font-family: "Different External Font";
@@ -193,7 +178,7 @@ describe("font discovery", () => {
     );
     expect(
       fetchSpy.mock.calls.filter(([input]) =>
-        input.toString().startsWith(stylesheetUrl.href),
+        input.toString().startsWith(stylesheetHref),
       ),
     ).toHaveLength(1);
   });
