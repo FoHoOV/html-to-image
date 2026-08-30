@@ -1,13 +1,12 @@
 import type { Context } from "@/context";
-import { getStyleProperties } from "@/node/utils";
+import { getStyleProperties, getComputedStyle } from "@/node/utils";
 import { uuid } from "@/utils";
 import type { Embedder } from "../embed/types";
 
-export const embedPseudoElements: Embedder<Element, Promise<void>> = async ({
-  originalNode,
-  clonedNode,
-  context,
-}) => {
+export const embedPseudoElements: Embedder<
+  HTMLElement | SVGElement,
+  Promise<void>
+> = async ({ originalNode, clonedNode, context }) => {
   await context.addedToDom.ready;
   [":before", ":after"].forEach((target) => {
     const style = getComputedStyle(originalNode, target);

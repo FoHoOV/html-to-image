@@ -21,9 +21,12 @@ export function getStyleProperties({ options }: Context): string[] {
   return styleProps;
 }
 
-export function getComputedStyle(element: HTMLElement | SVGElement) {
+export function getComputedStyle(
+  element: HTMLElement | SVGElement,
+  target?: string | null,
+) {
   const sourceWindow = element.ownerDocument.defaultView ?? window;
-  return sourceWindow.getComputedStyle(element);
+  return sourceWindow.getComputedStyle(element, target);
 }
 
 export function serializeComputedStyles(
