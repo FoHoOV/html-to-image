@@ -27,7 +27,6 @@ export const cloneUseElement: Cloner<SVGUseElement> = async ({
 
   if (!hasDefinition(ownerSvg, parsed.id)) {
     await embedDefinition(ownerSvg, href, context);
-    setHref(cloned, `#${parsed.id}`);
   }
 
   setHref(cloned, `#${parsed.id}`);

@@ -417,7 +417,7 @@ htmlToImage.toSvg(element, {
 });
 ```
 
-Migrating from the old options: `skipFonts: true` becomes `fonts: { strategy: 'none' }`; `fontEmbedCSS: css` becomes `fonts: { strategy: 'provided', css }`. Omitting `fonts` entirely keeps the previous default (automatic discovery).
+Migrating from the old options: `skipFonts: true` becomes `fonts: { strategy: 'none' }`; `fontEmbedCSS: css` becomes `fonts: { strategy: 'provided', fontFaces: css }`. Omitting `fonts` entirely keeps the previous default (automatic discovery).
 
 ### skipAutoScale
 

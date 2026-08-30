@@ -22,18 +22,6 @@ export type FontFaceCollection = {
   sourcesByFamily: Map<string, WebFontSource[]>;
 };
 
-export function collectDocumentFontFaces(
-  sourceDocument: Document,
-  wantedFamilies: Set<string>,
-  context: Context,
-): Promise<FontFaceCollection> {
-  return new FontFaceCollector(
-    sourceDocument,
-    wantedFamilies,
-    context,
-  ).collect();
-}
-
 export class FontFaceCollector {
   private readonly sourcesByFamily = new Map<string, WebFontSource[]>();
   /** Stylesheet URLs already walked or currently being walked, so `@import`

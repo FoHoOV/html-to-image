@@ -37,41 +37,30 @@ export const embedWebFonts: Embedder<HTMLElement | SVGElement, void> = (
     // Every family the tree uses, wherever it was found, is resolved against
     // the rendered root's own document.
     const rootDocument = config.originalNode.ownerDocument ?? document;
+    // A family the caller supplies is never discovered, so the resolver takes
+    // these as already-resolved and scans the document for the rest.
+    const supplied = fonts?.fontFaces && byNormalizedFamily(fonts.fontFaces);
     context.embedding.font.add(async () => {
       await context.cloning.ready;
-
-      const usedFamilies = context.embedding.font.usedFamilies;
-      let wanted: ReadonlySet<string> = usedFamilies;
-      const overrideCSS: string[] = [];
-
-      if (fonts?.fontFaces) {
-        // A family listed here is never discovered: this render's whole
-        // stylesheet scan is smaller by exactly the families overridden.
-        const overrides = new Map<string, string>();
-        for (const family of Object.keys(fonts.fontFaces)) {
-          overrides.set(normalizeFontFamily(family), fonts.fontFaces[family]);
-        }
-        const remaining = new Set<string>();
-        for (const family of usedFamilies) {
-          const css = overrides.get(family);
-          if (css) {
-            overrideCSS.push(css);
-          } else {
-            remaining.add(family);
-          }
-        }
-        wanted = remaining;
-      }
-
       const resolver = new FontResolver(context);
-      await resolver.resolveAll(rootDocument, wanted);
-      addFontStyleNode(config.clonedNode, [
-        ...resolver.cssTexts,
-        ...overrideCSS,
-      ]);
+      await resolver.resolveAll(
+        rootDocument,
+        context.embedding.font.usedFamilies,
+        supplied,
+      );
+      addFontStyleNode(config.clonedNode, resolver.cssTexts);
     });
   }
 };
+
+/** Keys supplied faces the way used families are keyed, so they match. */
+function byNormalizedFamily(fontFaces: Record<string, string>) {
+  const supplied = new Map<string, string>();
+  for (const family of Object.keys(fontFaces)) {
+    supplied.set(normalizeFontFamily(family), fontFaces[family]);
+  }
+  return supplied;
+}
 
 function trackUsedFamilies({
   originalNode,

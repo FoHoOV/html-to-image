@@ -36,22 +36,28 @@ export function serializeComputedStyles(
 ) {
   const path = clonedNode.getAttribute("d");
 
-  return getStyleProperties(context)
-    .filter((property) => !SKIPPED_STYLE_PROPS.has(property))
-    .map((property) => {
-      let value = sourceStyles.getPropertyValue(property);
-      if (property === "font-kerning") {
-        value = "normal";
-      } else if (property === "d" && path) {
-        value = `path(${path})`;
-      } else if (property === "clip-path") {
-        value = localizeClipPath(value, clonedNode) ?? value;
-      }
+  // Runs once per element over every computed property, so it appends into one
+  // array and joins once rather than allocating a filtered and a mapped array.
+  const declarations: string[] = [];
+  for (const property of getStyleProperties(context)) {
+    if (SKIPPED_STYLE_PROPS.has(property)) {
+      continue;
+    }
 
-      const priority = sourceStyles.getPropertyPriority(property);
-      return `${property}: ${value}${priority ? " !important" : ""};`;
-    })
-    .join(" ");
+    let value = sourceStyles.getPropertyValue(property);
+    if (property === "font-kerning") {
+      value = "normal";
+    } else if (property === "d" && path) {
+      value = `path(${path})`;
+    } else if (property === "clip-path") {
+      value = localizeClipPath(value, clonedNode) ?? value;
+    }
+
+    const priority = sourceStyles.getPropertyPriority(property);
+    declarations.push(`${property}: ${value}${priority ? " !important" : ""};`);
+  }
+
+  return declarations.join(" ");
 }
 
 export function applyCustomStyles<TElement extends HTMLElement>(

@@ -35,12 +35,27 @@ export class FontResolver {
    * cached embeddings first, so a document whose families are all already
    * covered is never scanned at all, then one stylesheet scan for the rest.
    */
-  async resolveAll(sourceDocument: Document, families: ReadonlySet<string>) {
+  async resolveAll(
+    sourceDocument: Document,
+    families: ReadonlySet<string>,
+    supplied?: ReadonlyMap<string, string>,
+  ) {
     // The cache holds one document's fonts. Rendering a node from another
     // document starts fresh rather than answering with the first one's faces.
     if (!this.cache.holds(sourceDocument)) {
       this.cache.reset();
       this.cache.bind(sourceDocument);
+    }
+
+    // A supplied face is already this family's resolved text, so recording it
+    // up front both emits it and drops the family from the document scan.
+    if (supplied) {
+      for (const family of families) {
+        const cssText = supplied.get(family);
+        if (cssText) {
+          this.included.set(family, cssText);
+        }
+      }
     }
 
     await this.include(families, (family) => this.resolveCached(family));
