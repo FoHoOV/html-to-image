@@ -1,5 +1,37 @@
 # html-to-image
 
+## 3.0.0
+
+### Major Changes
+
+- 0a102d0: breaking: raise the emitted JavaScript syntax floor from ES5 to ES2015 and define fixed minimum browser versions for compatibility checks.
+- 9564c54: breaking: remove `getFontEmbedCSS`. Add caller-owned `FetchCache` and `FontCache` instances that can be composed through `Cache` to control fetched-resource and processed-font persistence independently. Resource entry methods move from `Cache` to `FetchCache`, which also coalesces simultaneous requests shared across renders. `FontCache` stores automatically discovered font state without parsing or normalizing CSS itself.
+
+  `Cache`, `FetchCache`, and `FontCache` each expose `reset()`, which empties them in place so a caller holding a reference does not have to reassign it. A `FontCache` holds one document's fonts and clears itself when a render targets a different document, so faces discovered for one document are never reused for another.
+
+  Font discovery snapshots the `@font-face` rules that apply when it runs, and a reused `FontCache` does not reevaluate `@media` or `@supports` conditions. Replace the `FontCache` when such a condition changes. A single render is always correct; only a cache that outlives a condition change is affected.
+
+- 6359172: breaking: update min emitted syntax to ES6 and define min browser support
+
+  raise the emitted JavaScript syntax floor from ES5 to ES2015 and define fixed minimum browser versions for compatibility checks.
+
+- acbfbf7: breaking: replace `skipFonts` and `fontEmbedCSS` with a single discriminated `fonts` option: `{ strategy: 'discover' }` (the default), `{ strategy: 'provided', fontFaces }`, or `{ strategy: 'none' }`. `skipFonts: true` becomes `fonts: { strategy: 'none' }`; `fontEmbedCSS: css` becomes `fonts: { strategy: 'provided', fontFaces: css }`.
+
+  This also fixes a bug where supplying `fontEmbedCSS` still triggered automatic discovery alongside it, producing two font `<style>` elements. The new shape makes `"provided"` and `"discover"` mutually exclusive by construction, so the bug has nowhere to live.
+
+- 9d9a9fa: feat: use single traversal of nodes for optimization and speed
+
+### Minor Changes
+
+- d42fe94: feat: lock same url requests to prevent duplicate requests at the same time
+- 470c2b3: feat: use generators instead of toArray calls for less memory usage
+- 13fef6a: refactor: update project build process and test environment to use vitest
+
+### Patch Changes
+
+- 24fa70f: fix: don't replace imagePlaceHolder with every failed resource download
+- 291cda2: fix: localize same-document `clip-path` references that arrive through CSS.
+
 ## 2.0.1
 
 ### Patch Changes
