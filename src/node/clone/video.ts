@@ -1,4 +1,5 @@
-import { copyAttributes, createImage } from "@/node/utils";
+import type { Context } from "@/context";
+import { copyAttributes, loadInlinedImage } from "@/node/utils";
 import { getMimeType, resourceToDataUrl } from "@/utils";
 import type { Cloner } from "./types";
 
@@ -14,7 +15,7 @@ export const cloneVideoElement: Cloner<HTMLVideoElement> = async ({
     canvas.height = originalNode.clientHeight;
     canvasContext?.drawImage(originalNode, 0, 0, canvas.width, canvas.height);
 
-    return createVideoImage(canvas.toDataURL(), originalNode);
+    return createVideoImage(canvas.toDataURL(), originalNode, context);
   }
 
   const poster = originalNode.poster;
@@ -24,11 +25,19 @@ export const cloneVideoElement: Cloner<HTMLVideoElement> = async ({
     context.options.imagePlaceholder,
     context,
   );
-  return createVideoImage(dataURL, originalNode);
+  return createVideoImage(dataURL, originalNode, context);
 };
-
-async function createVideoImage(dataURL: string, originalNode: HTMLElement) {
-  const image = await createImage(dataURL);
+async function createVideoImage(
+  dataURL: string,
+  originalNode: HTMLElement,
+  context: Context,
+) {
+  const image = new Image();
+  image.decoding = "sync";
   copyAttributes(image, originalNode);
+  image.src = dataURL;
+
+  await loadInlinedImage(dataURL, context);
+
   return image;
 }

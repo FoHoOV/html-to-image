@@ -350,13 +350,37 @@ Defaults to `true`
 
 ### imagePlaceholder
 
-A data URL for a placeholder image that will be used when fetching an image fails.
+A data URL substituted for a resource that **cannot be fetched**. It applies to image element sources, `<video>` posters, and CSS `url()` values.
 
-Defaults to an empty string and will render empty areas for failed images.
+Defaults to an empty string. What an unfetchable resource does then depends on where it was used:
 
-### onImageErrorHandler
+| Where the resource was used | Result |
+| --- | --- |
+| `<img>`, SVG `<image>`, `<video>` poster | The source fails to load, which is reported through [`onEmbeddedImageError`](#onEmbeddedImageError). With no handler, **the render rejects**. |
+| CSS `url()` (`background`, `mask`) | The value becomes `url("")`, so the area renders empty and the render continues. |
 
-An error handler called when an embedded image fails to load. If the handler completes successfully, the image error is considered handled and a later decode failure is ignored. Errors thrown by the handler, including rejected promises it returns, are propagated to the rendering call.
+Supplying a placeholder that itself fails to load behaves exactly like the empty default. So an image whose source cannot be downloaded does not silently render as an empty area unless you handle it — see below.
+
+### onEmbeddedImageError
+
+An error handler called when an image element's **inlined source fails to load or decode**.
+
+This is a different failure from the one `imagePlaceholder` covers. By the time this runs the image data is ready, so what failed is the browser rendering that source, not downloading it.
+
+- Return normally and the failure is treated as handled: the element keeps its broken or empty source, and the output paints an empty area.
+- Supply no handler, throw, or return a rejected promise, and that terminates image generations with that error.
+
+It covers `<img>`, SVG `<image>`, and `<video>` poster replacements. A CSS `url()` that cannot be fetched does not reach it; it degrades as described above.
+
+```js
+htmlToImage.toPng(node, {
+  imagePlaceholder: 'data:image/png;base64,...', // used when a fetch fails
+  onEmbeddedImageError: (event) => {
+    // reached when the resulting source will not render
+    console.warn('image could not be embedded', event);
+  },
+});
+```
 
 ### pixelRatio
 
@@ -416,6 +440,8 @@ htmlToImage.toSvg(element, {
   fonts: { strategy: 'none' },
 });
 ```
+
+Font failures degrade instead of failing the render. A `@font-face` whose source cannot be fetched is dropped from the embedded output, and a stylesheet that cannot be read or fetched is logged and skipped, so the render continues with the faces that did resolve. Neither [`imagePlaceholder`](#imagePlaceholder) nor [`onEmbeddedImageError`](#onEmbeddedImageError) applies to fonts — a placeholder image is not a usable font. When a scan ends incomplete, nothing is recorded as a definitive miss, so a later render using the same `FontCache` retries it.
 
 Migrating from the old options: `skipFonts: true` becomes `fonts: { strategy: 'none' }`; `fontEmbedCSS: css` becomes `fonts: { strategy: 'provided', fontFaces: css }`. Omitting `fonts` entirely keeps the previous default (automatic discovery).
 

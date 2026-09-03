@@ -10,6 +10,4 @@ export function copyAttributes(replacedNode: Element, originalNode: Element) {
       replacedNode.setAttribute(attribute.name, attribute.value);
     }
   }
-
-  return replacedNode;
 }
