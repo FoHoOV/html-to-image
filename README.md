@@ -209,7 +209,7 @@ Every breaking change is recorded per release in the [release notes](/CHANGELOG.
 
 | If your code has | Change it to |
 | --- | --- |
-| `filter` returning a boolean | `'keep'`, `'unwrap'`, or `'remove'` — see [filter](#filter). It now runs for the root as well as every descendant. |
+| `filter` returning a boolean | `'keep'`, `'unwrap'`, or `'remove'` — see [filter](#filter). It now runs for the root as well as every node beneath it, including text nodes. |
 | `backgroundColor: '#fff'` | `style: { backgroundColor: '#fff' }` |
 | `toSvg(node)` used as a data URL string | `toSvg` resolves with an `SVGSVGElement`; use [`toDataUrl`](#toDataUrl) for the string. |
 | `getFontEmbedCSS(node, options)` | Removed. Use [`fonts`](#fonts)`: { strategy: 'provided', fontFaces }`. |
@@ -231,17 +231,21 @@ The published bundles are ES2015 — see [Browsers](#browsers) for the supported
 ### filter
 
 ```ts
-(domNode: HTMLElement) => 'keep' | 'unwrap' | 'remove'
+(node: Node) => 'keep' | 'unwrap' | 'remove'
 ```
 
-A function invoked for the root node and every descendant element. Return `keep` to preserve the node and process its descendants, `unwrap` to omit only the node while preserving its descendants, node with unwrap is replaced with a document fragment, or `remove` to omit the node and its entire subtree.
+A function invoked for the root node and every node visited beneath it. Return `keep` to preserve the node and process its descendants, `unwrap` to omit only the node while preserving its descendants, node with unwrap is replaced with a document fragment, or `remove` to omit the node and its entire subtree.
+
+It is called for **every** node the capture walks, not only elements — text and comment nodes reach it too. So narrow before touching anything element-specific, as the optional chaining below does; `classList` is `undefined` on a text node, and reading `.contains` on it would throw.
 
 You can add a filter to every image function. For example:
 
 ```ts
-const filter = (node: HTMLElement) => {
+const filter = (node: Node) => {
   const exclusionClasses = ['remove-me', 'secret-div'];
-  return exclusionClasses.some((classname) => node.classList?.contains(classname))
+  return exclusionClasses.some((classname) =>
+    (node as HTMLElement).classList?.contains(classname),
+  )
     ? 'remove'
     : 'keep';
 }
@@ -384,7 +388,7 @@ An error handler called when an image element's **inlined source fails to load o
 This is a different failure from the one `imagePlaceholder` covers. By the time this runs the image data is ready, so what failed is the browser rendering that source, not downloading it.
 
 - Return normally and the failure is treated as handled: the element keeps its broken or empty source, and the output paints an empty area.
-- Supply no handler, throw, or return a rejected promise, and that terminates image generations with that error.
+- Supply no handler, throw, or return a rejected promise, and that terminates image generation with that error.
 
 It covers `<img>`, SVG `<image>`, and `<video>` poster replacements. A CSS `url()` that cannot be fetched does not reach it; it degrades as described above.
 
@@ -458,7 +462,6 @@ htmlToImage.toSvg(element, {
 ```
 
 Font failures degrade instead of failing the render. A `@font-face` whose source cannot be fetched is dropped from the embedded output, and a stylesheet that cannot be read or fetched is logged and skipped, so the render continues with the faces that did resolve. Neither [`imagePlaceholder`](#imagePlaceholder) nor [`onEmbeddedImageError`](#onEmbeddedImageError) applies to fonts — a placeholder image is not a usable font. When a scan ends incomplete, nothing is recorded as a definitive miss, so a later render using the same `FontCache` retries it.
-
 
 ### skipAutoScale
 

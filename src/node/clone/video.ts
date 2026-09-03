@@ -27,6 +27,7 @@ export const cloneVideoElement: Cloner<HTMLVideoElement> = async ({
   );
   return createVideoImage(dataURL, originalNode, context);
 };
+
 async function createVideoImage(
   dataURL: string,
   originalNode: HTMLElement,
