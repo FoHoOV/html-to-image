@@ -1,5 +1,15 @@
 # html-to-image
 
+## 4.0.0
+
+### Major Changes
+
+- a7535dc: breaking: rename `onImageErrorHandler` to `onEmbeddedImageError` and correctly document its usecases.
+
+### Patch Changes
+
+- 200efda: fix: a `<video>` poster that cannot be fetched now consults `onEmbeddedImageError` instead of always rejecting the render.
+
 ## 3.0.0
 
 ### Major Changes
