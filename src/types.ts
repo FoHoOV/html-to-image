@@ -49,9 +49,15 @@ export type Options = {
    */
   includeQueryParams?: boolean;
   /**
-   * A data URL for a placeholder image that will be used when fetching
-   * an image fails. Defaults to an empty string and will render empty
-   * areas for failed images.
+   * A data URL substituted for a resource that cannot be fetched. It applies
+   * to image element sources, video posters, and CSS `url()` values.
+   *
+   * Defaults to an empty string, and what an unfetchable resource does then
+   * depends on where it was used: an image element or video poster fails to
+   * load, which is reported through `onEmbeddedImageError` and rejects the
+   * render when no handler is supplied; a CSS `url()` becomes `url("")` and
+   * renders an empty area. A placeholder that itself fails to load behaves the
+   * same way as the empty default.
    */
   imagePlaceholder?: string;
   /**
@@ -108,9 +114,19 @@ export type Options = {
    */
   fetchRequestInit?: RequestInit;
   /**
-   * An event handler for the error event when any image in html has problem with loading.
+   * Called when an image element's inlined source fails to load or decode.
+   * That is a different failure from the fetch `imagePlaceholder` covers: by
+   * the time this runs the image data is already inlined, so what failed is the
+   * browser rendering it.
+   *
+   * Returning normally marks the failure handled, leaving the element with its
+   * broken or empty source so the output paints an empty area. Throwing, or
+   * returning a rejected promise, propagates to the rendering call. With no
+   * handler at all the failure rejects the render.
+   *
+   * Covers `<img>`, SVG `<image>`, and `<video>` poster replacements.
    */
-  onImageErrorHandler?: OnErrorEventHandler;
+  onEmbeddedImageError?: OnErrorEventHandler;
   /**
    * A caller-owned cache composed of fetched-resource and processed-font
    * caches. Reusing it across calls avoids repeating that work.

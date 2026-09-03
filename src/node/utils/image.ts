@@ -38,15 +38,15 @@ export function getImageSize(targetNode: HTMLElement, options: Options) {
 
 /**
  * Loads an inlined source to prove it decodes, applying the caller's
- * `onImageErrorHandler` policy when it does not.
+ * `onEmbeddedImageError` policy when it does not.
  */
 export async function loadInlinedImage(dataUrl: string, context: Context) {
   try {
     await createImage(dataUrl);
   } catch (error) {
-    const { onImageErrorHandler } = context.options;
+    const { onEmbeddedImageError } = context.options;
 
-    if (!onImageErrorHandler) {
+    if (!onEmbeddedImageError) {
       const failure = new Error("image load failed") as Error & {
         cause: unknown;
       };
@@ -54,6 +54,6 @@ export async function loadInlinedImage(dataUrl: string, context: Context) {
       throw failure;
     }
 
-    await onImageErrorHandler(error as Event);
+    await onEmbeddedImageError(error as Event);
   }
 }

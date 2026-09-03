@@ -320,6 +320,11 @@ Rules:
   changes, which is documented in the README.
 - Absorb a failed scan rather than letting it reject the render: log it and
   continue with whatever was already resolved from the cache.
+- Font sources do not use `imagePlaceholder` — a placeholder image is not a
+  usable font — so an `@font-face` whose source cannot be fetched is dropped
+  from the output rather than substituted, and `onEmbeddedImageError` is never
+  called for it. Keep that documented in the README's `fonts` section, with the
+  rest of the font behavior, rather than under the image options.
 - Preserve every applicable `@font-face` variant for a used family; do not
   reduce matching to weight/style equality.
 - Preserve source order, import cycles, declaring stylesheet base URLs, and
@@ -414,9 +419,15 @@ Call `seal()` after registration is complete and await `ready` later.
 - Preserve and propagate the first embedding failure.
 - Remote stylesheet discovery failures log and continue with successfully
   collected fonts.
-- Image failures use `onImageErrorHandler` when supplied. If that handler
-  succeeds, do not fail later on image decoding. If it throws/rejects, propagate
-  that user-land error.
+- An image element whose inlined source will not load uses
+  `onEmbeddedImageError` when supplied; without it the failure rejects the
+  render. If that handler returns, the element keeps its source and the render
+  continues. If it throws/rejects, propagate that user-land error.
+- A resource that cannot be fetched is a separate failure, and it degrades
+  differently per call site: an image element or video poster ends up with an
+  unloadable source, and a CSS `url()` becomes `url("")`. Both substitute
+  `imagePlaceholder` first when one is supplied. Font sources are covered by
+  the web-font rules instead.
 
 ## Performance and compatibility
 
