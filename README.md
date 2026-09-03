@@ -98,11 +98,11 @@ htmlToImage
 ```
 
 #### toDataUrl
-Get an SVG element as dataUrl:
+Get the rendered SVG as a data URL:
 
 ```js
 htmlToImage
-  .toSvg(document.getElementById('my-node'))
+  .toDataUrl(document.getElementById('my-node'))
   .then(function (dataUrl) {
     document.querySelector("#my-image-element").src = dataUrl
   });
@@ -203,12 +203,28 @@ const App: React.FC = () => {
 }
 ```
 
-## Migration notes from upstream
+## Migration
 
-- `filter` now runs for the root and every descendant element and must return `keep`, `unwrap`, or `remove`. Boolean callbacks no longer exclude nodes.
-- The standalone `backgroundColor` option has been removed. Use `style: { backgroundColor: '...' }`.
-- Output bounds are measured from the styled and filtered clone. Consumer-provided dimensions and layout-changing styles can therefore change the output size, and filtering can reduce it.
-- Cross-call resource caching is now opt-in and caller-owned. Without a supplied `Cache`, resources are cached only for the duration of the current API call. The library no longer retains fetched resources in a module-global cache for the application lifecycle, and `includeQueryParams` now defaults to `true`.
+Every breaking change is recorded per release in the [release notes](/CHANGELOG.md) — read them when upgrading. This section collects the ones that need an edit to your code, whether you are arriving from upstream [`html-to-image`](https://github.com/bubkoo/html-to-image) or upgrading between versions of this fork.
+
+| If your code has | Change it to |
+| --- | --- |
+| `filter` returning a boolean | `'keep'`, `'unwrap'`, or `'remove'` — see [filter](#filter). It now runs for the root as well as every descendant. |
+| `backgroundColor: '#fff'` | `style: { backgroundColor: '#fff' }` |
+| `toSvg(node)` used as a data URL string | `toSvg` resolves with an `SVGSVGElement`; use [`toDataUrl`](#toDataUrl) for the string. |
+| `getFontEmbedCSS(node, options)` | Removed. Use [`fonts`](#fonts)`: { strategy: 'provided', fontFaces }`. |
+| `skipFonts: true` | `fonts: { strategy: 'none' }` |
+| `fontEmbedCSS: css` | `fonts: { strategy: 'provided', fontFaces: css }` |
+| `onImageErrorHandler` | [`onEmbeddedImageError`](#onEmbeddedImageError) |
+| `cache.add(...)` / `cache.get(...)` / `cache.has(...)` | Resource entries live on `FetchCache`; `Cache` composes it with a `FontCache` — see [cache](#cache). |
+| Imports from `es/`, `lib/`, or `src/` | The package root only. Bundles are published under `dist`. |
+
+Two changes need no edit but can change what you get:
+
+- **Output bounds are measured from the styled and filtered clone.** Consumer-provided dimensions and layout-changing styles therefore affect the output size, and filtering can reduce it.
+- **Cross-call resource caching is opt-in.** Without a supplied [`cache`](#cache), resources are cached only for the duration of the current call; nothing is retained in a module-global for the application lifetime. `includeQueryParams` defaults to `true`.
+
+The published bundles are ES2015 — see [Browsers](#browsers) for the supported floor.
 
 ## Options
 
@@ -443,7 +459,6 @@ htmlToImage.toSvg(element, {
 
 Font failures degrade instead of failing the render. A `@font-face` whose source cannot be fetched is dropped from the embedded output, and a stylesheet that cannot be read or fetched is logged and skipped, so the render continues with the faces that did resolve. Neither [`imagePlaceholder`](#imagePlaceholder) nor [`onEmbeddedImageError`](#onEmbeddedImageError) applies to fonts — a placeholder image is not a usable font. When a scan ends incomplete, nothing is recorded as a definitive miss, so a later render using the same `FontCache` retries it.
 
-Migrating from the old options: `skipFonts: true` becomes `fonts: { strategy: 'none' }`; `fontEmbedCSS: css` becomes `fonts: { strategy: 'provided', fontFaces: css }`. Omitting `fonts` entirely keeps the previous default (automatic discovery).
 
 ### skipAutoScale
 
@@ -497,23 +512,34 @@ There might some day exist (or maybe already exists?) a simple and standard way 
 
 This library uses a feature of SVG that allows having arbitrary HTML content inside of the `<foreignObject>` tag. So, in order to render that DOM node for you, following steps are taken:
 
-1. Clone the original DOM node recursively and apply the configured filter. External SVG `<use>` definitions and their referenced dependencies are copied into the clone. Video frames and posters are replaced with images while preserving the computed video styles.
-2. Canvas elements that cannot produce a data URL through `toDataURL()`, as well as video elements, are replaced with `<img>` elements. The replacement image inherits the original element’s inline styles and class name. However, CSS selectors that specifically target `canvas` or `video` elements will no longer apply because the resulting element is an `<img>`.
-3. Apply consumer-provided dimensions and styles, attach the clone to an off-screen container, and wait for browser layout and paint work to settle.
-4. Read browser-computed styles, then apply them to the clone in a batched write pass. Measure the output from this styled and filtered clone.
+1. Walk the source subtree **once**. Every node is visited a single time, and everything that node will need later — its styles, its images, its fonts — is registered onto a queue as it is passed, so nothing has to descend the tree again looking for work.
+
+   Each visited node is filtered (`keep`, `unwrap`, `remove`), then shallow-cloned or replaced:
+   - Canvas and video elements become `<img>`, carrying the original element's attributes. A video contributes its current frame, or its poster when it has no loaded source; a canvas that yields no image data at all is left as a canvas. CSS selectors written against `canvas` or `video` no longer match the replacement, because it is an `<img>` now.
+   - External SVG `<use>` definitions and the definitions those reference are copied in.
+   - Live state that `cloneNode` drops — a text area's value, a select's chosen option — is carried over by hand.
+   - The font families in use are noted as they are seen, rather than searched for afterwards.
+
+   The cloned root also receives any consumer `width`, `height`, and `style`.
+
+2. Attach the clone to a hidden off-screen container and wait a frame for the browser to lay it out.
+
+3. Read computed styles from that **attached clone**, not from the original node, so layout-dependent values — percentages, flex, grid — come from the clone's own reflow with the consumer's dimensions applied. Each node's declaration is written in one pass rather than property by property.
+
    - and don't forget to recreate pseudo-elements, as they are not cloned in any way, of course
-5. Embed images
-   - embed image URLs in `<img>` elements
-   - inline images used in `background` CSS property, in a fashion similar to fonts
-6. Embed web fonts
-   - find all the `@font-face` declarations that might represent web fonts
-   - parse file URLs, download corresponding files
-   - base64-encode and inline content as dataURLs
-   - concatenate all the processed CSS rules and put them into one `<style>` element, then attach it to the clone
-7. Serialize the cloned node to XML
-8. Wrap XML into the `<foreignObject>` tag, then into the SVG, then make it a data URL
-9. Optionally, to get PNG content or raw pixel data as a Uint8Array, create an Image element with the SVG as a source, render it on an off-screen canvas, and read the content from the canvas. On WebKit, clear and redraw the same canvas on a later frame to avoid incomplete first draws.
-10. Done!
+
+4. Measure the output size from the styled, filtered clone — which is why filtering or a layout-changing `style` can change the size of what you get — and then detach it.
+
+5. Drain the queues from step 1, concurrently:
+   - `<img>`, SVG `<image>`, and video-poster sources are downloaded and inlined as data URLs
+   - so are the `url()`s inside `background` and `mask`
+   - the font families noted in step 1 are resolved against the rendered node's own document, walking only the stylesheets and `@media`/`@supports`/`@layer` blocks that currently apply. The faces found are downloaded, base64-inlined, and written into a single `<style>` element on the clone — carrying only the families this output actually uses.
+
+6. Serialize the clone to XML, wrap it in `<foreignObject>` inside an SVG, and make that a data URL.
+
+7. For canvas-based output, load that SVG into an image, draw it to an off-screen canvas, and read PNG, JPEG, or raw pixels back. On WebKit, clear and redraw the same canvas on a later frame, because its first draw can omit content.
+
+8. Done!
 
 
 ## Things to watch out for
