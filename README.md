@@ -2,7 +2,7 @@
 
 <p align="center"><strong>✂️ Generates an image from a DOM node using HTML5 canvas and SVG.</strong></p>
 
-<p align="center">Originally created by <a href="https://github.com/bubkoo" rel="nofollow">bubkoo</a> from <a href="https://github.com/tsayen/dom-to-image" rel="nofollow">dom-to-image</a>. This maintained fork continues development at <a href="https://github.com/FoHoOV/html-to-image">FoHoOV/html-to-image</a>.</p>
+<p align="center">Originally created by <a href="https://github.com/bubkoo" rel="nofollow">bubkoo</a> from <a href="https://github.com/tsayen/dom-to-image" rel="nofollow">dom-to-image</a>. This fork fixed IOS related issues <a href="https://github.com/FoHoOV/html-to-image">FoHoOV/html-to-image</a>.</p>
 
 <p align="center">
 <a href="https://github.com/FoHoOV/html-to-image/actions/workflows/ci.yml"><img alt="build" src="https://img.shields.io/github/actions/workflow/status/FoHoOV/html-to-image/ci.yml?branch=master&logo=github&style=for-the-badge"></a>
